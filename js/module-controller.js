@@ -323,6 +323,54 @@ class ModuleController {
     
     /**
      * ================================================
+     * 헤더 타이틀 업데이트 (Week N - O요일 | 아이콘 유형명)
+     * ================================================
+     */
+    updateHeaderTitle(componentType) {
+        // Week/요일 정보 가져오기
+        const currentTest = JSON.parse(sessionStorage.getItem('currentTest') || '{"week":"Week 1","day":"일"}');
+        const weekDay = `${currentTest.week || 'Week 1'} - ${currentTest.day || '일'}요일`;
+        
+        // 유형별 Font Awesome 아이콘 + 한글명 매핑
+        const typeMap = {
+            fillblanks: { icon: 'fas fa-book-open', name: '빈칸채우기' },
+            daily1: { icon: 'fas fa-book-open', name: '일상지문 1' },
+            daily2: { icon: 'fas fa-book-open', name: '일상지문 2' },
+            academic: { icon: 'fas fa-book-open', name: '학술지문' },
+            response: { icon: 'fas fa-headphones', name: '응답고르기' },
+            conver: { icon: 'fas fa-headphones', name: '대화' },
+            announcement: { icon: 'fas fa-headphones', name: '공지사항' },
+            lecture: { icon: 'fas fa-headphones', name: '렉쳐' },
+            arrange: { icon: 'fas fa-pen', name: '단어배열' },
+            email: { icon: 'fas fa-pen', name: '이메일' },
+            discussion: { icon: 'fas fa-pen', name: '토론' },
+            repeat: { icon: 'fas fa-microphone', name: '따라말하기' },
+            interview: { icon: 'fas fa-microphone', name: '인터뷰' }
+        };
+        
+        const typeInfo = typeMap[componentType] || { icon: 'fas fa-book', name: componentType };
+        const titleText = `${weekDay} | ${typeInfo.name}`;
+        
+        // 헤더 타이틀 요소 매핑
+        const titleElements = {
+            fillblanks: 'fillBlanksHeaderTitle',
+            daily1: 'daily1HeaderTitle',
+            daily2: 'daily2HeaderTitle',
+            academic: 'academicHeaderTitle'
+        };
+        
+        const elementId = titleElements[componentType];
+        if (elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.innerHTML = `<i class="${typeInfo.icon}"></i> ${titleText}`;
+                console.log(`📋 헤더 타이틀 업데이트: ${titleText}`);
+            }
+        }
+    }
+    
+    /**
+     * ================================================
      * 진행률 업데이트
      * ================================================
      */
@@ -369,6 +417,12 @@ class ModuleController {
                 element.textContent = progressText;
             }
         });
+        
+        // ★ fillblanks는 loadQuestion을 호출하지 않으므로 여기서 버튼 상태 설정
+        if (currentComponent.type === 'fillblanks') {
+            // fillblanks는 세트 전체가 하나의 화면이므로 첫 문제 인덱스 = 0
+            this.updateNavigationButtons(currentComponent.type, 0, currentComponent.questionsPerSet);
+        }
     }
     
     /**
@@ -423,6 +477,184 @@ class ModuleController {
                 element.textContent = progressText;
             }
         });
+        
+        // ★ Back/Next/Submit 버튼 상태 업데이트 (모듈 전체 기준)
+        this.updateNavigationButtons(currentComponent.type, questionIndexInComponent, currentComponent.questionsPerSet);
+    }
+    
+    /**
+     * 모듈 전체 기준 현재 문제 번호 계산
+     */
+    getGlobalQuestionNumber(questionIndexInComponent) {
+        let completedQuestions = 0;
+        for (let i = 0; i < this.currentComponentIndex; i++) {
+            completedQuestions += this.config.components[i].questionsPerSet;
+        }
+        return completedQuestions + questionIndexInComponent + 1;
+    }
+    
+    /**
+     * 헤더 Back/Next/Submit 버튼 상태 업데이트
+     * - Back: Q1에서만 숨김, Q2부터 항상 표시
+     * - Next: 마지막 문제(Q35)에서만 숨김
+     * - Submit: 마지막 문제(Q35)에서만 표시
+     */
+    updateNavigationButtons(componentType, questionIndex, totalQuestionsInSet) {
+        const globalQuestionNum = this.getGlobalQuestionNumber(questionIndex);
+        const totalQuestions = this.config.totalQuestions;
+        
+        const isFirstGlobal = (globalQuestionNum === 1);
+        const isLastGlobal = (globalQuestionNum === totalQuestions);
+        
+        console.log(`🔘 [Nav] 버튼 업데이트: Q${globalQuestionNum}/${totalQuestions} (${componentType} 내 idx:${questionIndex}) | Back:${!isFirstGlobal} Next:${!isLastGlobal} Submit:${isLastGlobal}`);
+        
+        // 모든 화면의 버튼을 업데이트 (현재 보이는 화면에만 적용됨)
+        const allBtnIds = [
+            { prev: 'fillBlanksPrevBtn', next: 'fillBlanksNextBtn', submit: 'fillBlanksSubmitBtn' },
+            { prev: 'daily1PrevBtn', next: 'daily1NextBtn', submit: 'daily1SubmitBtn' },
+            { prev: 'daily2PrevBtn', next: 'daily2NextBtn', submit: 'daily2SubmitBtn' },
+            { prev: 'academicPrevBtn', next: 'academicNextBtn', submit: 'academicSubmitBtn' }
+        ];
+        
+        allBtnIds.forEach(ids => {
+            const prevBtn = document.getElementById(ids.prev);
+            const nextBtn = document.getElementById(ids.next);
+            const submitBtn = document.getElementById(ids.submit);
+            
+            if (prevBtn) prevBtn.style.display = isFirstGlobal ? 'none' : '';
+            if (nextBtn) nextBtn.style.display = isLastGlobal ? 'none' : '';
+            if (submitBtn) submitBtn.style.display = isLastGlobal ? '' : 'none';
+        });
+    }
+    
+    /**
+     * 이전 컴포넌트로 이동 (Back 시 현재 컴포넌트 첫 문제에서 호출)
+     */
+    goToPreviousComponent() {
+        if (this.currentComponentIndex <= 0) {
+            console.log('⚠️ 첫 번째 컴포넌트입니다 - 이전으로 이동 불가');
+            return;
+        }
+        
+        const prevIndex = this.currentComponentIndex - 1;
+        const prevComponent = this.config.components[prevIndex];
+        
+        console.log(`⬅️ [Nav] 이전 컴포넌트로 이동: ${prevComponent.type} (Set ${prevComponent.setId})`);
+        
+        // 이전 컴포넌트의 결과를 componentResults와 allAnswers에서 제거
+        // (이전 컴포넌트가 submit되어 onComponentComplete로 추가된 데이터)
+        if (this.componentResults.length > prevIndex) {
+            const removedResult = this.componentResults.pop();
+            console.log(`🗑️ 이전 컴포넌트 결과 제거:`, removedResult?.componentType);
+            
+            // allAnswers에서 해당 컴포넌트의 답변 수만큼 제거
+            if (removedResult?.answers) {
+                this.allAnswers.splice(-removedResult.answers.length);
+                console.log(`🗑️ allAnswers에서 ${removedResult.answers.length}개 제거`);
+            }
+        }
+        
+        // 컴포넌트 인덱스 되돌리기
+        this.currentComponentIndex = prevIndex;
+        
+        // 완료된 문제 수 재계산
+        let completedQuestions = 0;
+        for (let i = 0; i < prevIndex; i++) {
+            completedQuestions += this.config.components[i].questionsPerSet;
+        }
+        this.currentQuestionNumber = completedQuestions;
+        
+        // 이전 컴포넌트의 마지막 문제로 로드
+        this.loadPreviousComponentAtLastQuestion(prevComponent);
+    }
+    
+    /**
+     * 이전 컴포넌트를 마지막 문제에서 시작하도록 로드
+     */
+    async loadPreviousComponentAtLastQuestion(prevComponent) {
+        const { type, setId, questionsPerSet } = prevComponent;
+        const lastQuestionIndex = questionsPerSet - 1;
+        
+        console.log(`📝 이전 컴포넌트 로드 (마지막 문제): ${type} (Set ${setId}), 마지막 문제 인덱스: ${lastQuestionIndex}`);
+        
+        // 진행률 업데이트
+        this.updateProgress();
+        
+        // 헤더 타이틀 업데이트
+        this.updateHeaderTitle(type);
+        
+        const initOptions = {
+            startQuestionNumber: this.currentQuestionNumber + 1,
+            totalModuleQuestions: this.config.totalQuestions
+        };
+        
+        // 컴포넌트별 초기화 (await로 데이터 로드 완료 대기)
+        switch (type) {
+            case 'fillblanks':
+                this.currentComponentInstance = window.FillBlanksComponent;
+                if (window.initFillBlanksComponent) {
+                    await window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions);
+                }
+                // fillblanks는 세트 전체가 한 화면이므로 마지막 문제 이동 불필요
+                this.updateNavigationButtons(type, 0, questionsPerSet);
+                break;
+            case 'daily1':
+                this.currentComponentInstance = window.Daily1Component;
+                if (window.initDaily1Component) {
+                    await window.initDaily1Component(setId, this.onComponentComplete.bind(this), initOptions);
+                }
+                if (window.currentDaily1Component && lastQuestionIndex > 0) {
+                    console.log(`⬅️ Daily1 마지막 문제로 이동: index ${lastQuestionIndex}`);
+                    window.currentDaily1Component.loadQuestion(lastQuestionIndex);
+                }
+                break;
+            case 'daily2':
+                this.currentComponentInstance = window.Daily2Component;
+                if (window.initDaily2Component) {
+                    await window.initDaily2Component(setId, this.onComponentComplete.bind(this), initOptions);
+                }
+                if (window.currentDaily2Component && lastQuestionIndex > 0) {
+                    console.log(`⬅️ Daily2 마지막 문제로 이동: index ${lastQuestionIndex}`);
+                    window.currentDaily2Component.loadQuestion(lastQuestionIndex);
+                }
+                break;
+            case 'academic':
+                this.currentComponentInstance = window.AcademicComponent;
+                if (window.initAcademicComponent) {
+                    await window.initAcademicComponent(setId, this.onComponentComplete.bind(this), initOptions);
+                }
+                if (window.currentAcademicComponent && lastQuestionIndex > 0) {
+                    console.log(`⬅️ Academic 마지막 문제로 이동: index ${lastQuestionIndex}`);
+                    window.currentAcademicComponent.loadQuestion(lastQuestionIndex);
+                }
+                break;
+        }
+    }
+    
+    /**
+     * 모듈 전체 Submit (마지막 문제 Q35에서 호출)
+     */
+    submitCurrentModule() {
+        console.log('📤 [모듈] 전체 Submit 호출 - 현재 컴포넌트 제출 후 모듈 완료');
+        
+        const currentComponent = this.config.components[this.currentComponentIndex];
+        if (!currentComponent) return;
+        
+        // 현재 컴포넌트 submit (각 어댑터의 전역 submit 함수 호출)
+        switch (currentComponent.type) {
+            case 'fillblanks':
+                if (typeof submitFillBlanks === 'function') submitFillBlanks();
+                break;
+            case 'daily1':
+                if (typeof submitDaily1 === 'function') submitDaily1();
+                break;
+            case 'daily2':
+                if (typeof submitDaily2 === 'function') submitDaily2();
+                break;
+            case 'academic':
+                if (typeof submitAcademic === 'function') submitAcademic();
+                break;
+        }
     }
     
     /**
@@ -459,6 +691,9 @@ class ModuleController {
         
         console.log(`🎯 컴포넌트 초기화: ${type} (Set ${setId}), 문제 시작: ${this.currentQuestionNumber + 1}`);
         
+        // ★ 헤더 타이틀 업데이트
+        this.updateHeaderTitle(type);
+        
         // 컴포넌트별 초기화 함수 호출 (시작 문제 번호와 총 문제 수 전달)
         const initOptions = {
             startQuestionNumber: this.currentQuestionNumber + 1,
@@ -470,7 +705,10 @@ class ModuleController {
             case 'fillblanks':
                 this.currentComponentInstance = window.FillBlanksComponent;
                 if (window.initFillBlanksComponent) {
-                    window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions);
+                    window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions).then(() => {
+                        // fillblanks 초기화 완료 후 버튼 상태 강제 설정
+                        this.updateNavigationButtons(type, 0, questionsPerSet);
+                    });
                 }
                 break;
                 
@@ -682,6 +920,47 @@ class ModuleController {
 // 전역으로 노출
 if (typeof window !== 'undefined') {
     window.ModuleController = ModuleController;
+    
+    /**
+     * ================================================
+     * 전역 네비게이션 어댑터 함수
+     * ================================================
+     * HTML 헤더 버튼에서 호출되는 함수들
+     */
+    
+    /**
+     * fillblanks 화면에서 Next 클릭
+     * → 현재 세트 제출 후 다음 컴포넌트로 이동
+     */
+    window.moduleNextFromFillBlanks = function() {
+        console.log('➡️ [Nav] fillblanks Next 클릭');
+        // submitFillBlanks()는 어댑터 함수로 currentFillBlanksComponent.submit() 호출
+        // submit() → onComplete 콜백 → onComponentComplete → 다음 컴포넌트 자동 로드
+        if (typeof submitFillBlanks === 'function') {
+            submitFillBlanks();
+        }
+    };
+    
+    /**
+     * fillblanks 화면에서 Back 클릭
+     * → 이전 컴포넌트로 이동 (첫 세트면 동작 안함)
+     */
+    window.modulePrevFromFillBlanks = function() {
+        console.log('⬅️ [Nav] fillblanks Back 클릭');
+        if (window.isModuleMode && window.moduleController) {
+            window.moduleController.goToPreviousComponent();
+        }
+    };
+    
+    /**
+     * 모듈 전체 Submit (마지막 문제 Q35에서 호출)
+     */
+    window.moduleSubmitAll = function() {
+        console.log('📤 [Nav] 모듈 전체 Submit 클릭');
+        if (window.isModuleMode && window.moduleController) {
+            window.moduleController.submitCurrentModule();
+        }
+    };
     
     /**
      * 테스트 함수: Reading Module 1 시작

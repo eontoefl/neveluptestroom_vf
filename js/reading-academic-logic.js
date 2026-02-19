@@ -32,6 +32,7 @@ async function initAcademicComponent(setId, onCompleteCallback) {
         currentAcademicComponent._completed = true;
         if (onCompleteCallback) onCompleteCallback(results);
     };
+    window.currentAcademicComponent = currentAcademicComponent;
     await currentAcademicComponent.init();
 }
 
@@ -84,7 +85,6 @@ function submitAcademic() {
 
 /**
  * 다음 문제 - Component 어댑터
- * (Module 모드에서는 사용하지 않음)
  */
 function academicNextQuestion() {
     if (currentAcademicComponent) {
@@ -92,10 +92,9 @@ function academicNextQuestion() {
         if (!hasNext) {
             console.log('⚠️ 세트 내 마지막 문제입니다');
             
-            // 모듈 모드일 때는 자동으로 submit
+            // 모듈 모드일 때는 자동으로 submit하여 다음 컴포넌트로 이동
             if (window.isModuleMode) {
                 console.log('📦 [모듈 모드] 세트 완료 → 자동 제출');
-                // 이미 제출됐는지 확인
                 if (!currentAcademicComponent._submitted && !currentAcademicComponent._completed && !currentAcademicComponent._destroyed) {
                     currentAcademicComponent._submitted = true;
                     currentAcademicComponent.submit();
@@ -109,13 +108,16 @@ function academicNextQuestion() {
 
 /**
  * 이전 문제 - Component 어댑터
- * (Module 모드에서는 사용하지 않음)
+ * 컴포넌트 첫 문제에서 Back → 이전 컴포넌트로 이동
  */
 function academicPrevQuestion() {
     if (currentAcademicComponent) {
         const hasPrev = currentAcademicComponent.previousQuestion();
         if (!hasPrev) {
-            console.log('⚠️ 세트 내 첫 문제입니다');
+            console.log('⬅️ [모듈 모드] 세트 첫 문제 → 이전 컴포넌트로 이동');
+            if (window.isModuleMode && window.moduleController) {
+                window.moduleController.goToPreviousComponent();
+            }
         }
     } else {
         console.warn(`⚠️ Component가 초기화되지 않았습니다`);

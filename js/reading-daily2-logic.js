@@ -34,6 +34,7 @@ async function initDaily2Component(setId, onCompleteCallback) {
         },
         onError: (error) => console.error(`❌ [모듈] Daily2 Component 오류:`, error)
     });
+    window.currentDaily2Component = currentDaily2Component;
     await currentDaily2Component.init();
 }
 
@@ -89,7 +90,6 @@ function submitDaily2() {
 
 /**
  * 다음 문제 - Component 어댑터
- * (Module 모드에서는 사용하지 않음)
  */
 function daily2NextQuestion() {
     if (currentDaily2Component) {
@@ -97,10 +97,9 @@ function daily2NextQuestion() {
         if (!hasNext) {
             console.log('⚠️ 세트 내 마지막 문제입니다');
             
-            // 모듈 모드일 때는 자동으로 submit
+            // 모듈 모드일 때는 자동으로 submit하여 다음 컴포넌트로 이동
             if (window.isModuleMode) {
                 console.log('📦 [모듈 모드] 세트 완료 → 자동 제출');
-                // 이미 제출됐는지 확인
                 if (!currentDaily2Component._submitted && !currentDaily2Component._completed && !currentDaily2Component._destroyed) {
                     currentDaily2Component._submitted = true;
                     currentDaily2Component.submit();
@@ -114,13 +113,16 @@ function daily2NextQuestion() {
 
 /**
  * 이전 문제 - Component 어댑터
- * (Module 모드에서는 사용하지 않음)
+ * 컴포넌트 첫 문제에서 Back → 이전 컴포넌트로 이동
  */
 function daily2PrevQuestion() {
     if (currentDaily2Component) {
         const hasPrev = currentDaily2Component.previousQuestion();
         if (!hasPrev) {
-            console.log('⚠️ 세트 내 첫 문제입니다');
+            console.log('⬅️ [모듈 모드] 세트 첫 문제 → 이전 컴포넌트로 이동');
+            if (window.isModuleMode && window.moduleController) {
+                window.moduleController.goToPreviousComponent();
+            }
         }
     } else {
         console.warn(`⚠️ Component가 초기화되지 않았습니다`);
