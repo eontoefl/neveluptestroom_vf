@@ -352,7 +352,10 @@ class DiscussionComponent {
      */
     renderDiscussionQuestion() {
         const setData = this.writingDiscussionData[this.currentDiscussionSet];
-        const profiles = this.currentDiscussionProfiles;
+        const profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles || {
+            student1: { name: 'Student 1' },
+            student2: { name: 'Student 2' }
+        };
         
         console.log('🎨 [Discussion] 문제 렌더링:', setData);
         
@@ -570,7 +573,7 @@ class DiscussionComponent {
             // 입력 차단 (선택 사항)
             // textarea.value = textarea.value.split(/\s+/).slice(0, this.DISCUSSION_WORD_LIMIT).join(' ');
         } else {
-            wordCountElement.style.color = '#2ecc71';
+            wordCountElement.style.color = '';
         }
     }
     
@@ -689,12 +692,15 @@ class DiscussionComponent {
             String(now.getMinutes()).padStart(2, '0') +
             String(now.getSeconds()).padStart(2, '0');
         
-        const filename = `Writing_Discussion_${dateStr}.txt`;
+        const filename = `Writing_Discussion_${window.currentAttemptNumber === 2 ? '2차' : '1차'}_${dateStr}.txt`;
         
-        const profiles = this.currentDiscussionProfiles;
+        const profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles || {
+            student1: { name: 'Student 1' },
+            student2: { name: 'Student 2' }
+        };
         
         let content = '='.repeat(60) + '\n';
-        content += '토론형 글쓰기 답안\n';
+        content += `토론형 글쓰기 답안 (${window.currentAttemptNumber === 2 ? '2차 작성' : '1차 작성'})\n`;
         content += '='.repeat(60) + '\n\n';
         content += `작성일시: ${now.toLocaleString('ko-KR')}\n`;
         content += `단어 수: ${wordCount}\n\n`;
@@ -714,12 +720,14 @@ class DiscussionComponent {
         content += userAnswer + '\n\n';
         content += '='.repeat(60) + '\n';
         
-        const blob = new Blob([content], { type: 'text/plain' });
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
         console.log(`💾 [Discussion] 파일 다운로드: ${filename}`);
