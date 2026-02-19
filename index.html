@@ -11,7 +11,7 @@
     <!-- Pretendard Font -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <!-- CACHE BUSTER: 20250125-1355 -->
-    <link rel="stylesheet" href="css/style.css?v=104">
+    <link rel="stylesheet" href="css/style.css?v=106_header_final">
     
     <link rel="stylesheet" href="css/result-screen.css?v=002">
     <link rel="stylesheet" href="css/retake-popup.css?v=003">
@@ -448,22 +448,27 @@
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
             <div class="test-progress">
-                <span id="fillBlanksProgress">Questions 1-10 of 30</span>
+                <span id="fillBlanksProgress">Questions 1-10 of 35</span>
             </div>
             <div class="test-title">
-                <i class="fas fa-book-open"></i>
-                <span>Reading - Fill in the Blanks</span>
+                <span id="fillBlanksHeaderTitle"><i class="fas fa-book-open"></i> 빈칸채우기</span>
             </div>
             <div class="test-header-right">
-                <div class="test-timer">
+                <div class="test-timer" id="fillBlanksTimerWrap">
                     <i class="fas fa-clock"></i>
-                    <span id="fillBlanksTimer">3:00</span>
+                    <span id="fillBlanksTimer">20:00</span>
                 </div>
-                <button class="btn btn-secondary" id="fillBlanksPrevBtn" onclick="previousFillBlanks()" style="display: none;">
-                    <i class="fas fa-arrow-left"></i> Back
+                <div class="retake-badge" id="fillBlanksRetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
+                </div>
+                <button class="btn btn-secondary" id="fillBlanksPrevBtn" onclick="modulePrevFromFillBlanks()" style="display: none;">
+                    Back
                 </button>
-                <button class="btn btn-primary" id="fillBlanksSubmitBtn" onclick="submitFillBlanks()">
+                <button class="btn btn-primary" id="fillBlanksNextBtn" onclick="moduleNextFromFillBlanks()">
                     Next
+                </button>
+                <button class="btn btn-primary" id="fillBlanksSubmitBtn" onclick="moduleSubmitAll()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -1179,18 +1184,29 @@
             <button class="btn-back-to-schedule" onclick="backToSchedule()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
+            <div class="test-progress">
+                <span id="daily1Progress">Question 11 of 35</span>
+            </div>
             <div class="test-title">
-                <i class="fas fa-book-open"></i>
-                <span>Reading - Daily Reading 1</span>
+                <span id="daily1HeaderTitle"><i class="fas fa-book-open"></i> 일상지문 1</span>
             </div>
             <div class="test-header-right">
-                <div class="test-progress">
-                    <span id="daily1Progress">Question 1 of 4</span>
-                </div>
-                <div class="test-timer">
+                <div class="test-timer" id="daily1TimerWrap">
                     <i class="fas fa-clock"></i>
-                    <span id="daily1Timer">1:00</span>
+                    <span id="daily1Timer">20:00</span>
                 </div>
+                <div class="retake-badge" id="daily1RetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
+                </div>
+                <button class="btn btn-secondary" id="daily1PrevBtn" onclick="daily1PreviousQuestion()" style="display: none;">
+                    Back
+                </button>
+                <button class="btn btn-primary" id="daily1NextBtn" onclick="daily1NextQuestion()">
+                    Next
+                </button>
+                <button class="btn btn-primary" id="daily1SubmitBtn" onclick="moduleSubmitAll()" style="display: none;">
+                    Submit
+                </button>
             </div>
         </div>
         
@@ -1217,16 +1233,8 @@
                             <!-- 보기가 여기에 표시됩니다 -->
                         </div>
                         
-                        <div class="daily1-navigation">
-                            <button id="daily1PrevBtn" class="btn btn-secondary" onclick="daily1PreviousQuestion()" style="display: none;">
-                                <i class="fas fa-arrow-left"></i> Previous
-                            </button>
-                            <button id="daily1NextBtn" class="btn btn-primary" onclick="daily1NextQuestion()">
-                                Next <i class="fas fa-arrow-right"></i>
-                            </button>
-                            <button id="daily1SubmitBtn" class="btn btn-success" onclick="submitDaily1()" style="display: none;">
-                                <i class="fas fa-check"></i> Submit
-                            </button>
+                        <div class="daily1-navigation" style="display:none;">
+                            <!-- 버튼은 헤더에서 관리 -->
                         </div>
                     </div>
                 </div>
@@ -1343,25 +1351,27 @@
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
             <div class="test-progress">
-                <span id="daily2Progress">Question 1 of 6</span>
+                <span id="daily2Progress">Question 15 of 35</span>
             </div>
             <div class="test-title">
-                <i class="fas fa-book-open"></i>
-                <span>Reading - Daily Reading 2</span>
+                <span id="daily2HeaderTitle"><i class="fas fa-book-open"></i> 일상지문 2</span>
             </div>
             <div class="test-header-right">
-                <div class="test-timer">
+                <div class="test-timer" id="daily2TimerWrap">
                     <i class="fas fa-clock"></i>
-                    <span id="daily2Timer">1:20</span>
+                    <span id="daily2Timer">20:00</span>
+                </div>
+                <div class="retake-badge" id="daily2RetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
                 </div>
                 <button class="btn btn-secondary" id="daily2PrevBtn" onclick="daily2PrevQuestion()" style="display: none;">
-                    <i class="fas fa-arrow-left"></i> Back
+                    Back
                 </button>
                 <button class="btn btn-primary" id="daily2NextBtn" onclick="daily2NextQuestion()">
-                    Next <i class="fas fa-arrow-right"></i>
+                    Next
                 </button>
-                <button class="btn btn-primary" id="daily2SubmitBtn" onclick="submitDaily2()" style="display: none;">
-                    <i class="fas fa-check"></i> Submit
+                <button class="btn btn-primary" id="daily2SubmitBtn" onclick="moduleSubmitAll()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -1402,25 +1412,27 @@
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
             <div class="test-progress">
-                <span id="academicProgress">Question 1 of 5</span>
+                <span id="academicProgress">Question 31 of 35</span>
             </div>
             <div class="test-title">
-                <i class="fas fa-book-open"></i>
-                <span>Reading - Academic Reading</span>
+                <span id="academicHeaderTitle"><i class="fas fa-book-open"></i> 학술지문</span>
             </div>
             <div class="test-header-right">
-                <div class="test-timer">
+                <div class="test-timer" id="academicTimerWrap">
                     <i class="fas fa-clock"></i>
-                    <span id="academicTimer">2:00</span>
+                    <span id="academicTimer">20:00</span>
+                </div>
+                <div class="retake-badge" id="academicRetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
                 </div>
                 <button class="btn btn-secondary" id="academicPrevBtn" onclick="academicPrevQuestion()" style="display: none;">
-                    <i class="fas fa-arrow-left"></i> Back
+                    Back
                 </button>
                 <button class="btn btn-primary" id="academicNextBtn" onclick="academicNextQuestion()">
-                    Next <i class="fas fa-arrow-right"></i>
+                    Next
                 </button>
-                <button class="btn btn-primary" id="academicSubmitBtn" onclick="submitAcademic()" style="display: none;">
-                    <i class="fas fa-check"></i> Submit
+                <button class="btn btn-primary" id="academicSubmitBtn" onclick="moduleSubmitAll()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -3054,19 +3066,19 @@
     <!-- 빈칸채우기 Component -->
     <script src="js/components/FillBlanksComponent.js?v=019"></script>
     <script src="js/reading-fillblanks.js?v=014"></script>
-    <script src="js/reading-fillblanks-logic.js?v=031"></script>
+    <script src="js/reading-fillblanks-logic.js?v=032_nav"></script>
     <!-- 일상리딩1 Component -->
     <script src="js/components/Daily1Component.js?v=013"></script>
     <script src="js/reading-daily1.js?v=015"></script>
-    <script src="js/reading-daily1-logic.js?v=layout_fix_001"></script>
+    <script src="js/reading-daily1-logic.js?v=nav_cross_001"></script>
     <!-- 일상리딩2 Component -->
     <script src="js/components/Daily2Component.js?v=004"></script>
     <script src="js/reading-daily2.js?v=006"></script>
-    <script src="js/reading-daily2-logic.js?v=20260215_001"></script>
+    <script src="js/reading-daily2-logic.js?v=nav_cross_001"></script>
     <!-- 아카데믹리딩 Component -->
     <script src="js/components/AcademicComponent.js?v=007"></script>
     <script src="js/reading-academic.js?v=006"></script>
-    <script src="js/reading-academic-logic.js?v=layout_fix_001"></script>
+    <script src="js/reading-academic-logic.js?v=nav_cross_001"></script>
     <!-- AudioPlayer (2차 풀이용) -->
     <script src="js/components/AudioPlayer.js?v=004"></script>
     <!-- 응답고르기 Component -->
@@ -3107,9 +3119,9 @@
     
     <!-- 모듈 시스템 -->
     <script src="js/module-definitions.js?v=002"></script>
-    <script src="js/module-controller.js?v=005"></script>
+    <script src="js/module-controller.js?v=009_fix_next"></script>
     <script src="js/result-controller.js?v=008"></script>
-    <script src="js/retake-controller.js?v=20260215_level_fix_001"></script>
+    <script src="js/retake-controller.js?v=20260219_header"></script>
     
     <script src="js/reading-module-controller.js?v=001"></script>
     <script src="js/listening-module-controller.js?v=001"></script>
