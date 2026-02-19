@@ -70,10 +70,33 @@ function showDiscussionResult(data) {
             contextElement.textContent = data.question.classContext;
         }
         
-        // Topic
+        // Topic (이름 치환 적용)
         const topicElement = document.getElementById('discussionResultTopic');
         if (topicElement && data.question.topic) {
-            topicElement.textContent = data.question.topic;
+            topicElement.textContent = replaceStudentNamesInResult(data.question.topic, profiles);
+        }
+        
+        // ★ 학생 의견 표시 (이름 치환 적용)
+        const opinionsContainer = document.getElementById('discussionResultStudentOpinions');
+        if (opinionsContainer) {
+            let opinionsHtml = '';
+            if (data.question.student1Opinion) {
+                const s1Text = replaceStudentNamesInResult(data.question.student1Opinion, profiles);
+                opinionsHtml += `
+                    <div style="background:#f0f4ff; border-radius:6px; padding:10px 12px; margin-bottom:8px; border-left:3px solid #42a5f5;">
+                        <div style="font-size:12px; color:#1976d2; font-weight:600; margin-bottom:4px;">🙋 ${profiles.student1.name}</div>
+                        <div style="color:#444; font-size:14px; line-height:1.5;">${s1Text}</div>
+                    </div>`;
+            }
+            if (data.question.student2Opinion) {
+                const s2Text = replaceStudentNamesInResult(data.question.student2Opinion, profiles);
+                opinionsHtml += `
+                    <div style="background:#fff5f5; border-radius:6px; padding:10px 12px; border-left:3px solid #ef5350;">
+                        <div style="font-size:12px; color:#c62828; font-weight:600; margin-bottom:4px;">🙋 ${profiles.student2.name}</div>
+                        <div style="color:#444; font-size:14px; line-height:1.5;">${s2Text}</div>
+                    </div>`;
+            }
+            opinionsContainer.innerHTML = opinionsHtml;
         }
     }
     
