@@ -1,0 +1,3129 @@
+<!DOCTYPE html>
+<!-- CACHE BUST: 20260218_lecture_fix_002 -->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>내벨업 테스트룸 - Level Up Test Room</title>
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <!-- CACHE BUSTER: 20250125-1355 -->
+    <link rel="stylesheet" href="css/style.css?v=104">
+    
+    <link rel="stylesheet" href="css/result-screen.css?v=002">
+    <link rel="stylesheet" href="css/retake-popup.css?v=003">
+<link rel="stylesheet" href="css/reading-daily1-result.css?v=daily2_fix_001">
+<link rel="stylesheet" href="css/reading-daily2-result.css?v=20260215_002">
+<link rel="stylesheet" href="css/reading-academic-result.css?v=academic_fix_001">
+<link rel="stylesheet" href="css/reading-retake-result.css?v=20260215_006">
+<link rel="stylesheet" href="css/reading-retake-detail.css?v=daily2_fix_001">
+<link rel="stylesheet" href="css/final-explain-screen.css?v=014">
+<link rel="stylesheet" href="css/listening-response-result.css?v=010">
+<link rel="stylesheet" href="css/listening-conver-result.css?v=103">
+<link rel="stylesheet" href="css/listening-announcement-result.css?v=001">
+<link rel="stylesheet" href="css/listening-lecture-result.css?v=002">
+<link rel="stylesheet" href="css/writing-arrange-result.css?v=001">
+<link rel="stylesheet" href="css/writing-email-result.css?v=015">
+<link rel="stylesheet" href="css/writing-discussion-result.css?v=003">
+    <link rel="stylesheet" href="css/discussion-style-v2.css?v=015">
+    <link rel="stylesheet" href="css/speaking-repeat-style.css?v=20250207-fixed">
+    <link rel="stylesheet" href="css/speaking-repeat-result.css?v=001">
+    <link rel="stylesheet" href="css/speaking-interview-style.css?v=005">
+    <link rel="stylesheet" href="css/speaking-interview-result.css?v=016">
+    <link rel="stylesheet" href="css/vocab-test-v3.css?v=20250209-icon-buttons">
+    <link rel="stylesheet" href="css/vocab-test-result-v4.css?v=20250209-clean-layout">
+    <link rel="stylesheet" href="css/intro-book-modal.css?v=001">
+    
+    <!-- INLINE STYLES FOR DISCUSSION - 직접 삽입 -->
+    <style>
+        /* 왼쪽 전체 텍스트 크기 - 줄이기 */
+        .discussion-context {
+            font-size: 15px !important;
+            line-height: 1.6 !important;
+            margin-bottom: 10px !important;
+            padding-bottom: 0 !important;
+        }
+        
+        .discussion-instruction-title {
+            font-size: 15px !important;
+            margin-bottom: 8px !important;
+        }
+        
+        .discussion-instructions li {
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+            margin-bottom: 4px !important;
+        }
+        
+        .discussion-note {
+            font-size: 13px !important;
+            margin-top: 8px !important;
+            margin-bottom: 8px !important;
+        }
+        
+        .discussion-instruction {
+            margin-bottom: 10px !important;
+        }
+        
+        /* 왼쪽 task-box - flex로 자동 조절 */
+        .discussion-task-box {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            max-height: none !important;
+            overflow: hidden !important;
+        }
+        
+        .discussion-task-panel {
+            height: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        .discussion-layout {
+            overflow: hidden !important;
+        }
+        
+        /* Context 섹션 - flex-shrink로 크기 조절 */
+        .discussion-context {
+            font-size: 17px !important;
+            line-height: 1.9 !important;
+            flex-shrink: 1 !important;
+            overflow: hidden !important;
+        }
+        
+        /* Instruction 섹션 - flex-shrink로 크기 조절 */
+        .discussion-instruction {
+            flex-shrink: 1 !important;
+            overflow: hidden !important;
+        }
+        
+        /* Professor section - flex로 남은 공간 차지, 여백 축소 */
+        .professor-section {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            margin-top: 10px !important;
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+        }
+        
+        .professor-image {
+            width: 150px !important;
+            height: 150px !important;
+            margin-bottom: 12px !important;
+            flex-shrink: 0 !important;
+        }
+        
+        /* Topic - 남은 공간 자동 조절, 스크롤 제거, 학생 의견과 동일한 크기 */
+        .discussion-topic {
+            width: 100% !important;
+            font-size: 17px !important;
+            line-height: 1.9 !important;
+            color: #2d3748 !important;
+            background: #f8f9fa !important;
+            padding: 12px !important;
+            border-radius: 10px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+            overflow-y: hidden !important;
+            flex: 1 !important;
+            min-height: 0 !important;
+        }
+        
+        /* 학생 의견 레이아웃 개선 */
+        .student-opinions {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            flex-shrink: 0 !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        
+        .student-opinion {
+            background: white !important;
+            border: 1px solid #e8eef5 !important;
+            border-radius: 10px !important;
+            padding: 12px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+            display: flex !important;
+            gap: 12px !important;
+        }
+        
+        .student-image {
+            width: 50px !important;
+            height: 50px !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            border: 2px solid #e8eef5 !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .student-name {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: var(--primary-color) !important;
+            margin-bottom: 5px !important;
+        }
+        
+        .student-text {
+            font-size: 17px !important;
+            line-height: 1.9 !important;
+            color: #2d3748 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* 텍스트박스 크게 */
+        .discussion-textarea {
+            width: 100% !important;
+            flex: 1 !important;
+            padding: 20px !important;
+            border: none !important;
+            font-size: 18px !important;
+            line-height: 2.0 !important;
+            color: #2d3748 !important;
+            resize: none !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+            overflow-y: auto !important;
+            min-height: 350px !important;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 로그인 화면 -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <i class="fas fa-user-shield"></i>
+                    <h1>내벨업 테스트룸</h1>
+                    <p>수강생 인증</p>
+                </div>
+                
+                <!-- 이온토플 브랜드 -->
+                <div class="brand-badge">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>이온토플</span>
+                </div>
+                
+                <div id="loginMessage" class="login-message" style="display:none;"></div>
+                
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="studentName">
+                            <i class="fas fa-user"></i>
+                            이름
+                        </label>
+                        <input 
+                            type="text" 
+                            id="studentName" 
+                            placeholder="홍길동" 
+                            autocomplete="name"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studentPhone">
+                            <i class="fas fa-mobile-alt"></i>
+                            휴대폰번호
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="studentPhone" 
+                            placeholder="01012345678 (- 없이 입력)" 
+                            pattern="[0-9]{10,11}"
+                            autocomplete="tel"
+                        >
+                        <small>하이픈(-) 없이 숫자만 입력해주세요</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large btn-block" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>인증하기</span>
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p><i class="fas fa-info-circle"></i> 등록된 수강생만 시험에 응시할 수 있습니다.</p>
+                </div>
+                
+                <!-- 카카오톡 문의 버튼 -->
+                <a href="https://business.kakao.com/_FWxcZC/chats" target="_blank" class="kakao-help-btn" title="문의하기">
+                    <i class="fas fa-comment-dots"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 학습 일정 선택 화면 -->
+    <div id="scheduleScreen" class="screen">
+        <!-- 상단 네비게이션 바 (container 밖) -->
+        <div class="top-nav-bar">
+            <div class="top-nav-left">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span><strong id="scheduleUserName"></strong>님</span>
+                    <span class="program-badge" id="userProgramBadge"></span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="logout-btn" onclick="testFinalExplainScreen()" style="background: #9333ea;">
+                    <i class="fas fa-flask"></i>
+                    최종 해설화면 테스트
+                </button>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    로그아웃
+                </button>
+            </div>
+        </div>
+        
+        <div class="container" style="position: relative;">
+            <div class="schedule-header">
+                <i class="fas fa-calendar-alt"></i>
+                <h1>학습 일정</h1>
+                <p class="subtitle">원하는 주차와 요일을 선택하세요</p>
+            </div>
+            
+            <div id="scheduleContainer" class="schedule-container">
+                <!-- 주차별 일정이 여기에 동적으로 생성됩니다 -->
+            </div>
+            
+            <!-- 🧪 모듈 시스템 테스트 버튼 (임시) -->
+            <div style="margin-top: 40px; padding: 20px; background: #f0f0f0; border-radius: 10px;">
+                <h3>🧪 모듈 시스템 테스트</h3>
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <button onclick="testModuleGeneration()" style="padding: 10px 20px; background: #4A90E2; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        모듈 정의 확인
+                    </button>
+                    <button onclick="testReadingModule1()" style="padding: 10px 20px; background: #E74C3C; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Reading Module 1 시작
+                    </button>
+                    <button onclick="testRepeatResultScreen()" style="padding: 10px 20px; background: #9333ea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        📖 따라말하기 복습 화면 테스트
+                    </button>
+                    <button onclick="testInterviewResultScreen()" style="padding: 10px 20px; background: #9480c5; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        🎤 인터뷰 채점 화면 테스트
+                    </button>
+                </div>
+                <div id="module-timer-display" style="margin-top: 15px; font-size: 18px; font-weight: bold; color: #E74C3C;"></div>
+                <div id="module-progress-text" style="margin-top: 10px; font-size: 16px; color: #666;"></div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- 메인 시작 화면 (기존 시험 개요 화면 - 추후 제거 가능) -->
+    <div id="welcomeScreen" class="screen" style="display:none;">
+        <!-- 상단 네비게이션 바 (container 밖) -->
+        <div class="top-nav-bar">
+            <div class="top-nav-left">
+                <button class="btn-back" onclick="backToSchedule()" title="뒤로가기">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span><strong id="currentUserName"></strong>님</span>
+                    <span class="program-badge" id="currentUserProgramBadge"></span>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                로그아웃
+            </button>
+        </div>
+        
+        <div class="container" style="position: relative;">
+            <div class="welcome-header">
+                <i class="fas fa-graduation-cap"></i>
+                <h1>내벨업 테스트룸</h1>
+                <p class="subtitle">Level Up Test Room</p>
+            </div>
+            
+            <div class="test-info">
+                <h2>과제 목록</h2>
+                <div class="sections-grid">
+                    <div class="section-card">
+                        <i class="fas fa-book-open"></i>
+                        <h3>Reading</h3>
+                        <p>3개 지문</p>
+                        <p class="time">54분</p>
+                    </div>
+                    <div class="section-card">
+                        <i class="fas fa-headphones"></i>
+                        <h3>Listening</h3>
+                        <p>대화 & 강의</p>
+                        <p class="time">41분</p>
+                    </div>
+                    <div class="section-card">
+                        <i class="fas fa-pen"></i>
+                        <h3>Writing</h3>
+                        <p>2개 에세이</p>
+                        <p class="time">50분</p>
+                    </div>
+                    <div class="section-card">
+                        <i class="fas fa-microphone"></i>
+                        <h3>Speaking</h3>
+                        <p>4개 과제</p>
+                        <p class="time">17분</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="start-options">
+                <button class="btn btn-primary btn-large" onclick="startFullTest()">
+                    <i class="fas fa-play"></i> 전체 시험 시작
+                </button>
+                <button class="btn btn-secondary btn-large" onclick="showSectionSelect()">
+                    <i class="fas fa-list"></i> 섹션별 연습
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 섹션 선택 화면 -->
+    <div id="sectionSelectScreen" class="screen">
+        <!-- 상단 네비게이션 바 (container 밖) -->
+        <div class="top-nav-bar">
+            <div class="top-nav-left">
+                <button class="btn-back" onclick="backToSchedule()" title="뒤로가기">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span><strong id="sectionSelectUserName"></strong>님</span>
+                    <span class="program-badge" id="sectionSelectProgramBadge"></span>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                로그아웃
+            </button>
+        </div>
+        
+        <div class="container" style="position: relative;">
+            <h1>연습할 섹션을 선택하세요</h1>
+            
+            <div class="section-select-grid">
+                <div class="section-select-card" onclick="startSection('reading')">
+                    <i class="fas fa-book-open"></i>
+                    <h3>Reading</h3>
+                    <p>지문 독해 및 문제 풀이</p>
+                    <span class="duration">54분</span>
+                </div>
+                <div class="section-select-card" onclick="startSection('listening')">
+                    <i class="fas fa-headphones"></i>
+                    <h3>Listening</h3>
+                    <p>대화 및 강의 듣기</p>
+                    <span class="duration">41분</span>
+                </div>
+                <div class="section-select-card" onclick="startSection('writing')">
+                    <i class="fas fa-pen"></i>
+                    <h3>Writing</h3>
+                    <p>에세이 작성</p>
+                    <span class="duration">50분</span>
+                </div>
+                <div class="section-select-card" onclick="startSection('speaking')">
+                    <i class="fas fa-microphone"></i>
+                    <h3>Speaking</h3>
+                    <p>말하기 과제</p>
+                    <span class="duration">17분</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 빈칸채우기 -->
+    <div id="readingFillBlanksScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-progress">
+                <span id="fillBlanksProgress">Questions 1-10 of 30</span>
+            </div>
+            <div class="test-title">
+                <i class="fas fa-book-open"></i>
+                <span>Reading - Fill in the Blanks</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="fillBlanksTimer">3:00</span>
+                </div>
+                <button class="btn btn-secondary" id="fillBlanksPrevBtn" onclick="previousFillBlanks()" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="btn btn-primary" id="fillBlanksSubmitBtn" onclick="submitFillBlanks()">
+                    Next
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="fillblanks-container">
+                <div class="fillblanks-instruction">
+                    <h2 id="fillBlanksTitle">Fill in the missing letters in the paragraph.</h2>
+                </div>
+                
+                <div class="fillblanks-passage" id="fillBlanksPassage">
+                    <!-- 빈칸이 포함된 지문이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Reading Module 1차 결과 화면 -->
+    <!-- ============================= -->
+    <div id="readingResultScreen" class="result-screen test-screen">
+        <div class="result-header">
+            <div class="result-title">Reading Module 1</div>
+            <div class="result-subtitle">1차 채점 결과</div>
+        </div>
+        
+        <div class="result-score-card">
+            <div class="result-total-score">-- / --</div>
+            <div class="result-percentage">--%</div>
+            <div class="result-level-container">
+                <span class="result-level-label">레벨</span>
+                <span class="result-level">-.-</span>
+            </div>
+        </div>
+        
+        <div class="result-component-section">
+            <div class="result-section-title">유형별 정답 현황</div>
+            <div class="result-component-list">
+                <!-- 컴포넌트별 점수가 여기에 표시됩니다 -->
+            </div>
+        </div>
+        
+        <div class="result-buttons">
+            <!-- 버튼이 동적으로 추가됩니다 -->
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Reading Module 2차 결과 화면 -->
+    <!-- ============================= -->
+    <div id="readingRetakeResultScreen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-result-header">
+            <h2>📖 Reading Module 1 - 2차 풀이 완료</h2>
+        </div>
+        
+        <!-- 상단: 전체 요약 섹션 -->
+        <div class="retake-summary-section">
+            <!-- 35문제 O/X 비교표 -->
+            <div class="question-comparison-table">
+                <div class="comparison-row comparison-header">
+                    <span class="row-label">문제번호</span>
+                    <div class="question-numbers" id="questionNumbers">
+                        <!-- 1~35 동적 생성 -->
+                    </div>
+                </div>
+                <div class="comparison-row first-attempt-row">
+                    <span class="row-label">1차 결과</span>
+                    <div class="question-results" id="firstAttemptResults">
+                        <!-- O/X 동적 생성 -->
+                    </div>
+                </div>
+                <div class="comparison-row second-attempt-row">
+                    <span class="row-label">2차 결과</span>
+                    <div class="question-results" id="secondAttemptResults">
+                        <!-- O/X 동적 생성 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 점수/정답률/레벨 비교표 -->
+            <div class="stats-comparison-table">
+                <div class="stats-header">
+                    <div class="stats-col">1차 결과</div>
+                    <div class="stats-col">2차 결과</div>
+                    <div class="stats-col">개선</div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-col">
+                        <span class="stats-value" id="firstScore">25/35</span>
+                    </div>
+                    <div class="stats-col">
+                        <span class="stats-value" id="secondScore">30/35</span>
+                    </div>
+                    <div class="stats-col improvement">
+                        <span class="stats-value" id="scoreDiff">+5 문제</span>
+                        <span class="improvement-icon">✨</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-col">
+                        <span class="stats-value" id="firstPercent">71%</span>
+                    </div>
+                    <div class="stats-col">
+                        <span class="stats-value" id="secondPercent">86%</span>
+                    </div>
+                    <div class="stats-col improvement">
+                        <span class="stats-value" id="percentDiff">+15%</span>
+                        <span class="improvement-icon">📈</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-col">
+                        <span class="stats-label">레벨 </span>
+                        <span class="stats-value" id="firstLevel">3.5</span>
+                    </div>
+                    <div class="stats-col">
+                        <span class="stats-label">레벨 </span>
+                        <span class="stats-value" id="secondLevel">4.0</span>
+                    </div>
+                    <div class="stats-col improvement">
+                        <span class="stats-value" id="levelDiff">+0.5</span>
+                        <span class="improvement-icon">⬆️</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 축하/격려 메시지 -->
+            <div class="motivation-message" id="motivationMessage">
+                <p>🎉 축하합니다!</p>
+                <p>조금 더 생각하는 것만으로 5문제를 더 맞혔어요!</p>
+                <p>정답률이 15% 상승했고, 0.5 레벨이 올랐어요!</p>
+            </div>
+        </div>
+        
+        <!-- 페이지 네비게이션 (나중에 구현) -->
+        <div class="retake-navigation">
+            <button class="btn btn-primary btn-large" onclick="showRetakeDetailPage(1)">
+                유형별 세부 결과 보기 →
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Reading Module 2차 - 빈칸채우기 세부 결과 화면 -->
+    <!-- ============================= -->
+    <div id="readingRetakeDetailFillBlanksScreen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="fillBlanksDetailTitle">📖 Week 1 - 일요일 : Reading Module 1 최종 해설</h2>
+        </div>
+        
+        <!-- 빈칸채우기 요약 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="fillBlanksTotal">20</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="fillBlanksFirst">15/20 (75%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="fillBlanksSecond">18/20 (90%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="fillBlanksImprovement">+3문제 (+15%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="fillBlanksDetailSets">
+            <!-- Set 0001, Set 0002가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="backToRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과로 돌아가기
+            </button>
+            <button class="btn btn-primary" onclick="showRetakeDetailPage(2)">
+                다음: 일상리딩 1 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- 일상리딩1 최종 해설 화면 -->
+    <!-- ============================= -->
+    <div id="readingRetakeDetailDaily1Screen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="daily1DetailTitle">📖 Week 1 - 일요일 : Reading Module 1 최종 해설</h2>
+        </div>
+        
+        <!-- 일상리딩1 요약 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="daily1Total">4</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="daily1First">2/4 (50%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="daily1Second">3/4 (75%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="daily1Improvement">+1문제 (+25%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="daily1DetailSets">
+            <!-- Set 결과가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="showRetakeDetailPage(1)">
+                <i class="fas fa-arrow-left"></i> 이전: 빈칸채우기
+            </button>
+            <button class="btn btn-primary" onclick="showRetakeDetailPage(3)">
+                다음: 일상리딩 2 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Reading 일상리딩2 최종 해설 화면 -->
+    <!-- ============================= -->
+    <div id="readingRetakeDetailDaily2Screen" class="result-screen test-screen" style="display: none;">
+        <!-- 헤더 -->
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="daily2DetailTitle">Week 1 - 일요일 : Reading Module 1 최종 해설</h2>
+        </div>
+        
+        <!-- 요약 통계 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="daily2Total">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="daily2First">0/0 (0%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="daily2Second">0/0 (0%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="daily2Improvement">+0문제 (+0%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="daily2DetailSets">
+            <!-- Set 결과가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="showRetakeDetailPage(2)">
+                <i class="fas fa-arrow-left"></i> 이전: 일상리딩 1
+            </button>
+            <button class="btn btn-primary" onclick="showRetakeDetailPage(4)">
+                다음: 아카데믹 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Reading 아카데믹 리딩 최종 해설 화면 -->
+    <!-- ============================= -->
+    <div id="readingRetakeDetailAcademicScreen" class="result-screen test-screen" style="display: none;">
+        <!-- 헤더 -->
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="academicDetailTitle">Week 1 - 일요일 : Reading Module 1 최종 해설</h2>
+        </div>
+        
+        <!-- 요약 통계 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="academicTotal">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="academicFirst">0/0 (0%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="academicSecond">0/0 (0%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="academicImprovement">+0문제 (+0%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="academicDetailSets">
+            <!-- Set 결과가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="showRetakeDetailPage(3)">
+                <i class="fas fa-arrow-left"></i> 이전: 일상리딩 2
+            </button>
+            <button class="btn btn-primary" onclick="backToRetakeResult()">
+                2차 결과로 돌아가기 <i class="fas fa-check"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Listening Module 1차 결과 화면 -->
+    <!-- ============================= -->
+    <div id="listeningResultScreen" class="result-screen test-screen">
+        <div class="result-header">
+            <div class="result-title">Listening Module 1</div>
+            <div class="result-subtitle">1차 채점 결과</div>
+        </div>
+        
+        <div class="result-score-card">
+            <div class="result-total-score">-- / --</div>
+            <div class="result-percentage">--%</div>
+            <div class="result-level-container">
+                <span class="result-level-label">레벨</span>
+                <span class="result-level">-.-</span>
+            </div>
+        </div>
+        
+        <div class="result-component-section">
+            <div class="result-section-title">유형별 정답 현황</div>
+            <div class="result-component-list">
+                <!-- 컴포넌트별 점수가 여기에 표시됩니다 -->
+            </div>
+        </div>
+        
+        <div class="result-buttons">
+            <!-- 버튼이 동적으로 추가됩니다 -->
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- Listening Module 2차 결과 화면 -->
+    <!-- ============================= -->
+    <div id="listeningRetakeResultScreen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-result-header">
+            <h2>🎧 Listening Module 1 - 2차 풀이 완료</h2>
+        </div>
+        
+        <!-- 상단: 전체 요약 섹션 -->
+        <div class="retake-summary-section">
+            <!-- 32문제 O/X 비교표 -->
+            <div class="question-comparison-table">
+                <div class="comparison-row comparison-header">
+                    <span class="row-label">문제번호</span>
+                    <div class="question-numbers" id="listeningQuestionNumbers">
+                        <!-- 1~32 동적 생성 -->
+                    </div>
+                </div>
+                <div class="comparison-row first-attempt-row">
+                    <span class="row-label">1차 결과</span>
+                    <div class="question-results" id="listeningFirstAttemptResults">
+                        <!-- O/X 동적 생성 -->
+                    </div>
+                </div>
+                <div class="comparison-row second-attempt-row">
+                    <span class="row-label">2차 결과</span>
+                    <div class="question-results" id="listeningSecondAttemptResults">
+                        <!-- O/X 동적 생성 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 점수/정답률/레벨 비교표 -->
+            <div class="stats-comparison-table">
+                <div class="stats-header">
+                    <div class="stats-col">1차 결과</div>
+                    <div class="stats-col">2차 결과</div>
+                    <div class="stats-col">개선</div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-col">
+                        <span class="stats-value" id="listeningFirstScore">20/32</span>
+                    </div>
+                    <div class="stats-col">
+                        <span class="stats-value" id="listeningSecondScore">25/32</span>
+                    </div>
+                    <div class="stats-col improvement">
+                        <span class="stats-value" id="listeningScoreDiff">+5 문제</span>
+                        <span class="improvement-icon">✨</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-col">
+                        <span class="stats-value" id="listeningFirstPercent">63%</span>
+                    </div>
+                    <div class="stats-col">
+                        <span class="stats-value" id="listeningSecondPercent">78%</span>
+                    </div>
+                    <div class="stats-col improvement">
+                        <span class="stats-value" id="listeningPercentDiff">+15%</span>
+                        <span class="improvement-icon">📈</span>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-col">
+                        <span class="stats-label">레벨 </span>
+                        <span class="stats-value" id="listeningFirstLevel">3.0</span>
+                    </div>
+                    <div class="stats-col">
+                        <span class="stats-label">레벨 </span>
+                        <span class="stats-value" id="listeningSecondLevel">5.0</span>
+                    </div>
+                    <div class="stats-col improvement">
+                        <span class="stats-value" id="listeningLevelDiff">+2.0</span>
+                        <span class="improvement-icon">⬆️</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 축하/격려 메시지 -->
+            <div class="motivation-message" id="listeningMotivationMessage">
+                <p>🎉 축하합니다!</p>
+                <p>다시 한번 집중해서 듣는 것만으로 5문제를 더 맞혔어요!</p>
+                <p>정답률이 15% 상승했고, 2.0 레벨이 올랐어요!</p>
+            </div>
+        </div>
+        
+        <!-- 페이지 네비게이션 (최종 해설화면은 나중에 구현) -->
+        <div class="retake-navigation">
+            <button class="btn btn-primary btn-large" onclick="showListeningRetakeDetailPage(1)">
+                유형별 세부 결과 보기 →
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- 리스닝 응답고르기 최종 해설 화면 -->
+    <!-- ============================= -->
+    <div id="listeningRetakeDetailResponseScreen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToListeningRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="responseDetailTitle">🎧 Week 1 - 일요일 : Listening Module 1 최종 해설</h2>
+        </div>
+        
+        <!-- 응답고르기 요약 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="responseTotal">12</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="responseFirst">8/12 (67%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="responseSecond">10/12 (83%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="responseImprovement">+2문제 (+16%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="responseDetailSets">
+            <!-- Set 결과가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="backToListeningRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과로 돌아가기
+            </button>
+            <button class="btn btn-primary" onclick="showListeningRetakeDetailPage(2)">
+                다음: Conversation <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 리스닝 최종 해설 - 컨버 화면 -->
+    <div id="listeningRetakeDetailConverScreen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToListeningRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="converDetailTitle">🎧 Week 1 - 일요일 : Listening Module 2 최종 해설</h2>
+        </div>
+        
+        <!-- 컨버 요약 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="converTotal">12</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="converFirst">8/12 (67%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="converSecond">10/12 (83%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="converImprovement">+2문제 (+16%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="converDetailSets">
+            <!-- Set 결과가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="showListeningRetakeDetailPage(1)">
+                <i class="fas fa-arrow-left"></i> 이전: 응답고르기
+            </button>
+            <button class="btn btn-primary" onclick="showListeningRetakeDetailPage(3)">
+                다음: 공지사항 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 리스닝 최종 해설 - 공지사항 화면 -->
+    <div id="listeningRetakeDetailAnnouncementScreen" class="result-screen test-screen" style="display: none;">
+        <div class="retake-detail-header">
+            <button class="btn-back" onclick="backToListeningRetakeResult()">
+                <i class="fas fa-arrow-left"></i> 2차 결과
+            </button>
+            <h2 id="announcementDetailTitle">🎧 Week 1 - 일요일 : Listening Module 3 최종 해설</h2>
+        </div>
+        
+        <!-- 공지사항 요약 -->
+        <div class="retake-detail-summary">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">총 문제</span>
+                    <span class="stat-value" id="announcementTotal">12</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">1차 정답</span>
+                    <span class="stat-value first" id="announcementFirst">8/12 (67%)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">2차 정답</span>
+                    <span class="stat-value second" id="announcementSecond">10/12 (83%)</span>
+                </div>
+                <div class="stat-box improvement">
+                    <span class="stat-label">개선</span>
+                    <span class="stat-value" id="announcementImprovement">+2문제 (+16%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 세트별 세부 결과 -->
+        <div class="retake-detail-sets" id="announcementDetailSets">
+            <!-- Set 결과가 동적으로 추가됨 -->
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="retake-detail-navigation">
+            <button class="btn btn-secondary" onclick="showListeningRetakeDetailPage(2)">
+                <i class="fas fa-arrow-left"></i> 이전: Conversation
+            </button>
+            <button class="btn btn-primary" onclick="showListeningRetakeDetailPage(4)">
+                다음: Lecture <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 최종 해설 화면 컴포넌트 -->
+    <div id="finalExplainScreen" class="screen" style="display: none;">
+        <div class="final-header">
+            <h2 id="finalExplainTitle">📖 Week 1 - 월요일 : Reading Module 1 최종 해설</h2>
+        </div>
+        
+        <!-- 요약 통계 -->
+        <div class="final-summary">
+            <div class="final-stats">
+                <div class="final-stat-box">
+                    <span class="final-stat-label">총 문제</span>
+                    <span class="final-stat-value" id="finalTotal">12</span>
+                </div>
+                <div class="final-stat-box">
+                    <span class="final-stat-label">1차 정답</span>
+                    <span class="final-stat-value first" id="finalFirst">8/12 (67%)</span>
+                </div>
+                <div class="final-stat-box">
+                    <span class="final-stat-label">2차 정답</span>
+                    <span class="final-stat-value second" id="finalSecond">10/12 (83%)</span>
+                </div>
+                <div class="final-stat-box improvement">
+                    <span class="final-stat-label">개선</span>
+                    <span class="final-stat-value" id="finalImprovement">+2문제 (+16%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 유형 제목 -->
+        <div class="final-section-header">
+            <h3 id="finalSectionTitle">Reading - Fill in the blanks</h3>
+        </div>
+        
+        <!-- 세부 결과 컨테이너 -->
+        <div class="final-content" id="finalDetailContent">
+            <!-- 여기에 컨텐츠가 동적으로 삽입됨 -->
+            <p style="text-align: center; color: #666; padding: 40px;">컨텐츠 영역</p>
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="final-navigation">
+            <button class="btn btn-secondary" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 뒤로가기
+            </button>
+            <button class="btn btn-primary" id="finalNextBtn" onclick="goToNextFinalExplainPage()">
+                다음 페이지 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 정답채점 화면 -->
+    <div id="resultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="resultDayTitle">Week 1 - 일요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="resultTotalScore">85%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="resultCorrectCount">17</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="resultIncorrectCount">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="resultTotalCount">20</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="resultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToSchedule()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 일상리딩1 -->
+    <div id="readingDaily1Screen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-book-open"></i>
+                <span>Reading - Daily Reading 1</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-progress">
+                    <span id="daily1Progress">Question 1 of 4</span>
+                </div>
+                <div class="test-timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="daily1Timer">1:00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="daily1-layout">
+                <!-- 왼쪽: 지문 -->
+                <div class="daily1-passage-panel">
+                    <div class="daily1-main-title">
+                        <h2 id="daily1MainTitle">Read a notice.</h2>
+                    </div>
+                    <div class="daily1-passage-box">
+                        <h3 id="daily1PassageTitle" class="daily1-passage-title">지문 제목</h3>
+                        <p id="daily1PassageContent" class="daily1-passage-content">
+                            <!-- 지문 내용이 여기에 표시됩니다 -->
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 문제 -->
+                <div class="daily1-question-panel">
+                    <div class="daily1-question-container">
+                        <h3 id="daily1Question" class="daily1-question">What type of business issued the notice?</h3>
+                        <div id="daily1Options" class="daily1-options">
+                            <!-- 보기가 여기에 표시됩니다 -->
+                        </div>
+                        
+                        <div class="daily1-navigation">
+                            <button id="daily1PrevBtn" class="btn btn-secondary" onclick="daily1PreviousQuestion()" style="display: none;">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            <button id="daily1NextBtn" class="btn btn-primary" onclick="daily1NextQuestion()">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button id="daily1SubmitBtn" class="btn btn-success" onclick="submitDaily1()" style="display: none;">
+                                <i class="fas fa-check"></i> Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 일상리딩1 결과 화면 -->
+    <div id="readingDaily1ResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>일상리딩1 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="daily1ResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="daily1ResultScoreValue">85%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="daily1ResultCorrectCount">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="daily1ResultIncorrectCount">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="daily1ResultTotalCount">4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="daily1ResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToSchedule()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 일상리딩1 정답 채점 결과 -->
+    <div id="readingDaily2ResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromDaily2Result()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>일상리딩2 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="daily2ResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="daily2ResultScoreValue">85%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="daily2ResultCorrectCount">3</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="daily2ResultIncorrectCount">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="daily2ResultTotalCount">4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="daily2ResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromDaily2Result()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 일상리딩2 -->
+    <div id="readingDaily2Screen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-progress">
+                <span id="daily2Progress">Question 1 of 6</span>
+            </div>
+            <div class="test-title">
+                <i class="fas fa-book-open"></i>
+                <span>Reading - Daily Reading 2</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="daily2Timer">1:20</span>
+                </div>
+                <button class="btn btn-secondary" id="daily2PrevBtn" onclick="daily2PrevQuestion()" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="btn btn-primary" id="daily2NextBtn" onclick="daily2NextQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="btn btn-primary" id="daily2SubmitBtn" onclick="submitDaily2()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="daily1-layout">
+                <!-- 왼쪽: 지문 -->
+                <div class="daily1-passage-panel">
+                    <div class="daily1-main-title">
+                        <h2 id="daily2MainTitle">Read a social media post.</h2>
+                    </div>
+                    <div class="daily1-passage-box">
+                        <h3 id="daily2PassageTitle" class="daily1-passage-title">지문 제목</h3>
+                        <p id="daily2PassageContent" class="daily1-passage-content">
+                            <!-- 지문 내용이 여기에 표시됩니다 -->
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 문제 -->
+                <div class="daily1-question-panel">
+                    <div class="daily1-question-container">
+                        <h3 id="daily2Question" class="daily1-question">What is the main purpose of the post?</h3>
+                        <div id="daily2Options" class="daily1-options">
+                            <!-- 보기가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 아카데믹리딩 -->
+    <div id="readingAcademicScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-progress">
+                <span id="academicProgress">Question 1 of 5</span>
+            </div>
+            <div class="test-title">
+                <i class="fas fa-book-open"></i>
+                <span>Reading - Academic Reading</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="academicTimer">2:00</span>
+                </div>
+                <button class="btn btn-secondary" id="academicPrevBtn" onclick="academicPrevQuestion()" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="btn btn-primary" id="academicNextBtn" onclick="academicNextQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="btn btn-primary" id="academicSubmitBtn" onclick="submitAcademic()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="daily1-layout">
+                <!-- 왼쪽: 지문 -->
+                <div class="daily1-passage-panel">
+                    <div class="daily1-main-title">
+                        <h2 id="academicMainTitle">Read an academic passage.</h2>
+                    </div>
+                    <div class="daily1-passage-box">
+                        <h3 id="academicPassageTitle" class="daily1-passage-title">지문 제목</h3>
+                        <p id="academicPassageContent" class="daily1-passage-content">
+                            <!-- 지문 내용이 여기에 표시됩니다 -->
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 문제 -->
+                <div class="daily1-question-panel">
+                    <div class="daily1-question-container">
+                        <h3 id="academicQuestion" class="daily1-question">What is the main purpose?</h3>
+                        <div id="academicOptions" class="daily1-options">
+                            <!-- 보기가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening - 응답고르기 -->
+    <div id="listeningResponseScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-headphones"></i>
+                <span>Listening - Choose Response</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-progress">
+                    <span id="responseProgress">Question 1 of 12</span>
+                </div>
+                <div class="test-timer">
+                    <i class="fas fa-clock"></i>
+                    <span class="timer" id="responseTimer">0:20</span>
+                </div>
+                <!-- Next/Submit 버튼 -->
+                <button id="responseNextBtn" class="btn btn-primary" onclick="nextResponseQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="responseSubmitBtn" class="btn btn-success" onclick="submitListeningResponse()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <div class="response-container">
+                <!-- 고정 제목 -->
+                <h2 class="response-title">Choose the best response.</h2>
+                
+                <!-- 화면 분할: 왼쪽 사람, 오른쪽 보기 -->
+                <div class="response-layout">
+                    <!-- 왼쪽: 사람 이미지 -->
+                    <div class="response-person-panel">
+                        <div id="responsePersonImage">
+                            <!-- 사람 이미지가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 오른쪽: 보기 -->
+                    <div class="response-options-panel">
+                        <div id="responseOptions">
+                            <!-- 보기가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening 섹션 - 응답고르기 정답 채점 결과 -->
+    <div id="listeningResponseResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromResponseResult()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>응답고르기 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="responseResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="responseResultScoreValue">85%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="responseResultCorrectCount">10</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="responseResultIncorrectCount">2</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="responseResultTotalCount">12</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="responseResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromResponseResult()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening - 컨버 -->
+    <div id="listeningConverScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-headphones"></i>
+                <span>Listening - Conversation</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-progress">
+                    <span id="converProgress" style="display: none;">Question 1 of 2</span>
+                </div>
+                <div class="test-timer">
+                    <span class="timer" id="converTimer" style="display: none;">0:20</span>
+                </div>
+                <!-- Next/Submit 버튼 -->
+                <button id="converNextBtn" class="btn btn-primary" onclick="nextConverQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="converSubmitBtn" class="btn btn-success" onclick="submitListeningConver()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <!-- 첫 번째 화면: 인트로 (이미지 + 오디오) -->
+            <div id="converIntroScreen" class="conver-intro-container">
+                <h2 class="conver-intro-title">Listen to a conversation.</h2>
+                <div id="converIntroImage" class="conver-intro-image">
+                    <!-- 이미지가 여기에 표시됩니다 -->
+                </div>
+            </div>
+
+            <!-- 두 번째 화면: 문제 (축소된 이미지 + 문제) -->
+            <div id="converQuestionScreen" class="conver-question-container" style="display: none;">
+                <div class="conver-layout">
+                    <!-- 왼쪽: 축소된 이미지 -->
+                    <div class="conver-image-panel">
+                        <div id="converSmallImage" class="conver-small-image">
+                            <!-- 축소된 이미지가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 오른쪽: 문제 -->
+                    <div class="conver-question-panel">
+                        <div id="converQuestionContent">
+                            <!-- 문제가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening 섹션 - 컨버 정답 채점 결과 -->
+    <div id="listeningConverResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromConverResult()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>컨버 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="converResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="converResultScoreValue">100%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="converResultCorrectCount">2</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="converResultIncorrectCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="converResultTotalCount">2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="converResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromConverResult()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening - 공지사항 섹션 -->
+    <div id="listeningAnnouncementScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-headphones"></i>
+                <span>Listening - Announcement</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-progress">
+                    <span id="announcementProgress">Question 1 of 2</span>
+                </div>
+                <div class="test-timer">
+                    <span class="timer" id="announcementTimer">00:20</span>
+                </div>
+                <!-- Next/Submit 버튼 -->
+                <button id="announcementNextBtn" class="btn btn-primary" onclick="nextAnnouncementQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="announcementSubmitBtn" class="btn btn-success" onclick="submitListeningAnnouncement()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <!-- 첫 번째 화면: 인트로 (이미지 + 오디오) -->
+            <div id="announcementIntroScreen" class="conver-intro-container">
+                <h2 class="conver-intro-title">Listen to an announcement.</h2>
+                <div id="announcementIntroImage" class="conver-intro-image">
+                    <!-- 이미지가 여기에 표시됩니다 -->
+                </div>
+            </div>
+
+            <!-- 두 번째 화면: 문제 (축소된 이미지 + 문제) -->
+            <div id="announcementQuestionScreen" class="conver-question-container" style="display: none;">
+                <div class="conver-layout">
+                    <!-- 왼쪽: 축소된 이미지 -->
+                    <div class="conver-image-panel">
+                        <div id="announcementSmallImage" class="conver-small-image">
+                            <!-- 축소된 이미지가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 오른쪽: 문제 -->
+                    <div class="conver-question-panel">
+                        <div id="announcementQuestionContent">
+                            <!-- 문제가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening - 공지사항 채점 결과 화면 -->
+    <div id="listeningAnnouncementResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromAnnouncementResult()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>공지사항 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="announcementResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="announcementResultScoreValue">100%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="announcementResultCorrectCount">2</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="announcementResultIncorrectCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="announcementResultTotalCount">2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="announcementResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromAnnouncementResult()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening - 렉쳐 채점 결과 화면 -->
+    <div id="listeningLectureResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromLectureResult()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>렉쳐 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="lectureResultDayTitle">Week 1 - 목요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="lectureResultScoreValue">100%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="lectureResultCorrectCount">4</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="lectureResultIncorrectCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="lectureResultTotalCount">4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="lectureResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromLectureResult()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening - 렉쳐 섹션 -->
+    <div id="listeningLectureScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Listening - Lecture</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-progress">
+                    <span id="lectureProgress">Question 1 of 4</span>
+                </div>
+                <div class="test-timer">
+                    <span class="timer" id="lectureTimer">00:20</span>
+                </div>
+                <!-- Next/Submit 버튼 -->
+                <button id="lectureNextBtn" class="btn btn-primary" onclick="nextLectureQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="lectureSubmitBtn" class="btn btn-success" onclick="submitListeningLecture()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <!-- 첫 번째 화면: 인트로 (이미지 + 오디오) -->
+            <div id="lectureIntroScreen" class="conver-intro-container">
+                <h2 id="lectureIntroTitle" class="conver-intro-title">Listen to a lecture.</h2>
+                <div id="lectureIntroImage" class="conver-intro-image">
+                    <!-- 이미지가 여기에 표시됩니다 -->
+                </div>
+            </div>
+
+            <!-- 두 번째 화면: 문제 (축소된 이미지 + 문제) -->
+            <div id="lectureQuestionScreen" class="conver-question-container" style="display: none;">
+                <div class="conver-layout">
+                    <!-- 왼쪽: 축소된 이미지 -->
+                    <div class="conver-image-panel">
+                        <div id="lectureSmallImage" class="conver-small-image">
+                            <!-- 축소된 이미지가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 오른쪽: 문제 -->
+                    <div class="conver-question-panel">
+                        <div id="lectureQuestionContent">
+                            <!-- 문제가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing - 단어배열 섹션 -->
+    <div id="writingArrangeScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-progress">
+                <span id="arrangeProgress">Question 1 of 10</span>
+            </div>
+            <div class="test-title">
+                <i class="fas fa-pen"></i>
+                <span>Writing - Build a Sentence</span>
+            </div>
+            <div class="test-header-right">
+                <div class="test-timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="arrangeTimer">6:50</span>
+                </div>
+                <button id="arrangeNextBtn" class="btn btn-primary" onclick="nextArrangeQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="arrangeSubmitBtn" class="btn btn-success" onclick="submitWritingArrange()" style="display: none;">
+                    <i class="fas fa-check"></i> Submit
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <div id="arrangeQuestionContent">
+                <!-- 문제가 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing - 단어배열 채점 결과 화면 -->
+    <div id="writingArrangeResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>Build a Sentence - 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="arrangeResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="arrangeResultScoreValue">85%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="arrangeResultCorrectCount">8</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="arrangeResultIncorrectCount">2</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="arrangeResultTotalCount">10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="arrangeResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToSchedule()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing - 이메일작성 섹션 -->
+    <div id="writingEmailScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <span id="emailProgress" class="test-progress">Question 1 of 2</span>
+            <div class="test-title">
+                <i class="fas fa-envelope"></i>
+                <span>Writing - Write an Email</span>
+            </div>
+            <div class="test-header-right">
+                <span class="timer" id="emailTimer"><i class="fas fa-clock"></i> 6:00</span>
+                <button id="emailNextBtn" class="btn btn-primary" onclick="nextEmailQuestion()" style="display: inline-block;">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="emailSubmitBtn" class="btn btn-success" onclick="submitWritingEmail()" style="display: none;">
+                    Submit <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <div class="email-layout">
+                <!-- 왼쪽: 과제 설명 (35%) -->
+                <div class="email-task-panel">
+                    <div class="email-task-box">
+                        <p id="emailSituation" class="email-situation"></p>
+                        <p id="emailTask" class="email-task-title"></p>
+                        <ul class="email-instructions">
+                            <li id="emailInstruction1"></li>
+                            <li id="emailInstruction2"></li>
+                            <li id="emailInstruction3"></li>
+                        </ul>
+                        <p class="email-note">Write as much as you can and in complete sentences.</p>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 답안 작성 (60%) -->
+                <div class="email-response-panel">
+                    <div class="email-response-header">
+                        <h3>Your Response:</h3>
+                        <p><strong>To:</strong> <span id="emailTo"></span></p>
+                        <p><strong>Subject:</strong> <span id="emailSubject"></span></p>
+                    </div>
+                    
+                    <div class="email-editor-box">
+                        <div class="email-editor-toolbar">
+                            <div class="toolbar-left">
+                                <button class="toolbar-btn" onclick="cutText()" title="Cut">
+                                    <i class="fas fa-cut"></i> Cut
+                                </button>
+                                <button class="toolbar-btn" onclick="pasteText()" title="Paste">
+                                    <i class="fas fa-paste"></i> Paste
+                                </button>
+                                <button class="toolbar-btn" onclick="undoText()" title="Undo">
+                                    <i class="fas fa-undo"></i> Undo
+                                </button>
+                                <button class="toolbar-btn" onclick="redoText()" title="Redo">
+                                    <i class="fas fa-redo"></i> Redo
+                                </button>
+                            </div>
+                            <div class="toolbar-right">
+                                <button id="toggleWordCountBtn" class="toolbar-btn-link" onclick="toggleWordCount()">
+                                    <i class="fas fa-eye-slash"></i> Hide Word Count
+                                </button>
+                                <span id="emailWordCountDisplay" class="word-count">
+                                    <span id="emailWordCount">0</span>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <textarea 
+                            id="emailTextarea" 
+                            class="email-textarea" 
+                            placeholder="Start typing your email here..."
+                            oninput="onEmailTextInput()">
+                        </textarea>
+                    </div>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing - 이메일작성 결과 화면 -->
+    <div id="writingEmailResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-envelope"></i>
+                <span>Write an Email - 채점 결과</span>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="emailResultTitle">Week 1, 월요일</h2>
+                </div>
+            <!-- 상단 정보 -->
+            <div class="email-result-summary">
+                <div class="result-status">
+                    <i class="fas fa-check-circle"></i> 작성 완료
+                </div>
+                <div class="result-word-count-box">
+                    <div class="result-word-count">
+                        단어 수: <span id="emailResultWordCount">0</span> words
+                    </div>
+                    <div class="word-count-feedback" id="emailWordCountFeedback">
+                        <!-- 단어 수 피드백 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 문제 보기 (접기 가능) -->
+            <div class="email-result-section">
+                <div class="email-result-toggle" onclick="toggleEmailProblem()">
+                    <i class="fas fa-chevron-down" id="emailProblemToggleIcon"></i>
+                    <span>문제 보기</span>
+                </div>
+                <div class="email-result-problem" id="emailResultProblem" style="display: none;">
+                    <p class="email-problem-situation" id="emailResultSituation"></p>
+                    <p class="email-problem-task" id="emailResultTask"></p>
+                    <ul class="email-problem-instructions">
+                        <li id="emailResultInstruction1"></li>
+                        <li id="emailResultInstruction2"></li>
+                        <li id="emailResultInstruction3"></li>
+                    </ul>
+                    <div class="email-problem-meta">
+                        <p><strong>To:</strong> <span id="emailResultTo"></span></p>
+                        <p><strong>Subject:</strong> <span id="emailResultSubject"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 내 답안 -->
+            <div class="email-result-section">
+                <h3 class="email-result-label">내 답안</h3>
+                <div class="email-result-answer-box">
+                    <div class="email-result-meta">
+                        <p><strong>To:</strong> <span id="emailResultUserTo"></span></p>
+                        <p><strong>Subject:</strong> <span id="emailResultUserSubject"></span></p>
+                    </div>
+                    <pre id="emailResultUserAnswer"></pre>
+                </div>
+            </div>
+
+            <!-- 모범 답안 -->
+            <div class="email-result-section">
+                <h3 class="email-result-label">모범 답안</h3>
+                <div class="email-result-sample-box">
+                    <div class="email-result-meta">
+                        <p><strong>To:</strong> <span id="emailResultSampleTo"></span></p>
+                        <p><strong>Subject:</strong> <span id="emailResultSampleSubject"></span></p>
+                    </div>
+                    <pre id="emailResultSampleAnswer"></pre>
+                </div>
+            </div>
+
+            <!-- 피드백 (3개 Bullet) -->
+            <div class="email-result-section">
+                <h3 class="email-result-label">피드백</h3>
+                <div class="email-bullets-container" id="emailResultBullets">
+                    <!-- Bullet 내용은 JS로 동적 생성 -->
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing - 토론형 섹션 -->
+    <div id="writingDiscussionScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <span id="discussionProgress" class="test-progress">Question 1 of 1</span>
+            <div class="test-title">
+                <i class="fas fa-comments"></i>
+                <span>Writing - Writing for an Academic Discussion</span>
+            </div>
+            <div class="test-header-right">
+                <span class="timer" id="discussionTimer"><i class="fas fa-clock"></i> 10:00</span>
+                <button id="discussionSubmitBtn" class="btn btn-success" onclick="submitWritingDiscussion()" style="display: inline-block;">
+                    Submit <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="test-content" style="display: flex; flex-direction: column; height: calc(100vh - 80px); overflow: hidden; padding: 0;">
+            <div class="discussion-layout" style="flex: 1; min-height: 0; overflow-y: auto;">
+                <!-- 왼쪽: 토론 주제 (35%) -->
+                <div class="discussion-task-panel">
+                    <div class="discussion-task-box">
+                        <p id="discussionClassContext" class="discussion-context"></p>
+                        
+                        <div class="discussion-instruction">
+                            <p class="discussion-instruction-title">In your response, you should do the following.</p>
+                            <ul class="discussion-instructions">
+                                <li>Express and support your opinion.</li>
+                                <li>Make a contribution to the discussion in your own words.</li>
+                            </ul>
+                            <p class="discussion-note">An effective response will contain at least 100 words.</p>
+                        </div>
+                        
+                        <div class="professor-section">
+                            <img id="discussionProfessorImage" src="https://i.pravatar.cc/150?img=33" alt="Professor" class="professor-image">
+                            <p id="discussionTopic" class="discussion-topic"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 학생 의견 & 답안 작성 (65%) -->
+                <div class="discussion-response-panel">
+                    <!-- 학생 의견들 -->
+                    <div class="student-opinions">
+                        <!-- 학생 1 -->
+                        <div class="student-opinion">
+                            <img id="discussionStudent1Image" src="https://i.pravatar.cc/150?img=5" alt="Student 1" class="student-image">
+                            <div style="flex: 1;">
+                                <div class="student-name" id="discussionStudent1Name" style="margin-bottom: 5px;">Student 1</div>
+                                <p id="discussionStudent1Opinion" class="student-text"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- 학생 2 -->
+                        <div class="student-opinion">
+                            <img id="discussionStudent2Image" src="https://i.pravatar.cc/150?img=12" alt="Student 2" class="student-image">
+                            <div style="flex: 1;">
+                                <div class="student-name" id="discussionStudent2Name" style="margin-bottom: 5px;">Student 2</div>
+                                <p id="discussionStudent2Opinion" class="student-text"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 에디터 박스 -->
+                    <div class="discussion-editor-box">
+                        <div class="discussion-editor-toolbar">
+                            <div class="toolbar-left">
+                                <button class="toolbar-btn" onclick="cutDiscussionText()" title="Cut">
+                                    <i class="fas fa-cut"></i> Cut
+                                </button>
+                                <button class="toolbar-btn" onclick="pasteDiscussionText()" title="Paste">
+                                    <i class="fas fa-paste"></i> Paste
+                                </button>
+                                <button class="toolbar-btn" onclick="undoDiscussionText()" title="Undo">
+                                    <i class="fas fa-undo"></i> Undo
+                                </button>
+                                <button class="toolbar-btn" onclick="redoDiscussionText()" title="Redo">
+                                    <i class="fas fa-redo"></i> Redo
+                                </button>
+                            </div>
+                            <div class="toolbar-right">
+                                <button id="toggleDiscussionWordCountBtn" class="toolbar-btn-link" onclick="toggleDiscussionWordCount()">
+                                    <i class="fas fa-eye-slash"></i> Hide Word Count
+                                </button>
+                                <span id="discussionWordCountDisplay" class="word-count">
+                                    <span id="discussionWordCount">0</span>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <textarea 
+                            id="discussionTextarea" 
+                            class="discussion-textarea" 
+                            placeholder="Write your response here..."
+                            oninput="onDiscussionTextInput()">
+                        </textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing - 토론형 결과 화면 -->
+    <div id="writingDiscussionResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-comments"></i>
+                <span>Writing for an Academic Discussion - 채점 결과</span>
+            </div>
+        </div>
+
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="discussionResultTitle">Week 1, 월요일</h2>
+                </div>
+            <!-- 상단 정보 -->
+            <div class="discussion-result-summary">
+                <div class="result-status">
+                    <i class="fas fa-check-circle"></i> 작성 완료
+                </div>
+                <div class="result-word-count-box">
+                    <div class="result-word-count">
+                        단어 수: <span id="discussionResultWordCount">0</span> words
+                    </div>
+                    <div class="word-count-feedback" id="discussionWordCountFeedback">
+                        <!-- 단어 수 피드백 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 문제 보기 (접기 가능) -->
+            <div class="discussion-result-section">
+                <div class="discussion-result-toggle" onclick="toggleDiscussionProblem()">
+                    <i class="fas fa-chevron-down" id="discussionProblemToggleIcon"></i>
+                    <span>문제 보기</span>
+                </div>
+                <div class="discussion-result-problem" id="discussionResultProblem" style="display: none;">
+                    <p class="discussion-problem-context" id="discussionResultContext"></p>
+                    <p class="discussion-problem-topic" id="discussionResultTopic"></p>
+                </div>
+            </div>
+
+            <!-- 내 답안 -->
+            <div class="discussion-result-section">
+                <h3 class="discussion-result-label">내 답안</h3>
+                <div class="discussion-result-answer-box">
+                    <pre id="discussionResultUserAnswer"></pre>
+                </div>
+            </div>
+
+            <!-- 모범 답안 -->
+            <div class="discussion-result-section">
+                <h3 class="discussion-result-label">모범 답안</h3>
+                <div class="discussion-result-sample-box">
+                    <pre id="discussionResultSampleAnswer"></pre>
+                </div>
+            </div>
+
+            <!-- 피드백 (3개 Bullet) -->
+            <div class="discussion-result-section">
+                <h3 class="discussion-result-label">피드백</h3>
+                <div class="discussion-bullets-container" id="discussionResultBullets">
+                    <!-- Bullet 내용은 JS로 동적 생성 -->
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speaking - 따라말하기 섹션 -->
+    <div id="speakingRepeatScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-microphone"></i>
+                <span>Speaking</span>
+            </div>
+            <div class="test-progress">
+                <span id="repeatProgress">Question 1 of 7</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <!-- 인트로 화면 -->
+            <div id="repeatIntroScreen" class="repeat-intro-screen">
+                <div class="repeat-intro-content">
+                    <div class="repeat-intro-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h1 class="repeat-intro-title">Listen and Repeat</h1>
+                    <div class="repeat-intro-text">
+                        <p>You will listen as someone speaks to you.</p>
+                        <p>Listen carefully and then repeat what you have heard.</p>
+                        <p>The clock will indicate how much time you have to speak.</p>
+                    </div>
+                    <div class="repeat-intro-note">
+                        No time for preparation will be provided.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 첫 번째 화면: 상황 설명 -->
+            <div id="repeatContextScreen" class="repeat-context-screen" style="display: none;">
+                <p id="repeatContextText" class="repeat-context-text"></p>
+                <img id="repeatContextImage" src="" alt="" class="repeat-illustration">
+            </div>
+            
+            <!-- 두 번째 화면: 나레이션 및 녹음 -->
+            <div id="repeatNarrationScreen" class="repeat-narration-screen" style="display: none;">
+                <p id="repeatNarrationContextText" class="repeat-instruction-text">Listen and repeat only once.</p>
+                <img id="repeatNarrationImage" src="" alt="" class="repeat-illustration">
+                
+                <!-- 녹음 UI -->
+                <div id="repeatRecordingUI" class="repeat-recording-ui" style="display: none;">
+                    <div class="repeat-timer-display">
+                        <div class="repeat-response-label">RESPONSE TIME</div>
+                        <div class="repeat-timer-content">
+                            <div class="repeat-timer-wrapper">
+                                <div class="repeat-progress-circle">
+                                    <svg width="50" height="50" viewBox="0 0 50 50">
+                                        <circle class="repeat-progress-circle-bg" cx="25" cy="25" r="20"></circle>
+                                        <circle id="repeatProgressCircle" class="repeat-progress-circle-fill" cx="25" cy="25" r="20" 
+                                                stroke-dasharray="125.6" stroke-dashoffset="125.6"></circle>
+                                    </svg>
+                                    <svg class="repeat-mic-icon" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"/>
+                                    </svg>
+                                </div>
+                                <span id="repeatTimer" class="repeat-timer">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 로딩 화면 -->
+            <div id="repeatLoadingScreen" class="repeat-loading-screen" style="display: none;">
+                <div class="repeat-loading-spinner"></div>
+            </div>
+            
+            <!-- 저장 팝업 -->
+            <div id="repeatSavingPopup" class="repeat-saving-popup" style="display: none;">
+                <h3>Stop Speaking</h3>
+                <p>Response time has ended.</p>
+                <p>Please wait.</p>
+                <p>We are currently saving your response.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speaking - 따라말하기 복습 화면 -->
+    <div id="speakingRepeatResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-microphone"></i>
+                <span>Speaking - 따라말하기 복습</span>
+            </div>
+            <div class="test-progress">
+                <span id="repeatResultProgress">Question 1 of 7</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="repeat-result-container">
+                <!-- Context 영역 -->
+                <div id="repeatResultContext" class="repeat-result-context" style="text-align:center; padding:12px 16px; font-size:14px; color:#666; background:#f0f0f0; border-radius:8px; margin-bottom:12px;"></div>
+                
+                <!-- 일러스트 이미지 -->
+                <div class="repeat-result-image-box">
+                    <img id="repeatResultIllustration" src="" alt="Illustration" class="repeat-result-image">
+                </div>
+                
+                <!-- 다시 듣기 버튼 -->
+                <div class="repeat-result-audio-box">
+                    <button id="repeatResultListenBtn" class="btn-listen-again" onclick="playRepeatResultAudio()">
+                        <i class="fas fa-volume-up"></i> 다시 듣기
+                    </button>
+                </div>
+                
+                <!-- 스크립트 -->
+                <div class="repeat-result-section">
+                    <div class="repeat-result-label">
+                        <i class="fas fa-file-alt"></i> Script
+                    </div>
+                    <div id="repeatResultScript" class="repeat-result-text"></div>
+                </div>
+                
+                <!-- 해석 -->
+                <div class="repeat-result-section">
+                    <div class="repeat-result-label">
+                        <i class="fas fa-language"></i> 해석
+                    </div>
+                    <div id="repeatResultTranslation" class="repeat-result-text translation"></div>
+                </div>
+                
+                <!-- 이전/다음 버튼 -->
+                <div class="repeat-result-navigation">
+                    <button id="repeatResultPrevBtn" class="btn-nav-prev" onclick="showPreviousRepeatResult()">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <button id="repeatResultNextBtn" class="btn-nav-next" onclick="showNextRepeatResult()">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speaking - 인터뷰 섹션 -->
+    <div id="speakingInterviewScreen" class="screen">
+        <div class="test-header">
+            <div class="test-header-left">
+                <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                    <i class="fas fa-arrow-left"></i> 학습 일정
+                </button>
+                <div class="test-progress">
+                    <span id="interviewProgress">Question 1 of 4</span>
+                </div>
+            </div>
+            <div class="test-title">
+                <i class="fas fa-user-tie"></i>
+                <span>Speaking</span>
+            </div>
+            <div class="test-header-right">
+                <!-- 볼륨 조절 버튼 -->
+                <div class="volume-control">
+                    <button class="volume-btn" onclick="toggleVolumeSlider()">
+                        <i class="fas fa-volume-up" id="volumeIcon"></i>
+                    </button>
+                    <div class="volume-slider-container" id="volumeSliderContainer" style="display: none;">
+                        <input type="range" min="0" max="100" value="70" class="volume-slider" id="interviewVolumeSlider" oninput="updateInterviewVolume(this.value)">
+                        <span class="volume-percentage" id="volumePercentage">70%</span>
+                    </div>
+                </div>
+                <!-- 테스트용 채점 화면 버튼 -->
+                <button class="btn-test-result" onclick="goToInterviewResult()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    📊 채점 화면 (Test)
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <!-- 인트로 화면 -->
+            <div id="interviewIntroScreen" class="repeat-intro-screen">
+                <div class="repeat-intro-content">
+                    <div class="repeat-intro-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h1 class="repeat-intro-title">Take an Interview</h1>
+                    <div class="repeat-intro-text">
+                        <p>An interviewer will ask you questions.</p>
+                        <p>Answer the questions and be sure to say</p>
+                        <p>as much as you can in the time allowed.</p>
+                    </div>
+                    <div class="repeat-intro-note">
+                        No time for preparation will be provided.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 첫 번째 화면: 상황 설명 -->
+            <div id="interviewContextScreen" class="interview-context-screen" style="display: none;">
+                <p id="interviewContextText" class="interview-context-text"></p>
+                <img id="interviewContextImage" src="" alt="Researcher" class="interview-image">
+                
+                <!-- 나레이션 재생 중 표시 -->
+                <div id="interviewAudioPlaying" class="audio-playing-indicator" style="display: none; margin-top: 30px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 15px; padding: 20px; background: #f0f9ff; border-radius: 12px; border: 2px solid #3b82f6;">
+                        <svg style="width: 24px; height: 24px; color: #3b82f6; animation: pulse 1.5s infinite;" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z"/>
+                        </svg>
+                        <span style="font-size: 18px; font-weight: 600; color: #1e40af;">나레이션이 재생 중입니다...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 두 번째 화면: 질문 및 녹음 -->
+            <div id="interviewQuestionScreen" class="interview-question-screen" style="display: none;">
+                <p class="interview-instruction-text">Please answer the interviewer's questions.</p>
+                
+                <!-- 영상 플레이스홀더 -->
+                <div id="interviewVideoPlaceholder" style="display: none; max-width: 700px; margin: 0 auto 40px; background: #f3f4f6; border-radius: 16px; padding: 60px 40px; border: 3px dashed #9ca3af;">
+                    <div style="text-align: center;">
+                        <svg style="width: 80px; height: 80px; color: #6b7280; margin: 0 auto 20px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                        </svg>
+                        <p style="font-size: 20px; font-weight: 600; color: #4b5563; margin: 0;">인터뷰 영상이 재생됩니다</p>
+                        <p style="font-size: 16px; color: #6b7280; margin-top: 10px;">질문을 듣고 답변해주세요</p>
+                    </div>
+                </div>
+                
+                <video id="interviewVideo" class="interview-video" playsinline webkit-playsinline style="display: none;">
+                    Your browser does not support the video tag.
+                </video>
+                
+                <!-- 녹음 UI -->
+                <div id="interviewRecordingUI" class="repeat-recording-ui" style="display: none;">
+                    <div class="repeat-timer-display">
+                        <div class="repeat-response-label">RESPONSE TIME</div>
+                        <div class="repeat-timer-content">
+                            <div class="repeat-timer-wrapper">
+                                <div class="repeat-progress-circle">
+                                    <svg width="50" height="50" viewBox="0 0 50 50">
+                                        <circle class="repeat-progress-circle-bg" cx="25" cy="25" r="20"></circle>
+                                        <circle id="interviewProgressCircle" class="repeat-progress-circle-fill" cx="25" cy="25" r="20" 
+                                                stroke-dasharray="125.6" stroke-dashoffset="125.6"></circle>
+                                    </svg>
+                                    <svg class="repeat-mic-icon" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"/>
+                                    </svg>
+                                </div>
+                                <span id="interviewTimer" class="repeat-timer">00:00:45</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 저장 팝업 -->
+            <div id="interviewSavingPopup" class="repeat-saving-popup" style="display: none;">
+                <h3>Stop Speaking</h3>
+                <p>Response time has ended.</p>
+                <p>Please wait.</p>
+                <p>We are currently saving your response.</p>
+            </div>
+            
+            <!-- 로딩 화면 -->
+            <div id="interviewLoadingScreen" class="repeat-loading-screen" style="display: none;">
+                <div class="repeat-loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Speaking - Interview 채점화면 -->
+    <div id="speakingInterviewResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromInterviewResult()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-microphone-alt"></i>
+                <span>Speaking - Interview 복습</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div id="interviewResultContainer" class="interview-result-container">
+                <!-- 채점 결과가 여기 표시됨 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 내벨업보카 시험 섹션 -->
+    <div id="vocabTestScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-spell-check"></i>
+                <span>내벨업보카 시험</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <!-- 시험 소개 화면 -->
+            <div id="vocabTestIntro" class="vocab-intro" style="display: block;">
+                <div class="vocab-intro-content">
+                    <div class="vocab-intro-icon">📚</div>
+                    <div class="intro-week-day"></div>
+                    <h2>내벨업보카 시험</h2>
+                    <div class="intro-page-info"></div>
+                    <div class="vocab-intro-description">
+                        <p>표제어를 보고 동의어를 <strong>모두</strong> 입력하는 시험입니다.</p>
+                        <p><strong>주의사항:</strong></p>
+                        <ul>
+                            <li>모든 철자를 정확하게 입력해야 합니다</li>
+                            <li>시험은 단 한 번의 기회만 주어지며, 제출 후 다시 돌아올 수 없습니다</li>
+                            <li>충분히 학습한 후 시험을 시작하시기 바랍니다</li>
+                        </ul>
+                    </div>
+                    <button class="btn-start-vocab-test" onclick="startVocabTest()">
+                        <i class="fas fa-play"></i> 시험 시작하기
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 시험 진행 화면 -->
+            <div id="vocabTestMain" class="vocab-main" style="display: none;">
+                <div class="vocab-progress">
+                    <span id="vocabTestProgressText" class="vocab-progress-text">문제 진행 중...</span>
+                </div>
+                
+                <div id="vocabTestContainer" class="vocab-container">
+                    <!-- 동적으로 문제가 생성됨 -->
+                </div>
+                
+                <div class="vocab-submit-section">
+                    <button class="vocab-prev-btn" onclick="goToPrevPage()" style="display: none;" title="이전 페이지">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="vocab-submit-btn" onclick="submitVocabTest()" title="제출하기">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 내벨업보카 채점 화면 -->
+    <div id="vocabResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-check-circle"></i>
+                <span>내벨업보카 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div id="vocabResultContainer" class="vocab-result-container">
+                <!-- 채점 결과가 여기 표시됨 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 (기존 지문독해) -->
+    <div id="readingScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-book-open"></i>
+                <span>Reading Section</span>
+            </div>
+            <div class="test-progress">
+                <span id="readingProgress">Question 1 of 10</span>
+            </div>
+            <div class="test-timer">
+                <i class="fas fa-clock"></i>
+                <span id="readingTimer">54:00</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="reading-layout">
+                <div class="passage-panel">
+                    <h3 id="passageTitle">지문 제목</h3>
+                    <div id="passageContent" class="passage-content">
+                        <!-- 지문 내용이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                
+                <div class="question-panel">
+                    <div class="question-container">
+                        <div class="question-number">Question <span id="currentQuestionNum">1</span></div>
+                        <div id="questionContent" class="question-content">
+                            <!-- 질문이 여기에 표시됩니다 -->
+                        </div>
+                        <div id="answerOptions" class="answer-options">
+                            <!-- 선택지가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()">
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="btn btn-success" id="submitBtn" onclick="submitSection()" style="display:none;">
+                            Submit Section <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reading 섹션 - 아카데믹리딩 정답 채점 결과 -->
+    <div id="readingAcademicResultScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromAcademicResult()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>아카데믹리딩 - 정답 채점 결과</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="result-container">
+                <div class="result-header">
+                    <h2 id="academicResultDayTitle">Week 1 - 월요일</h2>
+                    <div class="result-summary">
+                        <div class="result-score-card">
+                            <div class="score-label">총 점수</div>
+                            <div class="score-value" id="academicResultScoreValue">85%</div>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">정답</span>
+                                <span class="stat-value correct" id="academicResultCorrectCount">4</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">오답</span>
+                                <span class="stat-value incorrect" id="academicResultIncorrectCount">1</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">전체</span>
+                                <span class="stat-value" id="academicResultTotalCount">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="academicResultDetails">
+                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromAcademicResult()">
+                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listening 섹션 -->
+    <div id="listeningScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-headphones"></i>
+                <span>Listening Section</span>
+            </div>
+            <div class="test-progress">
+                <span id="listeningProgress">Question 1 of 6</span>
+            </div>
+            <div class="test-timer">
+                <i class="fas fa-clock"></i>
+                <span id="listeningTimer">41:00</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="listening-container">
+                <div class="audio-player-section" id="audioSection">
+                    <div class="audio-instruction">
+                        <i class="fas fa-volume-up"></i>
+                        <h3>Now listen to a conversation</h3>
+                        <p>오디오를 주의깊게 들으세요. 메모를 할 수 있습니다.</p>
+                    </div>
+                    <audio id="audioPlayer" controls>
+                        <source src="" type="audio/mpeg">
+                    </audio>
+                    <button class="btn btn-primary" onclick="startListeningQuestions()">
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="question-section" id="listeningQuestionSection" style="display:none;">
+                    <div class="question-container">
+                        <div class="question-number">Question <span id="listeningQuestionNum">1</span></div>
+                        <div id="listeningQuestionContent" class="question-content">
+                            <!-- 질문이 여기에 표시됩니다 -->
+                        </div>
+                        <div id="listeningAnswerOptions" class="answer-options">
+                            <!-- 선택지가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button class="btn btn-secondary" onclick="previousListeningQuestion()">
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        <button class="btn btn-primary" onclick="nextListeningQuestion()">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speaking 섹션 -->
+    <div id="speakingScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-microphone"></i>
+                <span>Speaking Section</span>
+            </div>
+            <div class="test-progress">
+                <span id="speakingProgress">Task 1 of 4</span>
+            </div>
+            <div class="test-timer">
+                <i class="fas fa-clock"></i>
+                <span id="speakingTimer">17:00</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="speaking-container">
+                <div class="speaking-task">
+                    <h3 id="speakingTaskTitle">Task 1: Independent Speaking</h3>
+                    <div id="speakingPrompt" class="speaking-prompt">
+                        <!-- 프롬프트가 여기에 표시됩니다 -->
+                    </div>
+                    
+                    <div class="preparation-section" id="preparationSection">
+                        <div class="prep-timer">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Preparation Time: <strong id="prepTimer">15</strong> seconds</span>
+                        </div>
+                        <textarea id="speakingNotes" placeholder="메모를 작성하세요..."></textarea>
+                    </div>
+                    
+                    <div class="recording-section" id="recordingSection" style="display:none;">
+                        <div class="recording-timer">
+                            <i class="fas fa-circle recording-indicator"></i>
+                            <span>Recording: <strong id="recordTimer">45</strong> seconds remaining</span>
+                        </div>
+                        <div class="recording-visual">
+                            <div class="waveform"></div>
+                        </div>
+                        <button class="btn btn-danger" onclick="stopRecording()">
+                            <i class="fas fa-stop"></i> Stop Recording
+                        </button>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button class="btn btn-primary" id="startRecordBtn" onclick="startSpeakingTask()">
+                            Start Preparation
+                        </button>
+                        <button class="btn btn-secondary" id="nextSpeakingBtn" onclick="nextSpeakingTask()" style="display:none;">
+                            Next Task <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing 섹션 -->
+    <div id="writingScreen" class="screen">
+        <div class="test-header">
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-title">
+                <i class="fas fa-pen"></i>
+                <span>Writing Section</span>
+            </div>
+            <div class="test-progress">
+                <span id="writingProgress">Task 1 of 2</span>
+            </div>
+            <div class="test-timer">
+                <i class="fas fa-clock"></i>
+                <span id="writingTimer">50:00</span>
+            </div>
+        </div>
+        
+        <div class="test-content">
+            <div class="writing-layout">
+                <div class="writing-prompt-panel">
+                    <h3 id="writingTaskTitle">Task 1: Integrated Writing</h3>
+                    <div id="writingPrompt" class="writing-prompt">
+                        <!-- 프롬프트가 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                
+                <div class="writing-editor-panel">
+                    <div class="editor-toolbar">
+                        <button onclick="formatText('bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                        <button onclick="formatText('italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                        <button onclick="formatText('underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                        <span class="word-count">Words: <strong id="wordCount">0</strong></span>
+                    </div>
+                    <textarea id="writingEditor" placeholder="여기에 에세이를 작성하세요..."></textarea>
+                    
+                    <div class="navigation-buttons">
+                        <button class="btn btn-secondary" onclick="saveWriting()">
+                            <i class="fas fa-save"></i> Save Draft
+                        </button>
+                        <button class="btn btn-primary" id="nextWritingBtn" onclick="nextWritingTask()">
+                            Next Task <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 입문서 정독 PDF 모달 -->
+    <div id="introBookModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeIntroBookModal()">&times;</span>
+            <div class="modal-header">
+                <i class="fas fa-book-open"></i>
+                <h2>입문서 정독 과제</h2>
+            </div>
+            <div class="modal-body">
+                <p class="intro-book-description">
+                    아래 링크를 클릭하여 입문서 PDF를 열고 해당 부분을 정독하세요.
+                </p>
+                <div class="intro-book-info">
+                    <p><strong>과제:</strong> <span id="introBookTask"></span></p>
+                </div>
+                <a href="https://eontoefl.co.kr/ebook/src/index.php?wr_id=31" 
+                   target="_blank" 
+                   class="btn btn-primary btn-large intro-book-link">
+                    <i class="fas fa-file-pdf"></i> 입문서 PDF 열기
+                </a>
+                <p class="intro-book-note">
+                    <i class="fas fa-info-circle"></i> 
+                    PDF를 열어 해당 챕터를 읽고 학습하세요. 읽기를 완료한 후 이 창을 닫으시면 됩니다.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeIntroBookModal()">
+                    <i class="fas fa-check"></i> 완료
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 결과 화면 -->
+    <div id="resultScreen" class="screen">
+        <div class="container">
+            <div class="result-header">
+                <i class="fas fa-trophy"></i>
+                <h1>시험 완료!</h1>
+                <p>수고하셨습니다. 결과를 확인하세요.</p>
+            </div>
+            
+            <div class="score-summary">
+                <div class="total-score">
+                    <h2>총점</h2>
+                    <div class="score-circle">
+                        <span id="totalScore">95</span>
+                        <span class="max-score">/120</span>
+                    </div>
+                </div>
+                
+                <div class="section-scores">
+                    <div class="section-score">
+                        <i class="fas fa-book-open"></i>
+                        <h3>Reading</h3>
+                        <div class="score" id="readingScore">28/30</div>
+                    </div>
+                    <div class="section-score">
+                        <i class="fas fa-headphones"></i>
+                        <h3>Listening</h3>
+                        <div class="score" id="listeningScore">26/30</div>
+                    </div>
+                    <div class="section-score">
+                        <i class="fas fa-microphone"></i>
+                        <h3>Speaking</h3>
+                        <div class="score" id="speakingScore">22/30</div>
+                    </div>
+                    <div class="section-score">
+                        <i class="fas fa-pen"></i>
+                        <h3>Writing</h3>
+                        <div class="score" id="writingScore">24/30</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-actions">
+                <button class="btn btn-primary" onclick="backToScheduleFromResult()">
+                    <i class="fas fa-calendar-alt"></i> 학습 일정으로
+                </button>
+                <button class="btn btn-secondary" onclick="restartTest()">
+                    <i class="fas fa-redo"></i> 다시 풀기
+                </button>
+                <button class="btn btn-success" onclick="exportResults()">
+                    <i class="fas fa-download"></i> 결과 다운로드
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js?v=20250209-pages"></script>
+    <script src="js/schedule-data.js?v=001"></script>
+    <script src="js/task-router.js?v=007"></script>
+    <script src="js/FlowController.js?v=008"></script>
+    <script src="js/tasks.js?v=002"></script>
+    <!-- 빈칸채우기 Component -->
+    <script src="js/components/FillBlanksComponent.js?v=019"></script>
+    <script src="js/reading-fillblanks.js?v=014"></script>
+    <script src="js/reading-fillblanks-logic.js?v=031"></script>
+    <!-- 일상리딩1 Component -->
+    <script src="js/components/Daily1Component.js?v=013"></script>
+    <script src="js/reading-daily1.js?v=015"></script>
+    <script src="js/reading-daily1-logic.js?v=layout_fix_001"></script>
+    <!-- 일상리딩2 Component -->
+    <script src="js/components/Daily2Component.js?v=004"></script>
+    <script src="js/reading-daily2.js?v=006"></script>
+    <script src="js/reading-daily2-logic.js?v=20260215_001"></script>
+    <!-- 아카데믹리딩 Component -->
+    <script src="js/components/AcademicComponent.js?v=007"></script>
+    <script src="js/reading-academic.js?v=006"></script>
+    <script src="js/reading-academic-logic.js?v=layout_fix_001"></script>
+    <!-- AudioPlayer (2차 풀이용) -->
+    <script src="js/components/AudioPlayer.js?v=004"></script>
+    <!-- 응답고르기 Component -->
+    <script src="js/components/ResponseComponent.js?v=20260215_key_fix_001"></script>
+    <script src="js/listening-response-logic.js?v=20250212-020"></script>
+    <!-- 컨버 Component -->
+    <script src="js/components/ConverComponent.js?v=20260215_retake_fix_001"></script>
+    <script src="js/listening-conver-logic.js?v=004"></script>
+    <!-- 공지사항 Component -->
+    <script src="js/components/AnnouncementComponent.js?v=003_fix"></script>
+    <script src="js/listening-announcement-logic.js?v=010"></script>
+    <script src="js/listening-announcement-result.js?v=004"></script>
+    <!-- 렉쳐 Component -->
+    <script src="js/components/LectureComponent.js?v=002_restore"></script>
+    <script src="js/listening-lecture-logic.js?v=006_restore"></script>
+    <script src="js/listening-lecture-logic-fixed.js?v=001_restore"></script>
+    <!-- listening-lecture-result.js 비활성화: 예전 버전(listening-lecture-logic.js) 사용 -->
+<!-- <script src="js/listening-lecture-result.js?v=20260218_001"></script> -->
+    <!-- 단어배열 Component -->
+    <script src="js/components/ArrangeComponent.js?v=001"></script>
+    <script src="js/writing-arrange-logic.js?v=20250212-001"></script>
+    <!-- 이메일작성 Component -->
+    <script src="js/components/EmailComponent.js?v=001"></script>
+    <script src="js/writing-email-logic.js?v=011"></script>
+    <script src="js/writing-email-result.js?v=013"></script>
+    <!-- 토론형글쓰기 Component -->
+    <script src="js/components/DiscussionComponent.js?v=001"></script>
+    <script src="js/writing-discussion-logic-v2.js?v=20250212-001"></script>
+    <script src="js/writing-discussion-result.js?v=003"></script>
+    <!-- 따라말하기 Component -->
+    <script src="js/components/RepeatComponent.js?v=001"></script>
+    <script src="js/speaking-repeat-logic.js?v=20250212-001"></script>
+    <!-- 인터뷰 Component -->
+    <script src="js/components/InterviewComponent.js?v=001"></script>
+    <script src="js/speaking-interview-logic.js?v=20250212-001"></script>
+    <!-- ComponentPatch: RepeatComponent, InterviewComponent에 init() 추가 -->
+    <script src="js/ComponentPatch.js?v=003"></script></script>
+    
+    <!-- 모듈 시스템 -->
+    <script src="js/module-definitions.js?v=002"></script>
+    <script src="js/module-controller.js?v=005"></script>
+    <script src="js/result-controller.js?v=008"></script>
+    <script src="js/retake-controller.js?v=20260215_level_fix_001"></script>
+    
+    <script src="js/reading-module-controller.js?v=001"></script>
+    <script src="js/listening-module-controller.js?v=001"></script>
+    
+<script src="js/vocab-test-logic-v2.js?v=20250209-arrow-layout"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/main.js?v=20250209-vocab-v2"></script>
+    <script src="js/navigation.js?v=20250209-002"></script>
+    <script src="js/auth.js?v=1001"></script>
+    
+    <!-- ⚠️ Reading 2차 결과 - 가장 마지막에 로드 (다른 스크립트의 덮어쓰기 방지) -->
+    <script src="js/reading-retake-result.js?v=academic_fix_final"></script>
+    <script src="js/listening-retake-result.js?v=20260215_004"></script>
+    <script src="js/listening-retake-detail.js?v=20260215_011"></script>
+<script src="js/final-explain-screen.js?v=001"></script>
+</body>
+</html>
