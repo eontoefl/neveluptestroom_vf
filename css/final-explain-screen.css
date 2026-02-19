@@ -1,0 +1,230 @@
+/* Final Explain Screen - 최종 해설 화면 전용 스타일 */
+/* 리딩/리스닝과 완전히 독립적인 CSS */
+
+/* 최상위 컨테이너 */
+#finalExplainScreen {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 40px;
+}
+
+/* 헤더 */
+.final-header {
+    background: white;
+    padding: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    text-align: center;
+}
+
+.final-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* 아이콘 */
+.final-icon {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* Reading 아이콘 (책) */
+.final-icon-reading {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.final-icon-reading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 2px;
+    background: white;
+    box-shadow: 
+        0 -5px 0 white,
+        0 5px 0 white;
+}
+
+/* Listening 아이콘 (헤드폰) */
+.final-icon-listening {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.final-icon-listening::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+}
+
+.final-icon-listening::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 6px;
+    width: 4px;
+    height: 8px;
+    background: white;
+    border-radius: 2px 0 0 2px;
+    box-shadow: 12px 0 0 white;
+}
+
+/* 요약 통계 섹션 */
+.final-summary {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.final-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.final-stat-box {
+    background: #f8fafc;
+    padding: 16px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.final-stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.final-stat-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.final-stat-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+}
+
+.final-stat-value.first {
+    color: #f59e0b;
+}
+
+.final-stat-value.second {
+    color: #3b82f6;
+}
+
+.final-stat-box.improvement .final-stat-value {
+    color: #10b981;
+}
+
+/* 유형 제목 */
+.final-section-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.final-section-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+}
+
+/* 세부 결과 컨테이너 */
+.final-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    min-height: 400px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 네비게이션 */
+.final-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 0;
+}
+
+.final-navigation .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+}
+
+.final-navigation .btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.final-navigation .btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.final-navigation .btn-primary {
+    background: #9480c5;
+    color: white;
+}
+
+.final-navigation .btn-primary:hover {
+    background: #7d6aaa;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .final-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .final-navigation {
+        flex-direction: column;
+    }
+    
+    .final-header h2 {
+        font-size: 18px;
+    }
+}

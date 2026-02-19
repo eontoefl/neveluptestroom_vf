@@ -1,0 +1,580 @@
+/* 응답고르기 결과 화면 스타일 - 리딩 채점화면과 유사하되 오디오 재생 기능 추가 */
+
+/* 세트 섹션 */
+.result-set-section {
+    margin-bottom: 30px;
+}
+
+.result-section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.result-section-title i {
+    color: var(--primary-color);
+}
+
+/* 오디오 섹션 */
+.audio-section {
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid #e0e7ff;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+}
+
+.audio-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.audio-title i {
+    color: var(--primary-color);
+    font-size: 20px;
+}
+
+/* 오디오 플레이어 - 한 줄에 모두 배치 */
+.audio-player-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* 재생/정지 버튼 - 배경 없는 아이콘 */
+.audio-play-btn {
+    background: transparent !important;
+    color: var(--primary-color) !important;
+    border: none !important;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, filter 0.2s !important;
+    flex-shrink: 0;
+}
+
+.audio-play-btn:hover {
+    background: transparent !important;
+    color: var(--primary-color) !important;
+    transform: scale(1.15) !important;
+    filter: drop-shadow(0 3px 6px rgba(102, 126, 234, 0.5)) !important;
+}
+
+.audio-play-btn:active {
+    transform: scale(1.05) !important;
+}
+
+.audio-play-btn:disabled {
+    color: #9ca3af !important;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.audio-play-btn span {
+    display: none;
+}
+
+/* 시크바 + 시간 영역 */
+.audio-seek-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+/* 시크바 */
+.audio-seek-bar {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+}
+
+.audio-seek-progress {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    transition: width 0.1s linear;
+    position: relative;
+}
+
+.audio-seek-handle {
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    cursor: grab;
+}
+
+.audio-seek-handle:active {
+    cursor: grabbing;
+}
+
+.audio-seek-bar:hover .audio-seek-handle {
+    width: 18px;
+    height: 18px;
+    right: -9px;
+}
+
+/* 시간 표시 */
+.audio-time {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    min-width: 90px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.audio-script {
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    margin-top: 8px;
+}
+
+/* 문제 카드 */
+.response-result-item {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #fafbfc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+.response-result-item.correct {
+    border-color: #d1fae5;
+    background: #f0fdf4;
+}
+
+.response-result-item.incorrect {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.question-number {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.result-status i {
+    font-size: 24px;
+}
+
+/* 답변 영역 */
+.response-answer-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    margin-right: 20px;
+}
+
+.response-answer-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.response-answer-value {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    background: #f3f4f6;
+    color: var(--text-primary);
+    border: 1.5px solid #e5e7eb;
+}
+
+.response-answer-value.correct {
+    background: #dcfce7;
+    color: #059669;
+    border-color: #10b981;
+}
+
+.response-answer-value.incorrect {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #ef4444;
+}
+
+/* 1차 정답 (First Try Correct) - 내 답변 박스만 */
+.response-answer-value.first-correct {
+    background: #d1fae5;
+    color: #047857;
+    border: 2px solid #10b981;
+    font-weight: 700;
+}
+
+/* 1차 오답 → 2차 정답 (Improved) - 내 답변 박스만 + 빛나는 효과 */
+.response-answer-value.improved {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 2px solid #3b82f6;
+    font-weight: 700;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3);
+    }
+}
+
+/* 1차 오답 → 2차 오답 (Still Wrong) - 내 답변 박스만 */
+.response-answer-value.still-wrong {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 2px solid #ef4444;
+    font-weight: 700;
+}
+
+/* 피드백 메시지 (인라인) */
+.feedback-message-inline {
+    font-size: 10pt;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* 컨버 & 공지사항 답변 행 스타일 */
+.conver-answer-row,
+.announcement-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.conver-answer-label,
+.announcement-answer-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 70px;
+    flex-shrink: 0;
+}
+
+.conver-answer-value,
+.announcement-answer-value {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    border: 2px solid #e5e7eb;
+    background: #f9fafb;
+    flex: 1;
+}
+
+/* 컨버 & 공지사항 1차 정답 (초록) */
+.conver-answer-value.first-correct,
+.announcement-answer-value.first-correct {
+    background: #d1fae5 !important;
+    color: #047857 !important;
+    border: 2px solid #10b981 !important;
+    font-weight: 600;
+}
+
+/* 컨버 & 공지사항 개선 (파란, 빛나는 효과) */
+.conver-answer-value.improved,
+.announcement-answer-value.improved {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+    border: 2px solid #3b82f6 !important;
+    font-weight: 600;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 컨버 & 공지사항 여전히 틀림 (회색) */
+.conver-answer-value.still-wrong,
+.announcement-answer-value.still-wrong {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    border: 2px solid #ef4444 !important;
+    font-weight: 600;
+}
+
+/* 컨버 & 공지사항 정답 박스 */
+.conver-answer-value.correct,
+.announcement-answer-value.correct {
+    background: #dcfce7;
+    color: #059669;
+    border: 2px solid #10b981;
+    font-weight: 600;
+}
+
+/* 컨버 & 공지사항 결과 아이템 */
+.conver-result-item,
+.announcement-result-item {
+    margin-bottom: 24px;
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    background: #ffffff;
+}
+
+.conver-result-item.correct,
+.announcement-result-item.correct {
+    background: #f0fdf4;
+    border-color: #86efac;
+}
+
+.conver-result-item.incorrect,
+.announcement-result-item.incorrect {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+/* 보기 해설 */
+.options-explanation-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.toggle-explanation-btn {
+    padding: 10px 16px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-explanation-btn:hover {
+    background: #f9fafb;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-explanation-btn i {
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.options-details {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.option-detail {
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.option-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.option-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+/* 보기 배지 스타일 */
+.option-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.option-badge.correct-only {
+    background: #dcfce7;
+    color: #047857;
+    border: 1.5px solid #10b981;
+}
+
+.option-badge.correct-and-user {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1.5px solid #059669;
+}
+
+.option-badge.user-only {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1.5px solid #ef4444;
+}
+
+.option-translation {
+    font-size: 14px;
+    color: #9ca3af;
+    font-style: italic;
+    margin-left: 16px;
+    margin-bottom: 2px;
+}
+
+.option-explanation {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 2px;
+}
+
+.option-explanation strong {
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 2px;
+}
+
+.option-explanation.correct {
+    background: #f0fdf4;
+    color: #065f46;
+}
+
+.option-explanation.incorrect {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* 답변 요약 */
+.answer-summary {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* 문제 섹션 */
+.questions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .result-section-title {
+        font-size: 20px;
+    }
+    
+    .audio-section {
+        padding: 12px;
+    }
+    
+    .audio-player-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .audio-play-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .response-result-item {
+        padding: 12px;
+    }
+}
+
+/* 키워드 하이라이트 스타일 */
+.response-keyword-highlight {
+    color: var(--primary-color);
+    font-weight: 600;
+    background: rgba(148, 128, 197, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.response-keyword-highlight:hover {
+    background: rgba(148, 128, 197, 0.2);
+    color: #7d6ab5;
+}
+
+/* 툴팁 박스 */
+.response-tooltip {
+    position: absolute;
+    background: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    max-width: 300px;
+    animation: tooltipFadeIn 0.2s ease;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tooltip-translation {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 6px;
+}
+
+.tooltip-explanation {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+}
