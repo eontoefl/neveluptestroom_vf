@@ -46,7 +46,7 @@ function executeTask(taskName) {
         case 'vocab':
             // 내벨업보카 시험 시작
             console.log(`  🔹 내벨업보카 시작 - 페이지: ${parsed.params.pages.join(', ')}`);
-            startVocabTest(parsed.params.pages);
+            _launchVocabModule(parsed.params.pages);
             break;
             
         case 'intro-book':
@@ -86,10 +86,11 @@ function executeTask(taskName) {
 }
 
 /**
- * 내벨업보카 시험 시작
+ * 내벨업보카 모듈 시작 (initVocabTest 호출)
+ * ⚠️ startVocabTest와 이름 충돌 방지 - vocab-test-logic-v2.js에 같은 이름 함수 있음
  * @param {Array<number>} pages - 페이지 번호 배열
  */
-function startVocabTest(pages) {
+function _launchVocabModule(pages) {
     // 페이지 배열을 문자열로 변환 (예: [5, 6, 7] -> "5-7")
     let pageRange;
     if (pages.length === 1) {

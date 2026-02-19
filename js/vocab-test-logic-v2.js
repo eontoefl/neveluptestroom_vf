@@ -39,18 +39,27 @@ function parseCSVLine(line) {
     return result;
 }
 
-// 페이지 범위 파싱 (예: "5-6" → [5, 6])
+// 페이지 범위 파싱 (예: "5-6" → [5, 6], "5,7,9" → [5,7,9], "5-7" → [5,6,7])
 function parsePageRange(pageRange) {
-    if (pageRange.includes('-')) {
-        const [start, end] = pageRange.split('-').map(p => parseInt(p.trim()));
+    const str = String(pageRange).trim();
+    
+    // 쉼표 구분 (예: "5,6,7" 또는 "5, 6, 7")
+    if (str.includes(',')) {
+        return str.split(',').map(p => parseInt(p.trim())).filter(n => !isNaN(n));
+    }
+    
+    // 하이픈 범위 (예: "5-7")
+    if (str.includes('-')) {
+        const [start, end] = str.split('-').map(p => parseInt(p.trim()));
         const pages = [];
         for (let i = start; i <= end; i++) {
             pages.push(i);
         }
         return pages;
-    } else {
-        return [parseInt(pageRange.trim())];
     }
+    
+    // 단일 페이지
+    return [parseInt(str)].filter(n => !isNaN(n));
 }
 
 // 데이터 로드
@@ -192,6 +201,13 @@ function updateVocabTestTitle(pageRange) {
 function startVocabTest() {
     console.log('✅ 내벨업보카 시험 시작');
     
+    // ★ 데이터가 없으면 시작 불가
+    if (!pageGroups || pageGroups.length === 0) {
+        console.error('❌ 단어 데이터가 없습니다. 데이터 로드를 확인하세요.');
+        alert('단어 데이터를 불러오지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+        return;
+    }
+    
     // 사용자 답안 초기화
     vocabUserAnswers = {};
     currentPageIndex = 0;
@@ -209,6 +225,13 @@ function renderCurrentPage() {
     const currentGroup = pageGroups[currentPageIndex];
     const container = document.getElementById('vocabTestContainer');
     container.innerHTML = '';
+    
+    // ★ 방어 코드: 데이터가 없으면 중단
+    if (!currentGroup || !currentGroup.data) {
+        console.error('❌ renderCurrentPage: 현재 페이지 데이터 없음', { currentPageIndex, pageGroupsLength: pageGroups.length });
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;"><p>📭 해당 페이지의 단어 데이터가 없습니다.</p><p>데이터 로드에 실패했을 수 있습니다.</p></div>';
+        return;
+    }
     
     // 진행 상태 업데이트 - 🎯 구조화된 HTML로 변경
     const progressHTML = `
