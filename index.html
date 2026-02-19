@@ -1471,24 +1471,25 @@
             <button class="btn-back-to-schedule" onclick="backToSchedule()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
+            <div class="test-progress">
+                <span id="responseProgress">Question 1 of 12</span>
+            </div>
             <div class="test-title">
-                <i class="fas fa-headphones"></i>
-                <span>Listening - Choose Response</span>
+                <span id="responseHeaderTitle"><i class="fas fa-headphones"></i> 응답고르기</span>
             </div>
             <div class="test-header-right">
-                <div class="test-progress">
-                    <span id="responseProgress">Question 1 of 12</span>
-                </div>
-                <div class="test-timer">
+                <div class="test-timer" id="responseTimerWrap">
                     <i class="fas fa-clock"></i>
-                    <span class="timer" id="responseTimer">0:20</span>
+                    <span id="responseTimer">0:20</span>
                 </div>
-                <!-- Next/Submit 버튼 -->
+                <div class="retake-badge" id="responseRetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
+                </div>
                 <button id="responseNextBtn" class="btn btn-primary" onclick="nextResponseQuestion()">
-                    Next <i class="fas fa-arrow-right"></i>
+                    Next
                 </button>
-                <button id="responseSubmitBtn" class="btn btn-success" onclick="submitListeningResponse()" style="display: none;">
-                    <i class="fas fa-check"></i> Submit
+                <button id="responseSubmitBtn" class="btn btn-primary" onclick="submitListeningResponse()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -1575,23 +1576,25 @@
             <button class="btn-back-to-schedule" onclick="backToSchedule()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
+            <div class="test-progress">
+                <span id="converProgress">Question 1 of 2</span>
+            </div>
             <div class="test-title">
-                <i class="fas fa-headphones"></i>
-                <span>Listening - Conversation</span>
+                <span id="converHeaderTitle"><i class="fas fa-headphones"></i> 대화</span>
             </div>
             <div class="test-header-right">
-                <div class="test-progress">
-                    <span id="converProgress" style="display: none;">Question 1 of 2</span>
+                <div class="test-timer" id="converTimerWrap">
+                    <i class="fas fa-clock"></i>
+                    <span id="converTimer">0:20</span>
                 </div>
-                <div class="test-timer">
-                    <span class="timer" id="converTimer" style="display: none;">0:20</span>
+                <div class="retake-badge" id="converRetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
                 </div>
-                <!-- Next/Submit 버튼 -->
                 <button id="converNextBtn" class="btn btn-primary" onclick="nextConverQuestion()">
-                    Next <i class="fas fa-arrow-right"></i>
+                    Next
                 </button>
-                <button id="converSubmitBtn" class="btn btn-success" onclick="submitListeningConver()" style="display: none;">
-                    <i class="fas fa-check"></i> Submit
+                <button id="converSubmitBtn" class="btn btn-primary" onclick="submitListeningConver()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -1683,23 +1686,25 @@
             <button class="btn-back-to-schedule" onclick="backToSchedule()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
+            <div class="test-progress">
+                <span id="announcementProgress">Question 1 of 2</span>
+            </div>
             <div class="test-title">
-                <i class="fas fa-headphones"></i>
-                <span>Listening - Announcement</span>
+                <span id="announcementHeaderTitle"><i class="fas fa-headphones"></i> 공지사항</span>
             </div>
             <div class="test-header-right">
-                <div class="test-progress">
-                    <span id="announcementProgress">Question 1 of 2</span>
+                <div class="test-timer" id="announcementTimerWrap">
+                    <i class="fas fa-clock"></i>
+                    <span id="announcementTimer">00:20</span>
                 </div>
-                <div class="test-timer">
-                    <span class="timer" id="announcementTimer">00:20</span>
+                <div class="retake-badge" id="announcementRetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
                 </div>
-                <!-- Next/Submit 버튼 -->
                 <button id="announcementNextBtn" class="btn btn-primary" onclick="nextAnnouncementQuestion()">
-                    Next <i class="fas fa-arrow-right"></i>
+                    Next
                 </button>
-                <button id="announcementSubmitBtn" class="btn btn-success" onclick="submitListeningAnnouncement()" style="display: none;">
-                    <i class="fas fa-check"></i> Submit
+                <button id="announcementSubmitBtn" class="btn btn-primary" onclick="submitListeningAnnouncement()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -1842,23 +1847,25 @@
             <button class="btn-back-to-schedule" onclick="backToSchedule()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
+            <div class="test-progress">
+                <span id="lectureProgress">Question 1 of 4</span>
+            </div>
             <div class="test-title">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <span>Listening - Lecture</span>
+                <span id="lectureHeaderTitle"><i class="fas fa-headphones"></i> 렉쳐</span>
             </div>
             <div class="test-header-right">
-                <div class="test-progress">
-                    <span id="lectureProgress">Question 1 of 4</span>
+                <div class="test-timer" id="lectureTimerWrap">
+                    <i class="fas fa-clock"></i>
+                    <span id="lectureTimer">00:30</span>
                 </div>
-                <div class="test-timer">
-                    <span class="timer" id="lectureTimer">00:20</span>
+                <div class="retake-badge" id="lectureRetakeBadge" style="display:none;">
+                    🔄 2차 (제한없음)
                 </div>
-                <!-- Next/Submit 버튼 -->
                 <button id="lectureNextBtn" class="btn btn-primary" onclick="nextLectureQuestion()">
-                    Next <i class="fas fa-arrow-right"></i>
+                    Next
                 </button>
-                <button id="lectureSubmitBtn" class="btn btn-success" onclick="submitListeningLecture()" style="display: none;">
-                    <i class="fas fa-check"></i> Submit
+                <button id="lectureSubmitBtn" class="btn btn-primary" onclick="submitListeningLecture()" style="display: none;">
+                    Submit
                 </button>
             </div>
         </div>
@@ -1911,6 +1918,9 @@
                     <i class="fas fa-clock"></i>
                     <span id="arrangeTimer">6:50</span>
                 </div>
+                <button id="arrangePrevBtn" class="btn btn-secondary" onclick="prevArrangeQuestion()" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Prev
+                </button>
                 <button id="arrangeNextBtn" class="btn btn-primary" onclick="nextArrangeQuestion()">
                     Next <i class="fas fa-arrow-right"></i>
                 </button>
@@ -2298,6 +2308,7 @@
                 <div class="discussion-result-problem" id="discussionResultProblem" style="display: none;">
                     <p class="discussion-problem-context" id="discussionResultContext"></p>
                     <p class="discussion-problem-topic" id="discussionResultTopic"></p>
+                    <div id="discussionResultStudentOpinions" style="margin-top:12px;"></div>
                 </div>
             </div>
 
@@ -2329,18 +2340,70 @@
         </div>
     </div>
 
+    <!-- Writing - 단어배열 비교 화면 (1차 vs 2차) -->
+    <div id="writingArrangeCompareScreen" class="screen">
+        <div class="test-header">
+            <div class="test-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>Build a Sentence - 해설</span>
+            </div>
+        </div>
+        <div class="test-content" style="overflow-y:auto; height:calc(100vh - 60px);">
+            <!-- WritingFlow.renderArrangeCompare()가 동적으로 채움 -->
+        </div>
+    </div>
+
+    <!-- Writing - 이메일 한글 번역 해설 화면 -->
+    <div id="writingEmailExplainScreen" class="screen">
+        <div class="test-header">
+            <div class="test-title">
+                <i class="fas fa-envelope"></i>
+                <span>Write an Email - 모범답안 번역</span>
+            </div>
+        </div>
+        <div class="test-content" style="overflow-y:auto; height:calc(100vh - 60px);">
+            <!-- WritingFlow.renderEmailExplain()가 동적으로 채움 -->
+        </div>
+    </div>
+
+    <!-- Writing - 토론형 한글 번역 해설 화면 -->
+    <div id="writingDiscussionExplainScreen" class="screen">
+        <div class="test-header">
+            <div class="test-title">
+                <i class="fas fa-comments"></i>
+                <span>Academic Discussion - 모범답안 번역</span>
+            </div>
+        </div>
+        <div class="test-content" style="overflow-y:auto; height:calc(100vh - 60px);">
+            <!-- WritingFlow.renderDiscussionExplain()가 동적으로 채움 -->
+        </div>
+    </div>
+
+    <!-- Writing - 최종 해설 화면 -->
+    <div id="writingFinalExplainScreen" class="screen">
+        <div class="test-header">
+            <div class="test-title">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Writing - 최종 해설</span>
+            </div>
+        </div>
+        <div class="test-content" style="overflow-y:auto; height:calc(100vh - 60px);">
+            <!-- WritingFlow.renderFinalExplain()가 동적으로 채움 -->
+        </div>
+    </div>
+
     <!-- Speaking - 따라말하기 섹션 -->
     <div id="speakingRepeatScreen" class="screen">
         <div class="test-header">
             <button class="btn-back-to-schedule" onclick="backToSchedule()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
-            <div class="test-title">
-                <i class="fas fa-microphone"></i>
-                <span>Speaking</span>
-            </div>
             <div class="test-progress">
                 <span id="repeatProgress">Question 1 of 7</span>
+            </div>
+            <div class="test-title" id="repeatHeaderTitle">
+                <i class="fas fa-microphone"></i>
+                <span>🎙️ 따라말하기</span>
             </div>
         </div>
         
@@ -2476,33 +2539,15 @@
     <!-- Speaking - 인터뷰 섹션 -->
     <div id="speakingInterviewScreen" class="screen">
         <div class="test-header">
-            <div class="test-header-left">
-                <button class="btn-back-to-schedule" onclick="backToSchedule()">
-                    <i class="fas fa-arrow-left"></i> 학습 일정
-                </button>
-                <div class="test-progress">
-                    <span id="interviewProgress">Question 1 of 4</span>
-                </div>
+            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+                <i class="fas fa-arrow-left"></i> 학습 일정
+            </button>
+            <div class="test-progress">
+                <span id="interviewProgress">Question 1 of 4</span>
             </div>
-            <div class="test-title">
-                <i class="fas fa-user-tie"></i>
-                <span>Speaking</span>
-            </div>
-            <div class="test-header-right">
-                <!-- 볼륨 조절 버튼 -->
-                <div class="volume-control">
-                    <button class="volume-btn" onclick="toggleVolumeSlider()">
-                        <i class="fas fa-volume-up" id="volumeIcon"></i>
-                    </button>
-                    <div class="volume-slider-container" id="volumeSliderContainer" style="display: none;">
-                        <input type="range" min="0" max="100" value="70" class="volume-slider" id="interviewVolumeSlider" oninput="updateInterviewVolume(this.value)">
-                        <span class="volume-percentage" id="volumePercentage">70%</span>
-                    </div>
-                </div>
-                <!-- 테스트용 채점 화면 버튼 -->
-                <button class="btn-test-result" onclick="goToInterviewResult()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                    📊 채점 화면 (Test)
-                </button>
+            <div class="test-title" id="interviewHeaderTitle">
+                <i class="fas fa-microphone"></i>
+                <span>🎙️ 인터뷰</span>
             </div>
         </div>
         
@@ -3061,7 +3106,7 @@
     <script src="js/data.js?v=20250209-pages"></script>
     <script src="js/schedule-data.js?v=001"></script>
     <script src="js/task-router.js?v=007"></script>
-    <script src="js/FlowController.js?v=008"></script>
+    <script src="js/FlowController.js?v=009_writing_flow"></script>
     <script src="js/tasks.js?v=002"></script>
     <!-- 빈칸채우기 Component -->
     <script src="js/components/FillBlanksComponent.js?v=019"></script>
@@ -3083,45 +3128,48 @@
     <script src="js/components/AudioPlayer.js?v=004"></script>
     <!-- 응답고르기 Component -->
     <script src="js/components/ResponseComponent.js?v=20260215_key_fix_001"></script>
-    <script src="js/listening-response-logic.js?v=20250212-020"></script>
+    <script src="js/listening-response-logic.js?v=20250219_timer_fix"></script>
     <!-- 컨버 Component -->
-    <script src="js/components/ConverComponent.js?v=20260215_retake_fix_001"></script>
-    <script src="js/listening-conver-logic.js?v=004"></script>
+    <script src="js/components/ConverComponent.js?v=20260219_intro_hide"></script>
+    <script src="js/listening-conver-logic.js?v=005_timer_fix"></script>
     <!-- 공지사항 Component -->
-    <script src="js/components/AnnouncementComponent.js?v=003_fix"></script>
-    <script src="js/listening-announcement-logic.js?v=010"></script>
+    <script src="js/components/AnnouncementComponent.js?v=004_intro_hide"></script>
+    <script src="js/listening-announcement-logic.js?v=011_timer_fix"></script>
     <script src="js/listening-announcement-result.js?v=004"></script>
     <!-- 렉쳐 Component -->
-    <script src="js/components/LectureComponent.js?v=002_restore"></script>
-    <script src="js/listening-lecture-logic.js?v=006_restore"></script>
-    <script src="js/listening-lecture-logic-fixed.js?v=001_restore"></script>
+    <script src="js/components/LectureComponent.js?v=003_intro_hide"></script>
+    <script src="js/listening-lecture-logic.js?v=007_timer_fix"></script>
+    <script src="js/listening-lecture-logic-fixed.js?v=002_result_only"></script>
     <!-- listening-lecture-result.js 비활성화: 예전 버전(listening-lecture-logic.js) 사용 -->
 <!-- <script src="js/listening-lecture-result.js?v=20260218_001"></script> -->
     <!-- 단어배열 Component -->
-    <script src="js/components/ArrangeComponent.js?v=001"></script>
-    <script src="js/writing-arrange-logic.js?v=20250212-001"></script>
+    <script src="js/components/ArrangeComponent.js?v=003_retake_full"></script>
+    <script src="js/writing-arrange-logic.js?v=20250219-002"></script>
     <!-- 이메일작성 Component -->
     <script src="js/components/EmailComponent.js?v=001"></script>
-    <script src="js/writing-email-logic.js?v=011"></script>
+    <script src="js/writing-email-logic.js?v=012"></script>
     <script src="js/writing-email-result.js?v=013"></script>
     <!-- 토론형글쓰기 Component -->
     <script src="js/components/DiscussionComponent.js?v=001"></script>
-    <script src="js/writing-discussion-logic-v2.js?v=20250212-001"></script>
+    <script src="js/writing-discussion-logic-v2.js?v=20250219-002"></script>
     <script src="js/writing-discussion-result.js?v=003"></script>
+    <!-- 라이팅 한글 번역 + 라이팅 플로우 -->
+    <script src="js/writing-ko-data.js?v=003"></script>
+    <script src="js/writing-flow.js?v=006"></script>
     <!-- 따라말하기 Component -->
     <script src="js/components/RepeatComponent.js?v=001"></script>
     <script src="js/speaking-repeat-logic.js?v=20250212-001"></script>
     <!-- 인터뷰 Component -->
-    <script src="js/components/InterviewComponent.js?v=001"></script>
+    <script src="js/components/InterviewComponent.js?v=002_header"></script>
     <script src="js/speaking-interview-logic.js?v=20250212-001"></script>
     <!-- ComponentPatch: RepeatComponent, InterviewComponent에 init() 추가 -->
     <script src="js/ComponentPatch.js?v=003"></script></script>
     
     <!-- 모듈 시스템 -->
     <script src="js/module-definitions.js?v=002"></script>
-    <script src="js/module-controller.js?v=009_fix_next"></script>
+    <script src="js/module-controller.js?v=012_speaking_header"></script>
     <script src="js/result-controller.js?v=008"></script>
-    <script src="js/retake-controller.js?v=20260219_header"></script>
+    <script src="js/retake-controller.js?v=20260219_listening_header"></script>
     
     <script src="js/reading-module-controller.js?v=001"></script>
     <script src="js/listening-module-controller.js?v=001"></script>
