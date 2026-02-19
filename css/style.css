@@ -414,29 +414,34 @@ body {
     font-weight: 400;
 }
 
-/* Test Header */
+/* Test Header - 통일 헤더 */
 .test-header {
     background: var(--surface-color);
-    padding: 20px 30px;
+    padding: 12px 24px;
     box-shadow: var(--shadow);
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
     align-items: center;
     gap: 20px;
     position: relative;
+    min-height: 56px;
 }
 
 .test-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 18px;
+    gap: 8px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--text-primary);
-    justify-self: center;
+    white-space: nowrap;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+}
+
+.test-title i {
+    color: var(--primary-color);
+    font-size: 18px;
 }
 
 .btn-back-to-schedule {
@@ -466,49 +471,71 @@ body {
     font-size: 14px;
 }
 
-.test-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: center;
-    gap: 12px;
-    font-size: 20px;
-    font-weight: 400;
-    color: var(--text-primary);
-}
-
 .test-title i {
     color: var(--primary-color);
-    font-size: 24px;
+    font-size: 16px;
 }
 
 .test-progress {
     display: flex;
     align-items: center;
-    gap: 15px;
-    font-size: 17px;
+    gap: 8px;
+    font-size: 14px;
     color: var(--text-secondary);
     font-weight: 600;
-    justify-self: start;
+    white-space: nowrap;
 }
 
-.test-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: center;
-    gap: 12px;
-    font-size: 20px;
-    font-weight: 400;
-    color: var(--text-primary);
-}
+
 
 .test-header-right {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 25px;
+    gap: 16px;
     margin-left: auto;
+    white-space: nowrap;
+}
+
+/* 2차 풀이 뱃지 */
+.retake-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: rgba(102, 51, 153, 0.08);
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* 헤더 안 버튼 크기 통일 */
+.test-header-right .btn {
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    min-width: 80px;
+    box-sizing: border-box;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.test-header-right .btn-secondary {
+    border: 1.5px solid var(--border-color);
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.test-header-right .btn-secondary:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(102, 51, 153, 0.05);
 }
 
 .test-header-left {
@@ -520,10 +547,11 @@ body {
 .test-timer {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 20px;
-    font-weight: 400;
+    gap: 6px;
+    font-size: 16px;
+    font-weight: 600;
     color: var(--primary-color);
+    white-space: nowrap;
 }
 
 /* Test Content */
@@ -998,8 +1026,27 @@ body {
     }
 
     .test-header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+    
+    .test-title {
+        position: static;
+        transform: none;
+        order: -1;
+        width: 100%;
+        justify-content: flex-start;
+        font-size: 13px;
+    }
+    
+    .test-progress {
+        font-size: 12px;
+    }
+    
+    .retake-badge {
+        font-size: 11px;
+        padding: 4px 10px;
     }
 
     .navigation-buttons {
