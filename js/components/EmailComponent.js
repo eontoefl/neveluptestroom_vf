@@ -455,7 +455,7 @@ class EmailComponent {
         });
         
         let txtContent = `====================================\n`;
-        txtContent += `Writing - Email\n`;
+        txtContent += `Writing - Email (${window.currentAttemptNumber === 2 ? '2차 작성' : '1차 작성'})\n`;
         txtContent += `제출 일시: ${dateStr}\n`;
         txtContent += `====================================\n\n`;
         
@@ -488,7 +488,7 @@ class EmailComponent {
         link.href = url;
         
         // 파일명: Writing_Email_YYYYMMDD_HHMMSS.txt
-        const fileName = `Writing_Email_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}.txt`;
+        const fileName = `Writing_Email_${window.currentAttemptNumber === 2 ? '2차' : '1차'}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}.txt`;
         link.download = fileName;
         
         document.body.appendChild(link);
