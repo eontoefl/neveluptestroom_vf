@@ -1,7 +1,7 @@
 /**
  * ArrangeComponent.js
  * 라이팅 - 단어배열 (Build a Sentence) 컴포넌트
- * v=001
+ * v=002_retake
  * 
  * 특징:
  * - 대화형 UI (두 사람 프로필 + 문장)
@@ -87,6 +87,18 @@ class ArrangeComponent {
             
             this.currentSetData = this.data.sets[setIndex];
             console.log('[ArrangeComponent] 세트 데이터 로드 완료:', this.currentSetData);
+            
+            // ★ 2차 리테이크 모드: 전체 순회 (틀린 문제만 표시가 아닌 전체 1-10 순회)
+            if (window.isArrangeRetake && window.arrangeRetakeWrongIndices) {
+                this.isRetakeMode = true;
+                this.retakeWrongIndices = window.arrangeRetakeWrongIndices;
+                // 1차에서 맞은 문제의 정답을 미리 채워넣기
+                this.prefillCorrectAnswers();
+                console.log(`🔄 [ArrangeComponent] 리테이크 모드 - 전체 ${this.currentSetData.questions.length}문제 순회 (틀린 ${this.retakeWrongIndices.length}개)`);
+            } else {
+                this.isRetakeMode = false;
+                this.retakeWrongIndices = [];
+            }
             
             // 3. 첫 번째 문제 로드
             this.loadQuestion(0);
@@ -279,10 +291,23 @@ class ArrangeComponent {
         // 문제 렌더링
         this.renderQuestion(question);
         
+        // ★ 리테이크 모드: floating UI 표시
+        if (this.isRetakeMode) {
+            this.showRetakeFloatingUI(questionIndex);
+        }
+        
         console.log(`[ArrangeComponent] 문제 ${questionIndex + 1} 로드 완료`);
         
-        // 마지막 문제면 Submit 버튼 표시
+        // 버튼 상태 업데이트
         const totalQuestions = this.currentSetData.questions.length;
+        
+        // Prev 버튼: 첫 문제가 아니면 표시
+        const prevBtn = document.getElementById('arrangePrevBtn');
+        if (prevBtn) {
+            prevBtn.style.display = questionIndex > 0 ? 'inline-block' : 'none';
+        }
+        
+        // Next/Submit 버튼
         if (questionIndex >= totalQuestions - 1) {
             document.getElementById('arrangeNextBtn').style.display = 'none';
             document.getElementById('arrangeSubmitBtn').style.display = 'inline-block';
@@ -293,10 +318,29 @@ class ArrangeComponent {
     }
     
     /**
+     * 이전 문제로 이동 (Prev 버튼에서 호출)
+     */
+    prevQuestion() {
+        const prevIndex = this.currentQuestion - 1;
+        if (prevIndex < 0) return;
+        
+        this.loadQuestion(prevIndex);
+        
+        const totalQuestions = this.currentSetData.questions.length;
+        const progressEl = document.getElementById('arrangeProgress');
+        if (progressEl) {
+            progressEl.textContent = `Question ${prevIndex + 1} of ${totalQuestions}`;
+        }
+    }
+    
+    /**
      * 문제 렌더링
      */
     renderQuestion(question) {
         const container = document.getElementById('arrangeQuestionContent');
+        
+        // ★ 리테이크 모드에서 맞은 문제인지 확인
+        const isReadonly = this.isRetakeMode && !this.retakeWrongIndices.includes(this.currentQuestion);
         
         // 저장된 답안 불러오기
         const questionKey = `${this.currentSetData.setId}_q${question.questionNum}`;
@@ -321,6 +365,16 @@ class ArrangeComponent {
             const userWord = savedAnswer && savedAnswer[index] ? savedAnswer[index] : null;
             
             if (isBlank) {
+                if (isReadonly) {
+                    // ★ readonly: 정답이 채워진 상태, 드래그/클릭 불가, 초록색 스타일
+                    return `
+                        <div class="arrange-blank has-word" 
+                             data-index="${index}" 
+                             style="background:#e8f5e9; border-color:#4CAF50; cursor:default; pointer-events:none;">
+                            <span class="filled-word" style="color:#2e7d32; font-weight:700;">${userWord || ''}</span>
+                        </div>
+                    `;
+                }
                 return `
                     <div class="arrange-blank ${userWord ? 'has-word' : ''}" 
                          data-index="${index}" 
@@ -349,13 +403,15 @@ class ArrangeComponent {
         
         // 하단 보기 단어들
         const usedWords = savedAnswer ? Object.values(savedAnswer) : [];
+        // ★ 대소문자 무시 비교 (첫 빈칸 대문자 변환 대응)
+        const usedWordsLower = usedWords.map(w => w.toLowerCase());
         const optionsHtml = question.optionWords.map(word => {
-            const isUsed = usedWords.includes(word);
+            const isUsed = isReadonly || usedWordsLower.includes(word.toLowerCase());
             return `
                 <div class="arrange-option ${isUsed ? 'used' : ''}" 
                      draggable="${!isUsed}" 
-                     ondragstart="window.currentArrangeComponent.dragStart(event)" 
-                     ondragend="window.currentArrangeComponent.dragEnd(event)"
+                     ${!isReadonly ? `ondragstart="window.currentArrangeComponent.dragStart(event)" 
+                     ondragend="window.currentArrangeComponent.dragEnd(event)"` : ''}
                      data-word="${word}">
                     ${word}
                 </div>
@@ -439,6 +495,11 @@ class ArrangeComponent {
      * 단어 제거 (클릭)
      */
     removeWord(index) {
+        // ★ 리테이크에서 맞은 문제는 제거 불가
+        if (this.isRetakeMode && !this.retakeWrongIndices.includes(this.currentQuestion)) {
+            return;
+        }
+        
         const question = this.currentSetData.questions[this.currentQuestion];
         const questionKey = `${this.currentSetData.setId}_q${question.questionNum}`;
         
@@ -448,6 +509,143 @@ class ArrangeComponent {
             
             // 화면 재렌더링
             this.renderQuestion(question);
+        }
+    }
+    
+    /**
+     * ★ 리테이크: 1차에서 맞은 문제에 정답을 미리 채우기
+     */
+    prefillCorrectAnswers() {
+        if (!this.currentSetData || !this.currentSetData.questions) return;
+        
+        this.currentSetData.questions.forEach((question, idx) => {
+            // 맞은 문제만 (wrongIndices에 없는 것)
+            if (!this.retakeWrongIndices.includes(idx)) {
+                const questionKey = `${this.currentSetData.setId}_q${question.questionNum}`;
+                this.answers[questionKey] = {};
+                
+                // correctAnswer 배열에서 빈칸 위치에 맞는 단어를 채움
+                question.presentedWords.forEach((word, wordIdx) => {
+                    if (word === '_') {
+                        // correctAnswer에서 대응하는 단어 찾기
+                        const correctWord = question.correctAnswer[wordIdx];
+                        if (correctWord) {
+                            this.answers[questionKey][wordIdx] = correctWord;
+                        }
+                    }
+                });
+                
+                console.log(`✅ [ArrangeComponent] Q${question.questionNum} 정답 미리 채움`);
+            }
+        });
+    }
+    
+    /**
+     * ★ 리테이크: Floating UI 표시
+     */
+    showRetakeFloatingUI(questionIndex) {
+        // 기존 floating 제거
+        const existing = document.getElementById('arrangeRetakeFloating');
+        if (existing) existing.remove();
+        
+        const isWrong = this.retakeWrongIndices.includes(questionIndex);
+        const total = this.currentSetData.questions.length;
+        const isFirst = questionIndex === 0;
+        const isLast = questionIndex >= total - 1;
+        
+        const floatingDiv = document.createElement('div');
+        floatingDiv.id = 'arrangeRetakeFloating';
+        floatingDiv.className = isWrong ? 'retake-floating wrong' : 'retake-floating correct';
+        
+        const prevBtnHtml = !isFirst 
+            ? `<button class="retake-prev-btn" onclick="window.currentArrangeComponent.goToPrevQuestion()">← 이전 문제</button>` 
+            : '';
+        const nextBtnHtml = !isLast
+            ? `<button class="retake-next-btn" onclick="window.currentArrangeComponent.goToNextQuestion()">다음 문제로 →</button>`
+            : `<button class="retake-next-btn" onclick="window.currentArrangeComponent.goToNextQuestion()">제출하기 →</button>`;
+        
+        if (isWrong) {
+            floatingDiv.innerHTML = `
+                <div class="retake-floating-content">
+                    <div class="retake-icon">⚠️</div>
+                    <div class="retake-message">틀렸던 문제입니다<br>다시 풀어보세요!</div>
+                    <div style="font-size:12px; color:#888; margin-top:4px;">Q${questionIndex + 1} / ${total}</div>
+                    <div class="retake-buttons">
+                        ${prevBtnHtml}
+                        ${nextBtnHtml}
+                    </div>
+                </div>
+            `;
+        } else {
+            floatingDiv.innerHTML = `
+                <div class="retake-floating-content">
+                    <div class="retake-icon">✅</div>
+                    <div class="retake-message">맞은 문제입니다</div>
+                    <div style="font-size:12px; color:#888; margin-top:4px;">Q${questionIndex + 1} / ${total}</div>
+                    <div class="retake-buttons">
+                        ${prevBtnHtml}
+                        ${nextBtnHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.body.appendChild(floatingDiv);
+    }
+    
+    /**
+     * ★ 리테이크: Floating UI 제거
+     */
+    removeRetakeFloatingUI() {
+        const existing = document.getElementById('arrangeRetakeFloating');
+        if (existing) existing.remove();
+    }
+    
+    /**
+     * ★ 리테이크: 다음 문제 (floating 버튼에서 호출)
+     */
+    goToNextQuestion() {
+        const nextIndex = this.currentQuestion + 1;
+        const totalQuestions = this.currentSetData.questions.length;
+        
+        if (nextIndex >= totalQuestions) {
+            // 마지막 → 제출
+            this.removeRetakeFloatingUI();
+            this.submit();
+            return;
+        }
+        
+        this.loadQuestion(nextIndex);
+        
+        // 진행률 업데이트
+        const progressEl = document.getElementById('arrangeProgress');
+        if (progressEl) {
+            progressEl.textContent = `Question ${nextIndex + 1} of ${totalQuestions}`;
+        }
+        
+        // Next/Submit 버튼 상태
+        if (nextIndex >= totalQuestions - 1) {
+            document.getElementById('arrangeNextBtn').style.display = 'none';
+            document.getElementById('arrangeSubmitBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('arrangeNextBtn').style.display = 'inline-block';
+            document.getElementById('arrangeSubmitBtn').style.display = 'none';
+        }
+    }
+    
+    /**
+     * ★ 리테이크: 이전 문제 (floating 버튼에서 호출)
+     */
+    goToPrevQuestion() {
+        const prevIndex = this.currentQuestion - 1;
+        if (prevIndex < 0) return;
+        
+        this.loadQuestion(prevIndex);
+        
+        const totalQuestions = this.currentSetData.questions.length;
+        const progressEl = document.getElementById('arrangeProgress');
+        if (progressEl) {
+            progressEl.textContent = `Question ${prevIndex + 1} of ${totalQuestions}`;
         }
     }
     
@@ -605,6 +803,14 @@ function nextArrangeQuestion() {
     }
 }
 window.nextArrangeQuestion = nextArrangeQuestion;
+
+// index.html의 Prev 버튼에서 호출하는 전역 함수
+function prevArrangeQuestion() {
+    if (window.currentArrangeComponent) {
+        window.currentArrangeComponent.prevQuestion();
+    }
+}
+window.prevArrangeQuestion = prevArrangeQuestion;
 
 // 드롭 허용 헬퍼 함수 (전역)
 function allowDrop(event) {
