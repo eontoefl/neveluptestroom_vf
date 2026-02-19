@@ -1,6 +1,6 @@
 // Writing - 단어배열 로직 (어댑터)
 // ArrangeComponent를 사용하는 어댑터
-// v=20250212-001
+// v=20250219-002
 
 console.log('✅ writing-arrange-logic.js 로드 시작 (ArrangeComponent 어댑터)');
 
@@ -9,14 +9,86 @@ window.currentArrangeComponent = null;
 
 async function initArrangeComponent(setId, onCompleteCallback) {
     console.log(`📦 [모듈] initArrangeComponent - setId: ${setId}`);
+    
+    // ★ 기존 타이머가 있으면 먼저 정리
+    if (window._arrangeTimerInterval) {
+        clearInterval(window._arrangeTimerInterval);
+        window._arrangeTimerInterval = null;
+        console.log('🧹 [Arrange] 기존 타이머 정리');
+    }
+    
     window.currentArrangeComponent = new ArrangeComponent(setId, {
         onComplete: (results) => {
             console.log(`✅ [모듈] Arrange Component 완료`);
+            // ★ 타이머 정리
+            if (window._arrangeTimerInterval) {
+                clearInterval(window._arrangeTimerInterval);
+                window._arrangeTimerInterval = null;
+            }
             if (onCompleteCallback) onCompleteCallback(results);
         },
         onError: (error) => console.error(`❌ [모듈] Arrange Component 오류:`, error)
     });
-    await window.currentArrangeComponent.init();
+    
+    try {
+        await window.currentArrangeComponent.init();
+    } catch (e) {
+        console.error('❌ [Arrange] init 실패:', e);
+    }
+    
+    // ★ 타이머 시작 (6분 50초 = 410초) - 2차 리테이크 시에는 스킵
+    if (!window.writingFlowNoTimer && !window.isArrangeRetake) {
+        console.log('⏱️ [Arrange] 타이머 시작 조건 충족 (1차 모드)');
+        startArrangeTimer(410);
+    } else {
+        console.log('⏱️ [Arrange] 2차 모드 - 타이머 숨김 (writingFlowNoTimer:', window.writingFlowNoTimer, ', isArrangeRetake:', window.isArrangeRetake, ')');
+        const timerEl = document.getElementById('arrangeTimer');
+        if (timerEl) timerEl.style.display = 'none';
+    }
+}
+
+/**
+ * 단어배열 타이머 시작
+ */
+function startArrangeTimer(totalSeconds) {
+    // ★ 기존 타이머 중복 방지
+    if (window._arrangeTimerInterval) {
+        clearInterval(window._arrangeTimerInterval);
+        window._arrangeTimerInterval = null;
+    }
+    
+    let remaining = totalSeconds;
+    
+    function updateDisplay() {
+        // ★ 매번 요소를 다시 찾아 DOM 갱신에 안전
+        const timerEl = document.getElementById('arrangeTimer');
+        if (!timerEl) {
+            console.warn('⚠️ [Arrange] arrangeTimer 요소를 찾을 수 없음');
+            return;
+        }
+        timerEl.style.display = '';  // 보이도록 강제
+        const min = Math.floor(remaining / 60);
+        const sec = remaining % 60;
+        timerEl.textContent = `${min}:${String(sec).padStart(2, '0')}`;
+    }
+    
+    updateDisplay();
+    
+    window._arrangeTimerInterval = setInterval(() => {
+        remaining--;
+        updateDisplay();
+        
+        if (remaining <= 0) {
+            clearInterval(window._arrangeTimerInterval);
+            window._arrangeTimerInterval = null;
+            console.log('⏰ [Arrange] 시간 종료 → 자동 제출');
+            if (window.currentArrangeComponent) {
+                window.currentArrangeComponent.submit();
+            }
+        }
+    }, 1000);
+    
+    console.log(`⏱️ [Arrange] 타이머 시작: ${totalSeconds}초 (${Math.floor(totalSeconds/60)}분 ${totalSeconds%60}초)`);
 }
 
 /**

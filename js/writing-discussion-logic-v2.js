@@ -1,5 +1,5 @@
 // ================================================
-// Writing - 토론형 어댑터 (v=20250212-001)
+// Writing - 토론형 어댑터 (v=20250219-002)
 // ================================================
 // Module 책임: 화면 전환, 진행률, 버튼 제어, 자동 이동, cleanup
 
@@ -13,6 +13,13 @@ let currentDiscussionComponent = null;
 // ============================================
 async function initDiscussionComponent(setId, onCompleteCallback) {
     console.log(`📦 [모듈] initDiscussionComponent - setId: ${setId}`);
+    
+    // ★ 기존 컴포넌트 타이머 정리
+    if (currentDiscussionComponent) {
+        currentDiscussionComponent.stopDiscussionTimer();
+        console.log('🧹 [Discussion] 기존 컴포넌트 타이머 정리');
+    }
+    
     currentDiscussionComponent = new DiscussionComponent();
     window.currentDiscussionComponent = currentDiscussionComponent;
     
@@ -25,7 +32,11 @@ async function initDiscussionComponent(setId, onCompleteCallback) {
     };
     
     // 데이터 로드 (init 대신 loadDiscussionData 사용)
-    await currentDiscussionComponent.loadDiscussionData();
+    try {
+        await currentDiscussionComponent.loadDiscussionData();
+    } catch (e) {
+        console.error('❌ [Discussion] 데이터 로드 실패:', e);
+    }
     
     // 첫 번째 문제 로드 (setId를 인덱스로 변환, 범위 체크)
     const totalSets = currentDiscussionComponent.writingDiscussionData?.length || 2;
@@ -41,6 +52,36 @@ async function initDiscussionComponent(setId, onCompleteCallback) {
     // 화면 표시
     if (typeof window.showScreen === 'function') {
         window.showScreen('writingDiscussionScreen');
+    }
+    
+    // ★ 2차 작성 (시간제한 없음) 모드: 타이머 숨기기
+    if (window.writingFlowNoTimer) {
+        console.log('⏰ [Discussion] 2차 작성 모드 - 타이머 숨김');
+        const timerEl = document.getElementById('discussionTimer');
+        if (timerEl) timerEl.style.display = 'none';
+    } else {
+        // ★ 1차 작성: 타이머 시작
+        console.log('⏱️ [Discussion] 타이머 시작 조건 충족 (writingFlowNoTimer:', window.writingFlowNoTimer, ')');
+        
+        // 타이머 요소 강제 표시
+        const timerEl = document.getElementById('discussionTimer');
+        if (timerEl) timerEl.style.display = '';
+        
+        currentDiscussionComponent.startDiscussionTimer(
+            (remainingTime) => {
+                const timerEl = document.getElementById('discussionTimer');
+                if (timerEl) {
+                    timerEl.style.display = '';  // 보이도록 강제
+                    const minutes = Math.floor(remainingTime / 60);
+                    const seconds = remainingTime % 60;
+                    timerEl.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+                }
+            },
+            () => {
+                console.log('⏰ [Discussion] 시간 종료 → 자동 제출');
+                submitWritingDiscussion();
+            }
+        );
     }
 }
 
@@ -218,4 +259,4 @@ function cleanupDiscussion() {
     }
 }
 
-console.log('✅ Writing-Discussion 어댑터 로드 완료 (v=20250212-001)');
+console.log('✅ Writing-Discussion 어댑터 로드 완료 (v=20250219-002)');
