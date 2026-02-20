@@ -245,7 +245,10 @@ function _launchVocabModule(pages) {
     
     // vocab-test-logic-v2.js의 initVocabTest 함수 호출
     if (typeof initVocabTest === 'function') {
-        initVocabTest(pageRange);
+        var ct = window.currentTest;
+        var weekId = ct ? ct.currentWeek : null;
+        var dayId = ct ? ct.currentDay : null;
+        initVocabTest(pageRange, weekId, dayId);
     } else {
         console.error('❌ initVocabTest 함수를 찾을 수 없습니다.');
     }
