@@ -47,6 +47,21 @@ function initScheduleScreen() {
     
     // 프로그램에 따른 일정 생성
     renderSchedule(currentUser.program);
+    
+    // 진도율 Progress Bar 표시
+    if (window.ProgressTracker) {
+        const pt = currentUser.programType || (currentUser.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
+        if (ProgressTracker._loaded) {
+            ProgressTracker.renderTotalProgressBar(pt);
+        } else {
+            ProgressTracker.loadCompletedTasks().then(function() {
+                ProgressTracker.renderTotalProgressBar(pt);
+                // 데이터 로드 후 요일 진도도 다시 그리기
+                renderSchedule(currentUser.program);
+                ProgressTracker.renderTotalProgressBar(pt);
+            });
+        }
+    }
 }
 
 function renderSchedule(program) {
@@ -101,9 +116,25 @@ function renderSchedule(program) {
             // 과제 정보 표시
             const taskInfo = tasks.length > 0 ? `${tasks.length}개 과제` : '휴무';
             
+            // 진도율 표시 (ProgressTracker가 로드됐으면)
+            let progressHTML = '';
+            if (tasks.length > 0 && window.ProgressTracker && ProgressTracker._loaded) {
+                const progress = ProgressTracker.getDayProgress(programType, week, dayEn);
+                if (progress.total > 0) {
+                    if (progress.completed === progress.total) {
+                        progressHTML = '<div class="day-progress day-progress-done"><span class="check-icon"></span> 완료</div>';
+                    } else if (progress.completed > 0) {
+                        progressHTML = '<div class="day-progress day-progress-partial">' + progress.completed + '/' + progress.total + '</div>';
+                    } else {
+                        progressHTML = '<div class="day-progress day-progress-none">0/' + progress.total + '</div>';
+                    }
+                }
+            }
+            
             dayButton.innerHTML = `
                 <div class="day-name">${dayKr}</div>
                 <div class="day-tasks">${taskInfo}</div>
+                ${progressHTML}
             `;
             
             // 휴무일인 경우 스타일 변경
