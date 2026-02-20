@@ -275,7 +275,6 @@
                 </div>
             </div>
             <div style="display: flex; gap: 10px;">
-                
                 <button class="logout-btn" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i>
                     로그아웃
@@ -294,7 +293,7 @@
                 <!-- 주차별 일정이 여기에 동적으로 생성됩니다 -->
             </div>
             
-            
+
             
         </div>
     </div>
@@ -1097,7 +1096,7 @@
         
         <!-- 네비게이션 -->
         <div class="final-navigation">
-            <button class="btn btn-secondary" onclick="backToSchedule()">
+            <button class="btn btn-secondary" onclick="backToScheduleFromResult()">
                 <i class="fas fa-arrow-left"></i> 뒤로가기
             </button>
             <button class="btn btn-primary" id="finalNextBtn" onclick="goToNextFinalExplainPage()">
@@ -1109,7 +1108,7 @@
     <!-- 정답채점 화면 -->
     <div id="resultScreen" class="screen">
         <div class="test-header">
-            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromResult()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
             <div class="test-title">
@@ -1149,7 +1148,7 @@
                 </div>
                 
                 <div class="result-actions">
-                    <button class="btn btn-primary btn-large" onclick="backToSchedule()">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromResult()">
                         <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
                     </button>
                 </div>
@@ -1225,7 +1224,7 @@
     <!-- Reading 섹션 - 일상리딩1 결과 화면 -->
     <div id="readingDaily1ResultScreen" class="screen">
         <div class="test-header">
-            <button class="btn-back-to-schedule" onclick="backToSchedule()">
+            <button class="btn-back-to-schedule" onclick="backToScheduleFromResult()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
             <div class="test-title">
@@ -1265,7 +1264,7 @@
                 </div>
                 
                 <div class="result-actions">
-                    <button class="btn btn-primary btn-large" onclick="backToSchedule()">
+                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromResult()">
                         <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
                     </button>
                 </div>
