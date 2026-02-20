@@ -23,7 +23,7 @@ function isTaskDeadlinePassed() {
     if (dayOffset === undefined) return false;
 
     // 과제 날짜 계산: startDate + (week-1)*7 + dayOffset
-    var startDate = new Date(user.startDate);
+    var startDate = new Date(user.startDate + 'T00:00:00');
     if (isNaN(startDate.getTime())) return false;
 
     var taskDate = new Date(startDate);
