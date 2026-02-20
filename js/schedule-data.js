@@ -390,7 +390,7 @@ async function loadScheduleFromSupabase() {
 
     try {
         console.log('📥 [Schedule] Supabase에서 스케줄 데이터 로드...');
-        const rows = await supabaseSelect('tr_schedule', 'select=*&order=id.asc');
+        const rows = await supabaseSelect('tr_schedule_assignment', 'select=*&order=id.asc');
 
         if (!rows || rows.length === 0) {
             console.warn('⚠️ [Schedule] Supabase 데이터 없음, 하드코딩 데이터 사용');
