@@ -345,6 +345,7 @@ let currentTest = {
     currentWeek: null,
     currentDay: null
 };
+window.currentTest = currentTest;
 
 // 프로그램별 일정 구조
 const programSchedule = {
