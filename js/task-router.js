@@ -14,7 +14,7 @@ function isTaskDeadlinePassed() {
     if (!ct || !ct.currentWeek || !ct.currentDay) return false;
 
     // 학생의 시작일 정보
-    var user = window.currentUser;
+    var user = getCurrentUser();
     if (!user || !user.startDate) return false;
 
     // 요일 → 오프셋 (일=0, 월=1, ..., 금=5, 토=6)
