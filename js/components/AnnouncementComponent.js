@@ -113,6 +113,16 @@ class AnnouncementComponent {
             return;
         }
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.data = supabaseResult;
+            cachedAnnouncementData = supabaseResult;
+            return;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [AnnouncementComponent] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.gid}`;
         console.log('[AnnouncementComponent] CSV URL:', csvUrl);
         
@@ -137,6 +147,70 @@ class AnnouncementComponent {
             
             // ✅ 데모 데이터도 캐시
             cachedAnnouncementData = this.data;
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [AnnouncementComponent] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_listening_announcement', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [AnnouncementComponent] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [AnnouncementComponent] Supabase에서 ${rows.length}개 세트 로드 성공`);
+            
+            const sets = rows.map(row => {
+                // scriptHighlights 파싱
+                let scriptHighlights = '';
+                if (row.script_highlights) scriptHighlights = row.script_highlights;
+                
+                return {
+                    setId: row.id,
+                    gender: row.gender || '',
+                    narrationUrl: row.narration_url || '',
+                    audioUrl: row.audio_url || '',
+                    script: row.script || '',
+                    scriptTrans: row.script_trans || '',
+                    scriptHighlights: scriptHighlights,
+                    questions: [
+                        {
+                            questionText: row.q1_question_text || '',
+                            questionTextTrans: row.q1_question_text_trans || '',
+                            options: [row.q1_opt1 || '', row.q1_opt2 || '', row.q1_opt3 || '', row.q1_opt4 || ''],
+                            correctAnswer: parseInt(row.q1_correct_answer) || 1,
+                            translations: [row.q1_trans1 || '', row.q1_trans2 || '', row.q1_trans3 || '', row.q1_trans4 || ''],
+                            explanations: [row.q1_exp1 || '', row.q1_exp2 || '', row.q1_exp3 || '', row.q1_exp4 || '']
+                        },
+                        {
+                            questionText: row.q2_question_text || '',
+                            questionTextTrans: row.q2_question_text_trans || '',
+                            options: [row.q2_opt1 || '', row.q2_opt2 || '', row.q2_opt3 || '', row.q2_opt4 || ''],
+                            correctAnswer: parseInt(row.q2_correct_answer) || 1,
+                            translations: [row.q2_trans1 || '', row.q2_trans2 || '', row.q2_trans3 || '', row.q2_trans4 || ''],
+                            explanations: [row.q2_exp1 || '', row.q2_exp2 || '', row.q2_exp3 || '', row.q2_exp4 || '']
+                        }
+                    ]
+                };
+            });
+            
+            sets.sort((a, b) => {
+                const numA = parseInt(a.setId.replace(/\D/g, ''));
+                const numB = parseInt(b.setId.replace(/\D/g, ''));
+                return numA - numB;
+            });
+            
+            return { type: 'listening_announcement', sets };
+            
+        } catch (error) {
+            console.error('❌ [AnnouncementComponent] Supabase 로드 실패:', error);
+            return null;
         }
     }
     
@@ -333,8 +407,15 @@ class AnnouncementComponent {
         document.getElementById('announcementQuestionScreen').style.display = 'none';
         
         // 진행률/타이머 숨기기 (인트로 중에는 안 보임)
+        // 진행률/타이머/Next버튼 숨김 (인트로 동안)
         document.getElementById('announcementProgress').style.display = 'none';
         document.getElementById('announcementTimer').style.display = 'none';
+        const annTimerWrap = document.getElementById('announcementTimerWrap');
+        if (annTimerWrap) annTimerWrap.style.display = 'none';
+        const annNextBtn = document.getElementById('announcementNextBtn');
+        if (annNextBtn) annNextBtn.style.display = 'none';
+        const annSubmitBtn = document.getElementById('announcementSubmitBtn');
+        if (annSubmitBtn) annSubmitBtn.style.display = 'none';
         
         // 오디오 시퀀스 시작
         this.playAudioSequence();
@@ -430,9 +511,13 @@ class AnnouncementComponent {
         document.getElementById('announcementIntroScreen').style.display = 'none';
         document.getElementById('announcementQuestionScreen').style.display = 'block';
         
-        // 진행률/타이머 표시 (문제 풀이 시작)
+        // 진행률/타이머/Next버튼 표시 (문제 풀이 시작)
         document.getElementById('announcementProgress').style.display = 'inline-block';
         document.getElementById('announcementTimer').style.display = 'inline-block';
+        const annTimerWrap = document.getElementById('announcementTimerWrap');
+        if (annTimerWrap) annTimerWrap.style.display = '';
+        const annNextBtn = document.getElementById('announcementNextBtn');
+        if (annNextBtn) annNextBtn.style.display = '';
         
         // 첫 번째 문제 로드
         this.loadQuestion(0);

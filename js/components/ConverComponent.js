@@ -111,6 +111,15 @@ class ConverComponent {
       return cachedConverData;
     }
     
+    // 1) Supabase 우선 시도
+    const supabaseResult = await this._loadFromSupabase();
+    if (supabaseResult) {
+      cachedConverData = supabaseResult;
+      return supabaseResult;
+    }
+    
+    // 2) Google Sheets 폴백
+    console.log('🔄 [ConverComponent] Google Sheets 폴백 시도...');
     try {
       const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.sheetGid}`;
       console.log('[ConverComponent] CSV URL:', csvUrl);
@@ -131,15 +140,86 @@ class ConverComponent {
         return this.getDemoData();
       }
       
-      console.log('[ConverComponent] 데이터 로드 성공:', parsedData.sets.length, '개 세트');
-      
-      // ✅ 캐시 저장
+      console.log('[ConverComponent] Google Sheets 데이터 로드 성공:', parsedData.sets.length, '개 세트');
       cachedConverData = parsedData;
-      
       return parsedData;
     } catch (error) {
       console.error('[ConverComponent] 데이터 로드 실패:', error);
       return this.getDemoData();
+    }
+  }
+
+  // --- Supabase에서 로드 ---
+  async _loadFromSupabase() {
+    if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+    if (typeof supabaseSelect !== 'function') return null;
+    
+    try {
+      console.log('📥 [ConverComponent] Supabase에서 데이터 로드...');
+      const rows = await supabaseSelect('tr_listening_conversation', 'select=*&order=id.asc');
+      
+      if (!rows || rows.length === 0) {
+        console.warn('⚠️ [ConverComponent] Supabase 데이터 없음');
+        return null;
+      }
+      
+      console.log(`✅ [ConverComponent] Supabase에서 ${rows.length}개 세트 로드 성공`);
+      
+      const sets = rows.map(row => {
+        // scriptHighlights 파싱
+        let scriptHighlights = [];
+        if (row.script_highlights && row.script_highlights.trim()) {
+          const items = row.script_highlights.split('##');
+          items.forEach(item => {
+            const parts = item.split('::');
+            if (parts.length >= 3) {
+              scriptHighlights.push({
+                word: parts[0].trim(),
+                translation: parts[1].trim(),
+                explanation: parts[2].trim()
+              });
+            }
+          });
+        }
+        
+        return {
+          id: row.id,
+          audioUrl: row.audio_url || '',
+          script: row.script || '',
+          scriptTrans: row.script_trans || '',
+          scriptHighlights: scriptHighlights,
+          questions: [
+            {
+              question: row.q1_question || '',
+              questionTrans: row.q1_question_trans || '',
+              options: [row.q1_opt1 || '', row.q1_opt2 || '', row.q1_opt3 || '', row.q1_opt4 || ''],
+              answer: parseInt(row.q1_answer) || 1,
+              optionTranslations: [row.q1_opt_trans1 || '', row.q1_opt_trans2 || '', row.q1_opt_trans3 || '', row.q1_opt_trans4 || ''],
+              optionExplanations: [row.q1_opt_exp1 || '', row.q1_opt_exp2 || '', row.q1_opt_exp3 || '', row.q1_opt_exp4 || '']
+            },
+            {
+              question: row.q2_question || '',
+              questionTrans: row.q2_question_trans || '',
+              options: [row.q2_opt1 || '', row.q2_opt2 || '', row.q2_opt3 || '', row.q2_opt4 || ''],
+              answer: parseInt(row.q2_answer) || 1,
+              optionTranslations: [row.q2_opt_trans1 || '', row.q2_opt_trans2 || '', row.q2_opt_trans3 || '', row.q2_opt_trans4 || ''],
+              optionExplanations: [row.q2_opt_exp1 || '', row.q2_opt_exp2 || '', row.q2_opt_exp3 || '', row.q2_opt_exp4 || '']
+            }
+          ]
+        };
+      });
+      
+      sets.sort((a, b) => {
+        const numA = parseInt(a.id.replace(/\D/g, ''));
+        const numB = parseInt(b.id.replace(/\D/g, ''));
+        return numA - numB;
+      });
+      
+      return { type: 'listening_conver', timeLimit: this.TIME_LIMIT, sets };
+      
+    } catch (error) {
+      console.error('❌ [ConverComponent] Supabase 로드 실패:', error);
+      return null;
     }
   }
 
@@ -337,9 +417,15 @@ class ConverComponent {
     document.getElementById('converIntroScreen').style.display = 'block';
     document.getElementById('converQuestionScreen').style.display = 'none';
     
-    // 진행률/타이머 숨김
+    // 진행률/타이머/Next버튼 숨김 (인트로 동안)
     document.getElementById('converProgress').style.display = 'none';
     document.getElementById('converTimer').style.display = 'none';
+    const converTimerWrap = document.getElementById('converTimerWrap');
+    if (converTimerWrap) converTimerWrap.style.display = 'none';
+    const converNextBtn = document.getElementById('converNextBtn');
+    if (converNextBtn) converNextBtn.style.display = 'none';
+    const converSubmitBtn = document.getElementById('converSubmitBtn');
+    if (converSubmitBtn) converSubmitBtn.style.display = 'none';
     
     // 랜덤 이미지 선택 (세트당 1개)
     if (!this.currentImage) {
@@ -481,9 +567,13 @@ class ConverComponent {
     document.getElementById('converIntroScreen').style.display = 'none';
     document.getElementById('converQuestionScreen').style.display = 'block';
     
-    // 진행률/타이머 표시
+    // 진행률/타이머/Next버튼 표시 (문제 풀이 시작)
     document.getElementById('converProgress').style.display = 'inline-block';
     document.getElementById('converTimer').style.display = 'inline-block';
+    const converTimerWrap = document.getElementById('converTimerWrap');
+    if (converTimerWrap) converTimerWrap.style.display = '';
+    const converNextBtn = document.getElementById('converNextBtn');
+    if (converNextBtn) converNextBtn.style.display = '';
     
     // 첫 번째 문제 로드
     this.loadQuestion(0);

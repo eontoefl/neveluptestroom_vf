@@ -128,6 +128,15 @@ class ResponseComponent {
       return cachedResponseData;
     }
     
+    // 1) Supabase 우선 시도
+    const supabaseResult = await this._loadFromSupabase();
+    if (supabaseResult) {
+      cachedResponseData = supabaseResult;
+      return supabaseResult;
+    }
+    
+    // 2) Google Sheets 폴백
+    console.log('🔄 [ResponseComponent] Google Sheets 폴백 시도...');
     try {
       const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.sheetGid}`;
       console.log('[ResponseComponent] CSV URL:', csvUrl);
@@ -148,15 +157,71 @@ class ResponseComponent {
         return this.getDemoData();
       }
       
-      console.log('[ResponseComponent] 데이터 로드 성공:', parsedData.sets.length, '개 세트');
-      
-      // ✅ 캐시 저장
+      console.log('[ResponseComponent] Google Sheets 데이터 로드 성공:', parsedData.sets.length, '개 세트');
       cachedResponseData = parsedData;
-      
       return parsedData;
     } catch (error) {
       console.error('[ResponseComponent] 데이터 로드 실패:', error);
       return this.getDemoData();
+    }
+  }
+
+  // --- Supabase에서 로드 ---
+  async _loadFromSupabase() {
+    if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+    if (typeof supabaseSelect !== 'function') return null;
+    
+    try {
+      console.log('📥 [ResponseComponent] Supabase에서 데이터 로드...');
+      const rows = await supabaseSelect('tr_listening_response', 'select=*&order=set_id.asc,question_num.asc');
+      
+      if (!rows || rows.length === 0) {
+        console.warn('⚠️ [ResponseComponent] Supabase 데이터 없음');
+        return null;
+      }
+      
+      console.log(`✅ [ResponseComponent] Supabase에서 ${rows.length}개 행 로드 성공`);
+      
+      // 행 데이터를 세트별로 그룹화 (기존 parseCSV 출력과 동일 형태)
+      const setsMap = {};
+      rows.forEach(row => {
+        const setId = row.set_id;
+        if (!setsMap[setId]) {
+          setsMap[setId] = { id: setId, questions: [] };
+        }
+        
+        let scriptHighlights = [];
+        if (row.script_highlights) {
+          try { scriptHighlights = JSON.parse(row.script_highlights); } catch(e) {}
+        }
+        
+        setsMap[setId].questions.push({
+          questionNum: parseInt(row.question_num) || 1,
+          audioUrl: row.audio_url || '',
+          gender: row.gender || '',
+          options: [row.option1 || '', row.option2 || '', row.option3 || '', row.option4 || ''],
+          answer: parseInt(row.answer) || 1,
+          script: row.script || '',
+          scriptTrans: row.script_trans || '',
+          scriptHighlights: scriptHighlights,
+          optionTranslations: [row.option_trans1 || '', row.option_trans2 || '', row.option_trans3 || '', row.option_trans4 || ''],
+          optionExplanations: [row.option_exp1 || '', row.option_exp2 || '', row.option_exp3 || '', row.option_exp4 || '']
+        });
+      });
+      
+      const sets = Object.values(setsMap);
+      sets.forEach(set => set.questions.sort((a, b) => a.questionNum - b.questionNum));
+      sets.sort((a, b) => {
+        const numA = parseInt(a.id.replace(/\D/g, ''));
+        const numB = parseInt(b.id.replace(/\D/g, ''));
+        return numA - numB;
+      });
+      
+      return { type: 'listening_response', timeLimit: this.RESPONSE_TIME_LIMIT, sets };
+      
+    } catch (error) {
+      console.error('❌ [ResponseComponent] Supabase 로드 실패:', error);
+      return null;
     }
   }
 

@@ -118,6 +118,16 @@ class LectureComponent {
             return;
         }
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.data = supabaseResult;
+            cachedLectureData = supabaseResult;
+            return;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [LectureComponent] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.gid}`;
         console.log('[LectureComponent] CSV URL:', csvUrl);
         
@@ -142,6 +152,78 @@ class LectureComponent {
             
             // ✅ 데모 데이터도 캐시
             cachedLectureData = this.data;
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [LectureComponent] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_listening_lecture', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [LectureComponent] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [LectureComponent] Supabase에서 ${rows.length}개 세트 로드 성공`);
+            
+            const sets = rows.map(row => {
+                // scriptHighlights 파싱
+                let scriptHighlights = [];
+                if (row.script_highlights && row.script_highlights.trim()) {
+                    try {
+                        const items = row.script_highlights.split('##');
+                        items.forEach(item => {
+                            const parts = item.split('::');
+                            if (parts.length >= 3) {
+                                scriptHighlights.push({
+                                    word: parts[0].trim(),
+                                    translation: parts[1].trim(),
+                                    explanation: parts[2].trim()
+                                });
+                            }
+                        });
+                    } catch(e) {}
+                }
+                
+                // 4개 문제 구성
+                const makeQ = (prefix) => ({
+                    questionText: row[`${prefix}_question_text`] || '',
+                    questionTrans: row[`${prefix}_question_trans`] || '',
+                    options: [row[`${prefix}_opt1`] || '', row[`${prefix}_opt2`] || '', row[`${prefix}_opt3`] || '', row[`${prefix}_opt4`] || ''],
+                    correctAnswer: parseInt(row[`${prefix}_correct_answer`]) || 1,
+                    translations: [row[`${prefix}_trans1`] || '', row[`${prefix}_trans2`] || '', row[`${prefix}_trans3`] || '', row[`${prefix}_trans4`] || ''],
+                    explanations: [row[`${prefix}_exp1`] || '', row[`${prefix}_exp2`] || '', row[`${prefix}_exp3`] || '', row[`${prefix}_exp4`] || '']
+                });
+                
+                return {
+                    setId: row.id,
+                    gender: row.gender || '',
+                    lectureTitle: row.lecture_title || '',
+                    narrationUrl: row.narration_url || '',
+                    audioUrl: row.audio_url || '',
+                    script: row.script || '',
+                    scriptTrans: row.script_trans || '',
+                    scriptHighlights: scriptHighlights,
+                    questions: [makeQ('q1'), makeQ('q2'), makeQ('q3'), makeQ('q4')]
+                };
+            });
+            
+            sets.sort((a, b) => {
+                const numA = parseInt(a.setId.replace(/\D/g, ''));
+                const numB = parseInt(b.setId.replace(/\D/g, ''));
+                return numA - numB;
+            });
+            
+            return { type: 'listening_lecture', sets };
+            
+        } catch (error) {
+            console.error('❌ [LectureComponent] Supabase 로드 실패:', error);
+            return null;
         }
     }
     
@@ -379,9 +461,15 @@ class LectureComponent {
         document.getElementById('lectureIntroScreen').style.display = 'block';
         document.getElementById('lectureQuestionScreen').style.display = 'none';
         
-        // 진행률/타이머 숨기기 (인트로 중에는 안 보임)
+        // 진행률/타이머/Next버튼 숨김 (인트로 동안)
         document.getElementById('lectureProgress').style.display = 'none';
         document.getElementById('lectureTimer').style.display = 'none';
+        const lecTimerWrap = document.getElementById('lectureTimerWrap');
+        if (lecTimerWrap) lecTimerWrap.style.display = 'none';
+        const lecNextBtn = document.getElementById('lectureNextBtn');
+        if (lecNextBtn) lecNextBtn.style.display = 'none';
+        const lecSubmitBtn = document.getElementById('lectureSubmitBtn');
+        if (lecSubmitBtn) lecSubmitBtn.style.display = 'none';
         
         // 오디오 시퀀스 시작
         this.playAudioSequence();
@@ -492,9 +580,13 @@ class LectureComponent {
         document.getElementById('lectureIntroScreen').style.display = 'none';
         document.getElementById('lectureQuestionScreen').style.display = 'block';
         
-        // 진행률/타이머 표시 (문제 풀이 시작)
+        // 진행률/타이머/Next버튼 표시 (문제 풀이 시작)
         document.getElementById('lectureProgress').style.display = 'inline-block';
         document.getElementById('lectureTimer').style.display = 'inline-block';
+        const lecTimerWrap = document.getElementById('lectureTimerWrap');
+        if (lecTimerWrap) lecTimerWrap.style.display = '';
+        const lecNextBtn = document.getElementById('lectureNextBtn');
+        if (lecNextBtn) lecNextBtn.style.display = '';
         
         // 첫 번째 문제 로드
         this.loadQuestion(0);
