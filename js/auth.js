@@ -88,7 +88,7 @@ async function handleLogin(event) {
         
         // 입금 미확인
         if (programInfo.error === 'not_confirmed') {
-            showLoginError('수강 등록이 아직 확인되지 않았습니다. 입금 확인 후 이용 가능합니다.');
+            showLoginError('수강 등록이 아직 확인되지 않았습니다. 관리자에게 문의해주세요.');
             resetLoginBtn();
             return;
         }
