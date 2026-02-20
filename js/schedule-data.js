@@ -432,13 +432,23 @@ async function loadScheduleFromSupabase() {
             newData[program][week][day] = tasks;
         });
 
-        // 비어있지 않은 프로그램만 덮어쓰기
-        if (Object.keys(newData.fast).length > 0) {
-            SCHEDULE_DATA.fast = newData.fast;
-        }
-        if (Object.keys(newData.standard).length > 0) {
-            SCHEDULE_DATA.standard = newData.standard;
-        }
+        // 주/요일 단위로 병합 (기존 하드코딩 데이터 보존)
+        ['fast', 'standard'].forEach(prog => {
+            if (!newData[prog] || Object.keys(newData[prog]).length === 0) return;
+            if (!SCHEDULE_DATA[prog]) SCHEDULE_DATA[prog] = {};
+            
+            Object.keys(newData[prog]).forEach(weekKey => {
+                if (!SCHEDULE_DATA[prog][weekKey]) SCHEDULE_DATA[prog][weekKey] = {};
+                
+                Object.keys(newData[prog][weekKey]).forEach(dayKey => {
+                    const tasks = newData[prog][weekKey][dayKey];
+                    // Supabase에 해당 요일 데이터가 있을 때만 덮어쓰기
+                    if (tasks && tasks.length > 0) {
+                        SCHEDULE_DATA[prog][weekKey][dayKey] = tasks;
+                    }
+                });
+            });
+        });
 
         console.log('✅ [Schedule] Supabase 데이터로 SCHEDULE_DATA 업데이트 완료');
         return SCHEDULE_DATA;
