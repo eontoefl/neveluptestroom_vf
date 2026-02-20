@@ -11,35 +11,49 @@
  */
 function isTaskDeadlinePassed() {
     var ct = window.currentTest;
-    if (!ct || !ct.currentWeek || !ct.currentDay) return false;
+    if (!ct || !ct.currentWeek || !ct.currentDay) {
+        console.log('⏰ [마감] 스케줄 정보 없음 — 체크 생략');
+        return false;
+    }
 
-    // 학생의 시작일 정보
-    var user = getCurrentUser();
-    if (!user || !user.startDate) return false;
+    var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!user || !user.startDate) {
+        console.log('⏰ [마감] startDate 없음 — 체크 생략');
+        return false;
+    }
 
-    // 요일 → 오프셋 (일=0, 월=1, ..., 금=5, 토=6)
     var dayMap = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
     var dayOffset = dayMap[ct.currentDay];
-    if (dayOffset === undefined) return false;
+    if (dayOffset === undefined) {
+        console.log('⏰ [마감] 요일 매핑 실패:', ct.currentDay);
+        return false;
+    }
 
-    // 과제 날짜 계산: startDate + (week-1)*7 + dayOffset
     var startDate = new Date(user.startDate + 'T00:00:00');
-    if (isNaN(startDate.getTime())) return false;
+    if (isNaN(startDate.getTime())) {
+        console.log('⏰ [마감] 날짜 파싱 실패:', user.startDate);
+        return false;
+    }
 
     var taskDate = new Date(startDate);
     taskDate.setDate(taskDate.getDate() + (ct.currentWeek - 1) * 7 + dayOffset);
 
-    // 데드라인 = 과제 날짜 다음날 04:00
     var deadline = new Date(taskDate);
     deadline.setDate(deadline.getDate() + 1);
     deadline.setHours(4, 0, 0, 0);
 
     var now = new Date();
-    if (now > deadline) {
-        console.log('⏰ [마감] 데드라인 초과:', deadline.toLocaleString());
-        return true;
-    }
-    return false;
+    var passed = now > deadline;
+    
+    console.log('⏰ [마감]', 
+        'start:', user.startDate,
+        'week:', ct.currentWeek, 'day:', ct.currentDay,
+        '→ taskDate:', taskDate.toLocaleDateString(),
+        '→ deadline:', deadline.toLocaleString(),
+        '→ now:', now.toLocaleString(),
+        '→ 결과:', passed ? '마감지남' : 'OK');
+    
+    return passed;
 }
 
 // 입문서 정독 모달 열기
@@ -67,6 +81,13 @@ function closeIntroBookModal() {
 async function submitIntroBook() {
     var memo = document.getElementById('introBookMemo');
     var memoText = memo ? memo.value.trim() : '';
+
+    if (window._deadlinePassedMode) {
+        console.log('📖 [IntroBook] 마감 지난 과제 — 저장 생략');
+        alert('제출 완료! (마감 지난 과제 — 인증률 미반영)');
+        closeIntroBookModal();
+        return;
+    }
 
     var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
     if (!user || !user.id || user.id === 'dev-user-001') {
@@ -146,11 +167,11 @@ function executeTask(taskName) {
     
     // ── 4시 마감 체크 ──
     if (isTaskDeadlinePassed()) {
-    alert('마감 시간이 지난 과제입니다. 연습용으로 풀 수 있지만 인증률에는 반영되지 않습니다.');
-    window._deadlinePassedMode = true;
-} else {
-    window._deadlinePassedMode = false;
-}
+        alert('마감 시간(새벽 4시)이 지났습니다.\n연습용으로 풀 수 있지만, 인증률에는 반영되지 않습니다.');
+        window._deadlinePassedMode = true;
+    } else {
+        window._deadlinePassedMode = false;
+    }
     
     const parsed = parseTaskName(taskName);
     console.log('  파싱 결과:', parsed);
