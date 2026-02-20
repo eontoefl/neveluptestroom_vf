@@ -10,7 +10,7 @@
  * @returns {boolean} true면 마감 지남 (과제 시작 불가)
  */
 function isTaskDeadlinePassed() {
-    var ct = window.currentTest;
+    var ct = (typeof currentTest !== 'undefined') ? currentTest : window.currentTest;
     if (!ct || !ct.currentWeek || !ct.currentDay) {
         console.log('⏰ [마감] 스케줄 정보 없음 — 체크 생략');
         return false;
