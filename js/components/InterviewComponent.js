@@ -79,6 +79,15 @@ class InterviewComponent {
     async loadInterviewData() {
         console.log('📥 [Interview] 데이터 로드 시작...');
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.speakingInterviewData = supabaseResult;
+            return supabaseResult;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [Interview] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.INTERVIEW_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.INTERVIEW_SHEET_CONFIG.sheetGid}`;
         
         try {
@@ -88,13 +97,62 @@ class InterviewComponent {
             const csvText = await response.text();
             this.speakingInterviewData = this.parseInterviewCSV(csvText);
             
-            console.log('✅ [Interview] 데이터 로드 성공:', this.speakingInterviewData);
+            console.log('✅ [Interview] Google Sheets 데이터 로드 성공:', this.speakingInterviewData);
             return this.speakingInterviewData;
         } catch (error) {
             console.error('❌ [Interview] 데이터 로드 실패:', error);
             console.log('📦 Demo 데이터 사용');
             this.speakingInterviewData = this.getInterviewDemoData();
             return this.speakingInterviewData;
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [Interview] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_speaking_interview', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [Interview] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [Interview] Supabase에서 ${rows.length}개 세트 로드 성공`);
+            
+            const sets = rows.map(row => {
+                const videos = [];
+                for (let v = 1; v <= 4; v++) {
+                    videos.push({
+                        video: row[`v${v}_video`] || '',
+                        script: row[`v${v}_script`] || '',
+                        translation: row[`v${v}_translation`] || '',
+                        modelAnswer: row[`v${v}_model_answer`] || '',
+                        modelAnswerTranslation: row[`v${v}_model_answer_trans`] || '',
+                        modelAnswerAudio: row[`v${v}_model_answer_audio`] || '',
+                        highlights: this.parseHighlights(row[`v${v}_highlights`] || '{}')
+                    });
+                }
+                
+                return {
+                    id: row.id,
+                    contextText: row.context_text || '',
+                    contextTranslation: row.translation || '',
+                    contextAudio: row.audio || '',
+                    contextImage: row.image || '',
+                    noddingVideo: row.nodding_video || '',
+                    videos: videos
+                };
+            });
+            
+            return { type: 'speaking_interview', sets };
+            
+        } catch (error) {
+            console.error('❌ [Interview] Supabase 로드 실패:', error);
+            return null;
         }
     }
     
@@ -725,6 +783,7 @@ class InterviewComponent {
      */
     toggleVolumeSlider() {
         const container = document.getElementById('volumeSliderContainer');
+        if (!container) return;
         if (container.style.display === 'none' || container.style.display === '') {
             container.style.display = 'block';
             console.log('🎵 볼륨 슬라이더 열림');

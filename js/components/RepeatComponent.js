@@ -61,6 +61,15 @@ class RepeatComponent {
     async loadRepeatData() {
         console.log('📥 [Repeat] 데이터 로드 시작...');
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.speakingRepeatData = supabaseResult;
+            return supabaseResult;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [Repeat] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.REPEAT_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.REPEAT_SHEET_CONFIG.sheetGid}`;
         
         try {
@@ -70,13 +79,62 @@ class RepeatComponent {
             const csvText = await response.text();
             this.speakingRepeatData = this.parseRepeatCSV(csvText);
             
-            console.log('✅ [Repeat] 데이터 로드 성공:', this.speakingRepeatData);
+            console.log('✅ [Repeat] Google Sheets 데이터 로드 성공:', this.speakingRepeatData);
             return this.speakingRepeatData;
         } catch (error) {
             console.error('❌ [Repeat] 데이터 로드 실패:', error);
             console.log('📦 Demo 데이터 사용');
             this.speakingRepeatData = this.getRepeatDemoData();
             return this.speakingRepeatData;
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [Repeat] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_speaking_repeat', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [Repeat] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [Repeat] Supabase에서 ${rows.length}개 세트 로드 성공`);
+            
+            const sets = rows.map(row => {
+                const narration = {
+                    audio: row.narration_audio || '',
+                    baseImage: row.narration_image || ''
+                };
+                
+                const audios = [];
+                for (let n = 1; n <= 7; n++) {
+                    audios.push({
+                        audio: row[`audio${n}_url`] || '',
+                        image: row[`audio${n}_image`] || '',
+                        script: row[`audio${n}_script`] || '',
+                        translation: row[`audio${n}_translation`] || '',
+                        responseTime: parseInt(row[`audio${n}_response_time`]) || 10
+                    });
+                }
+                
+                return {
+                    id: row.id,
+                    contextText: row.context_text || '',
+                    narration: narration,
+                    audios: audios
+                };
+            });
+            
+            return { type: 'speaking_repeat', sets };
+            
+        } catch (error) {
+            console.error('❌ [Repeat] Supabase 로드 실패:', error);
+            return null;
         }
     }
     
