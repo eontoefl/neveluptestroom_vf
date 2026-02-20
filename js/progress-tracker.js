@@ -13,7 +13,7 @@
  * ★ 인증률(auth rate)과 독립 — 여기서는 "기록이 존재하면 완료"만 판단
  */
 
-const ProgressTracker = {
+var ProgressTracker = {
     // 캐시: { 'reading_1': true, 'writing_3': true, ... }
     _completedTasks: {},
     _loaded: false,
