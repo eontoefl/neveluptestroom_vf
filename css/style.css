@@ -1622,10 +1622,11 @@ body {
 .section-card.task-completed {
     border-color: var(--success-color);
     background: linear-gradient(135deg, var(--bg-color), rgba(119, 191, 126, 0.05));
+    opacity: 0.85;
 }
 
 .section-card.task-completed::after {
-    content: '완료';
+    content: '제출됨';
     position: absolute;
     top: 8px;
     right: 8px;
