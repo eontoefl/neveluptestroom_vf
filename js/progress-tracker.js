@@ -248,7 +248,7 @@ var ProgressTracker = {
                 if (progress.completed === progress.total && progress.total > 0) {
                     // 전부 완료
                     progressEl.classList.add('day-progress-done');
-                    progressEl.innerHTML = '<span class="check-icon"></span> 완료';
+                    progressEl.innerHTML = '<span class="check-icon"></span> 제출됨';
                 } else if (progress.completed > 0) {
                     // 일부 완료
                     progressEl.classList.add('day-progress-partial');

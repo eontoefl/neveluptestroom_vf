@@ -767,6 +767,11 @@ const WritingFlow = {
     runStep11_email() {
         console.log('📖 [WritingFlow] Step 11-B: email 최종 해설');
         
+        // ★ 오답노트 플로팅 UI 표시
+        if (typeof ErrorNote !== 'undefined') {
+            ErrorNote.show('writing', this.moduleNumber || 1);
+        }
+        
         this.hideAllScreens();
         
         // ★ 기존 showEmailResult 함수 호출 (기존 해설 화면 그대로 렌더링)
@@ -919,6 +924,12 @@ const WritingFlow = {
     runStep12() {
         this.currentStep = 12;
         console.log('🏠 [WritingFlow] Step 12: 학습 일정 복귀');
+        
+        // ★ 오답노트 패널 정리
+        if (typeof ErrorNote !== 'undefined') {
+            ErrorNote.hide();
+        }
+        
         this.cleanup();
         
         if (typeof backToSchedule === 'function') {

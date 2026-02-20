@@ -412,6 +412,11 @@ const FlowController = {
         this.state = 'EXPLAIN';
         console.log('📖 [FlowController] 최종 해설 화면 표시');
         
+        // ★ 오답노트 플로팅 UI 표시
+        if (typeof ErrorNote !== 'undefined') {
+            ErrorNote.show(this.sectionType, this.moduleNumber);
+        }
+        
         // 해설 화면에 전달할 데이터 준비
         const explainData = {
             sectionType: this.sectionType,
@@ -790,6 +795,12 @@ const FlowController = {
     // ========================================
     finish() {
         console.log('🏠 [FlowController] 종료 → 스케줄 화면으로');
+        
+        // ★ 오답노트 패널 정리
+        if (typeof ErrorNote !== 'undefined') {
+            ErrorNote.hide();
+        }
+        
         this.cleanup();
         
         if (typeof backToSchedule === 'function') {
