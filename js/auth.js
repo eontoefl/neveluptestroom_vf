@@ -76,8 +76,22 @@ async function handleLogin(event) {
             return;
         }
         
-        // 2. 프로그램 정보 조회 (4주/8주)
+        // 2. 프로그램 정보 조회 (4주/8주) + 입금 확인 체크
         const programInfo = await getStudentProgram(email);
+        
+        // 수강신청 없음
+        if (programInfo.error === 'no_application') {
+            showLoginError('수강 신청 내역이 없습니다. 공식 홈페이지에서 먼저 수강 신청을 해주세요.');
+            resetLoginBtn();
+            return;
+        }
+        
+        // 입금 미확인
+        if (programInfo.error === 'not_confirmed') {
+            showLoginError('수강 등록이 아직 확인되지 않았습니다. 입금 확인 후 이용 가능합니다.');
+            resetLoginBtn();
+            return;
+        }
         
         // 3. 세션에 저장할 사용자 정보 구성
         const programType = programInfo.program.includes('Fast') ? 'fast' : 'standard';
