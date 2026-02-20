@@ -1,28 +1,107 @@
 // Reading - 일상리딩2 (Daily Reading 2) 데이터 구조
-// Google Sheets 연동 방식 (일상리딩1과 동일, 문제 3개)
+// v3 - Supabase 우선 → Google Sheets 폴백 방식
 
-const DAILY2_SHEET_CONFIG = {
-    spreadsheetId: '12EmtpZUXLyqyHH8iFfBiBgw7DVzP15LUWcIEaQLuOfY',
-    sheetGid: '840514208', // 일상리딩2 데이터용 시트
-};
+// Google Sheets 설정 (폴백용)
+const DAILY2_SHEET_CONFIG = { spreadsheetId: '12EmtpZUXLyqyHH8iFfBiBgw7DVzP15LUWcIEaQLuOfY', sheetGid: '840514208' };
 
-// Google Sheets에서 일상리딩2 데이터 가져오기
+// ========== Supabase → Google Sheets 폴백 ==========
 async function fetchDaily2FromSheet() {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${DAILY2_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${DAILY2_SHEET_CONFIG.sheetGid}`;
+    // 1) Supabase 우선 시도
+    const supabaseResult = await _fetchDaily2FromSupabase();
+    if (supabaseResult) return supabaseResult;
+    
+    // 2) 실패 시 Google Sheets 폴백
+    console.log('🔄 [Daily2] Google Sheets 폴백 시도...');
+    return await _fetchDaily2FromGoogleSheets();
+}
+
+// --- Supabase에서 로드 ---
+async function _fetchDaily2FromSupabase() {
+    if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) {
+        console.log('📋 [Daily2] Supabase 비활성화 → 건너뜀');
+        return null;
+    }
+    if (typeof supabaseSelect !== 'function') {
+        console.warn('⚠️ [Daily2] supabaseSelect 함수 없음 → 건너뜀');
+        return null;
+    }
     
     try {
-        const response = await fetch(csvUrl);
+        console.log('📥 [Daily2] Supabase에서 데이터 로드...');
+        const rows = await supabaseSelect('tr_reading_daily2', 'select=*&order=id.asc');
         
+        if (!rows || rows.length === 0) {
+            console.warn('⚠️ [Daily2] Supabase 데이터 없음');
+            return null;
+        }
+        
+        console.log(`✅ [Daily2] Supabase에서 ${rows.length}개 세트 로드 성공`);
+        
+        const sets = rows.map(row => {
+            const translations = row.sentence_translations ? row.sentence_translations.split('##') : [];
+            
+            const interactiveWordsList = [];
+            if (row.interactive_words) {
+                row.interactive_words.split('##').forEach(wordStr => {
+                    const parts = wordStr.split('::');
+                    if (parts.length >= 2) {
+                        interactiveWordsList.push({
+                            word: parts[0].trim(),
+                            translation: parts[1].trim(),
+                            explanation: parts.length >= 3 ? parts[2].trim() : ''
+                        });
+                    }
+                });
+            }
+            
+            const question1 = parseDaily2QuestionData(row.question1);
+            const question2 = parseDaily2QuestionData(row.question2);
+            const question3 = parseDaily2QuestionData(row.question3);
+            const questions = [];
+            if (question1) questions.push(question1);
+            if (question2) questions.push(question2);
+            if (question3) questions.push(question3);
+            
+            return {
+                id: row.id,
+                mainTitle: row.main_title,
+                passage: {
+                    title: row.passage_title,
+                    content: row.passage_content,
+                    translations,
+                    interactiveWords: interactiveWordsList
+                },
+                questions
+            };
+        });
+        
+        return { type: 'daily_reading_2', timeLimit: 80, sets };
+        
+    } catch (error) {
+        console.error('❌ [Daily2] Supabase 로드 실패:', error);
+        return null;
+    }
+}
+
+// --- Google Sheets에서 로드 (원본 코드) ---
+async function _fetchDaily2FromGoogleSheets() {
+    try {
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${DAILY2_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${DAILY2_SHEET_CONFIG.sheetGid}`;
+        console.log('📥 [Daily2] Google Sheets CSV URL:', csvUrl);
+        
+        const response = await fetch(csvUrl);
         if (!response.ok) {
-            console.warn('일상리딩2 데이터 시트에 접근할 수 없습니다. 데모 데이터를 사용합니다.');
+            console.warn('⚠️ [Daily2] Google Sheets HTTP 에러:', response.status);
             return null;
         }
         
         const csvText = await response.text();
+        console.log(`✅ [Daily2] Google Sheets CSV 다운로드 완료 (${csvText.length} bytes)`);
+        
         return parseDaily2CSV(csvText);
         
     } catch (error) {
-        console.error('일상리딩2 데이터 로드 실패:', error);
+        console.error('❌ [Daily2] Google Sheets 로드 실패:', error);
         return null;
     }
 }

@@ -1,28 +1,79 @@
 // Reading - 빈칸채우기 (Fill in the Blanks) 데이터 구조
-// Google Sheets 연동 방식
+// v3 - Supabase 우선 → Google Sheets 폴백 방식
 
-const FILLBLANKS_SHEET_CONFIG = {
-    spreadsheetId: '12EmtpZUXLyqyHH8iFfBiBgw7DVzP15LUWcIEaQLuOfY',
-    sheetGid: '0', // 첫 번째 시트 (빈칸채우기 데이터용)
-};
+// Google Sheets 설정 (폴백용)
+const FILLBLANKS_SHEET_CONFIG = { spreadsheetId: '12EmtpZUXLyqyHH8iFfBiBgw7DVzP15LUWcIEaQLuOfY', sheetGid: '0' };
 
-// Google Sheets에서 빈칸채우기 데이터 가져오기
+// ========== Supabase → Google Sheets 폴백 ==========
 async function fetchFillBlanksFromSheet() {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${FILLBLANKS_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${FILLBLANKS_SHEET_CONFIG.sheetGid}`;
+    // 1) Supabase 우선 시도
+    const supabaseResult = await _fetchFillBlanksFromSupabase();
+    if (supabaseResult) return supabaseResult;
+    
+    // 2) 실패 시 Google Sheets 폴백
+    console.log('🔄 [FillBlanks] Google Sheets 폴백 시도...');
+    return await _fetchFillBlanksFromGoogleSheets();
+}
+
+// --- Supabase에서 로드 ---
+async function _fetchFillBlanksFromSupabase() {
+    if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) {
+        console.log('📋 [FillBlanks] Supabase 비활성화 → 건너뜀');
+        return null;
+    }
+    if (typeof supabaseSelect !== 'function') {
+        console.warn('⚠️ [FillBlanks] supabaseSelect 함수 없음 → 건너뜀');
+        return null;
+    }
     
     try {
-        const response = await fetch(csvUrl);
+        console.log('📥 [FillBlanks] Supabase에서 데이터 로드...');
+        const rows = await supabaseSelect('tr_reading_fillblanks', 'select=id,passage_with_markers&order=id.asc');
         
+        if (!rows || rows.length === 0) {
+            console.warn('⚠️ [FillBlanks] Supabase 데이터 없음');
+            return null;
+        }
+        
+        console.log(`✅ [FillBlanks] Supabase에서 ${rows.length}개 세트 로드 성공`);
+        
+        const sets = rows.map(row => {
+            const parsedData = parsePassageWithMarkers(row.passage_with_markers);
+            return {
+                id: row.id,
+                title: 'Fill in the missing letters in the paragraph.',
+                passage: parsedData.cleanPassage,
+                blanks: parsedData.blanks
+            };
+        });
+        
+        return { type: 'fill_blanks', timeLimit: 180, sets };
+        
+    } catch (error) {
+        console.error('❌ [FillBlanks] Supabase 로드 실패:', error);
+        return null;
+    }
+}
+
+// --- Google Sheets에서 로드 (원본 코드) ---
+async function _fetchFillBlanksFromGoogleSheets() {
+    try {
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${FILLBLANKS_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${FILLBLANKS_SHEET_CONFIG.sheetGid}`;
+        console.log('📥 [FillBlanks] Google Sheets CSV URL:', csvUrl);
+        
+        const response = await fetch(csvUrl);
         if (!response.ok) {
-            console.warn('빈칸채우기 데이터 시트에 접근할 수 없습니다. 데모 데이터를 사용합니다.');
+            console.warn('⚠️ [FillBlanks] Google Sheets HTTP 에러:', response.status);
             return null;
         }
         
         const csvText = await response.text();
+        console.log(`✅ [FillBlanks] Google Sheets CSV 다운로드 완료 (${csvText.length} bytes)`);
+        
         return parseFillBlanksCSV(csvText);
         
     } catch (error) {
-        console.error('빈칸채우기 데이터 로드 실패:', error);
+        console.error('❌ [FillBlanks] Google Sheets 로드 실패:', error);
         return null;
     }
 }
