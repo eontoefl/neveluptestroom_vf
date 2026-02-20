@@ -309,24 +309,13 @@ const ProgressTracker = {
 };
 
 // ========================================
-// 자동 연동: initScheduleScreen 호출 시 진도율도 업데이트
+// 자동 연동: showTaskListScreen에 체크 표시 + AuthMonitor 캐시 갱신
 // ========================================
 (function() {
     var setupDone = false;
 
     function setup() {
         if (setupDone) return;
-
-        // initScheduleScreen 감싸기
-        if (typeof window.initScheduleScreen === 'function') {
-            var originalInit = window.initScheduleScreen;
-            window.initScheduleScreen = function() {
-                originalInit();
-                // 스케줄 렌더링 후 진도율 UI 업데이트
-                ProgressTracker.updateScheduleUI();
-            };
-            console.log('📊 [ProgressTracker] initScheduleScreen 연동 완료');
-        }
 
         // showTaskListScreen 감싸기 (과제 목록에 체크 표시)
         if (typeof window.showTaskListScreen === 'function') {
@@ -358,29 +347,6 @@ const ProgressTracker = {
         }
 
         setupDone = true;
-
-        // ★ wrap 적용 직후, 이미 스케줄 화면이 표시돼 있으면 즉시 업데이트
-        var scheduleScreen = document.getElementById('scheduleScreen');
-        if (scheduleScreen && (scheduleScreen.classList.contains('active') || scheduleScreen.style.display === 'block')) {
-            console.log('📊 [ProgressTracker] 스케줄 화면 이미 활성 — 즉시 업데이트');
-            ProgressTracker.updateScheduleUI();
-        }
-
-        // ★ 로그인 후 화면 전환 타이밍 대비 — 2초/4초 후에도 재확인
-        setTimeout(function() {
-            var s = document.getElementById('scheduleScreen');
-            if (s && s.classList.contains('active') && !document.getElementById('totalProgressContainer')) {
-                console.log('📊 [ProgressTracker] 지연 업데이트 (2초)');
-                ProgressTracker.updateScheduleUI();
-            }
-        }, 2000);
-        setTimeout(function() {
-            var s = document.getElementById('scheduleScreen');
-            if (s && s.classList.contains('active') && !document.getElementById('totalProgressContainer')) {
-                console.log('📊 [ProgressTracker] 지연 업데이트 (4초)');
-                ProgressTracker.updateScheduleUI();
-            }
-        }, 4000);
     }
 
     // 페이지 로드 후 연결
@@ -392,7 +358,7 @@ const ProgressTracker = {
         setTimeout(setup, 800);
     }
 
-    // 반복 체크 (FlowController 등이 늦게 로드될 경우 대비)
+    // 반복 체크
     var checkCount = 0;
     var checkInterval = setInterval(function() {
         if (setupDone || checkCount > 20) {
