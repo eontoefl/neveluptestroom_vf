@@ -343,9 +343,12 @@ function showTaskListScreen(week, dayKr, tasks) {
             }
             
             card.onclick = () => {
-                console.log(`🎯 [과제 실행] ${taskName}`);
-                executeTask(taskName);
-            };
+    console.log(`🎯 [과제 실행] ${taskName}`);
+    // 마감 체크를 위해 currentTest에 주차/요일 보장
+    if (!currentTest.currentWeek) currentTest.currentWeek = week;
+    if (!currentTest.currentDay) currentTest.currentDay = dayKr;
+    executeTask(taskName);
+};
             
             card.innerHTML = `
                 <i class="${icon}"></i>
