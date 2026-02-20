@@ -335,12 +335,17 @@ const AuthMonitor = {
             return originalAfterFirst();
         };
 
-        // 3) FlowController.finish 감싸기 → 기록 저장 + 감시 종료
+        // 3) FlowController.finish 감싸기 → 기록 저장 + 감시 종료 + 모든 화면 숨기기
         var originalFinish = fc.finish.bind(fc);
         fc.finish = async function() {
             AuthMonitor.recordWorkflowComplete();
             await AuthMonitor.saveRecords();
             AuthMonitor.stop();
+            // ★ result-screen, test-screen 등 모든 화면 숨기기
+            // backToSchedule()이 .screen만 정리하므로, 나머지도 여기서 처리
+            document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
+                el.style.display = 'none';
+            });
             return originalFinish();
         };
 
