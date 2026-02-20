@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="css/vocab-test-v3.css?v=20250209-icon-buttons">
     <link rel="stylesheet" href="css/vocab-test-result-v4.css?v=20250209-clean-layout">
     <link rel="stylesheet" href="css/intro-book-modal.css?v=001">
+    <link rel="stylesheet" href="css/review-panel.css?v=001">
     
     <!-- INLINE STYLES FOR DISCUSSION - 직접 삽입 -->
     <style>
@@ -454,6 +455,7 @@
                 <span id="fillBlanksHeaderTitle"><i class="fas fa-book-open"></i> 빈칸채우기</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="fillBlanksTimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="fillBlanksTimer">20:00</span>
@@ -1191,6 +1193,7 @@
                 <span id="daily1HeaderTitle"><i class="fas fa-book-open"></i> 일상지문 1</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="daily1TimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="daily1Timer">20:00</span>
@@ -1357,6 +1360,7 @@
                 <span id="daily2HeaderTitle"><i class="fas fa-book-open"></i> 일상지문 2</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="daily2TimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="daily2Timer">20:00</span>
@@ -1418,6 +1422,7 @@
                 <span id="academicHeaderTitle"><i class="fas fa-book-open"></i> 학술지문</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="academicTimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="academicTimer">20:00</span>
@@ -1478,6 +1483,7 @@
                 <span id="responseHeaderTitle"><i class="fas fa-headphones"></i> 응답고르기</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="responseTimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="responseTimer">0:20</span>
@@ -1583,6 +1589,7 @@
                 <span id="converHeaderTitle"><i class="fas fa-headphones"></i> 대화</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="converTimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="converTimer">0:20</span>
@@ -1693,6 +1700,7 @@
                 <span id="announcementHeaderTitle"><i class="fas fa-headphones"></i> 공지사항</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="announcementTimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="announcementTimer">00:20</span>
@@ -1854,6 +1862,7 @@
                 <span id="lectureHeaderTitle"><i class="fas fa-headphones"></i> 렉쳐</span>
             </div>
             <div class="test-header-right">
+                <button class="review-btn" onclick="openReviewPanel()"><i class="fas fa-list"></i> Review</button>
                 <div class="test-timer" id="lectureTimerWrap">
                     <i class="fas fa-clock"></i>
                     <span id="lectureTimer">00:30</span>
@@ -3185,5 +3194,32 @@
     <script src="js/listening-retake-result.js?v=20260215_004"></script>
     <script src="js/listening-retake-detail.js?v=20260215_011"></script>
 <script src="js/final-explain-screen.js?v=001"></script>
+<script src="js/review-panel.js?v=001"></script>
+
+<!-- Review 패널 (전체 화면 오버레이) -->
+<div id="reviewPanel">
+    <div class="review-header">
+        <div class="review-header-left">
+            <button class="review-back-btn" onclick="closeReviewPanel()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <span id="reviewPanelTitle">Review</span>
+        </div>
+        <div class="review-summary" id="reviewSummary"></div>
+    </div>
+    <div class="review-table-wrapper">
+        <table class="review-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="reviewTableBody">
+            </tbody>
+        </table>
+    </div>
+</div>
 </body>
 </html>
