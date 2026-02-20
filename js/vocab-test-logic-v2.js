@@ -604,6 +604,8 @@ async function saveVocabRecord(correctCount, totalCount, percentage) {
     var ct = window.currentTest;
     if (ct && ct.currentWeek) {
         scheduleInfo = { week: ct.currentWeek, day: ct.currentDay || '월' };
+    } else if (currentWeekId && currentDayId) {
+        scheduleInfo = { week: currentWeekId, day: currentDayId };
     }
 
     var accuracyRate = percentage / 100;
