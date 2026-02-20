@@ -163,7 +163,7 @@ async function getStudentProgram(userEmail) {
     // applications 테이블에서 가장 최근 신청서 조회
     const apps = await supabaseSelect(
         'applications',
-        `email=eq.${encodeURIComponent(userEmail)}&order=created_at.desc&limit=1&select=id,preferred_program,preferred_start_date,current_step,status`
+        `email=eq.${encodeURIComponent(userEmail)}&order=created_at.desc&limit=1&select=id,preferred_program,preferred_start_date,schedule_start,current_step,status`
     );
 
     if (!apps || apps.length === 0) {
@@ -180,7 +180,7 @@ async function getStudentProgram(userEmail) {
 
     return {
         program: app.preferred_program || '내벨업챌린지 - Standard',
-        startDate: app.preferred_start_date,
+        startDate: app.schedule_start || app.preferred_start_date,
         applicationId: app.id,
         currentStep: app.current_step,
         status: app.status
