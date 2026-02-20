@@ -51,15 +51,12 @@ function initScheduleScreen() {
     // 진도율 Progress Bar 표시
     if (typeof ProgressTracker !== 'undefined') {
         const pt = currentUser.programType || (currentUser.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
-        if (ProgressTracker._loaded) {
+        // ★ 매번 Supabase에서 최신 데이터 조회 후 렌더링
+        ProgressTracker._loaded = false;
+        ProgressTracker.loadCompletedTasks().then(function() {
+            renderSchedule(currentUser.program);
             ProgressTracker.renderTotalProgressBar(pt);
-        } else {
-            ProgressTracker.loadCompletedTasks().then(function() {
-                ProgressTracker.renderTotalProgressBar(pt);
-                // 데이터 로드 후 요일 진도도 다시 그리기
-                renderSchedule(currentUser.program);
-                ProgressTracker.renderTotalProgressBar(pt);
-            });
+        });
         }
     }
 }
