@@ -1479,6 +1479,166 @@ body {
     line-height: 1.4;
 }
 
+/* ================================================
+   Progress Tracker — 진도율 시스템
+   ================================================ */
+
+/* 전체 진도율 Progress Bar */
+.total-progress-container {
+    max-width: 1000px;
+    margin: 0 auto 24px;
+    background: var(--surface-color);
+    padding: 20px 28px;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+.total-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.total-progress-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.total-progress-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.total-progress-bar-track {
+    width: 100%;
+    height: 10px;
+    background: var(--bg-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.total-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color), #5dab64);
+    border-radius: 5px;
+    transition: width 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    min-width: 0;
+}
+
+.total-progress-percent {
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--success-color);
+    margin-top: 6px;
+}
+
+/* CSS 체크 아이콘 (이모지 사용 안 함) */
+.check-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    position: relative;
+    vertical-align: middle;
+}
+
+.check-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    background: var(--success-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.check-icon::after {
+    content: '';
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    width: 5px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* 작은 체크 아이콘 (과제 카드용) */
+.check-icon-sm {
+    width: 14px;
+    height: 14px;
+}
+
+.check-icon-sm::before {
+    width: 14px;
+    height: 14px;
+}
+
+.check-icon-sm::after {
+    width: 4px;
+    height: 7px;
+}
+
+/* 요일 버튼 내 진도 표시 */
+.day-progress {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.day-progress-done {
+    color: var(--success-color);
+}
+
+.day-progress-partial {
+    color: var(--warning-color);
+}
+
+.day-progress-none {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* 과제 카드 완료 배지 */
+.task-complete-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.section-card {
+    position: relative;
+}
+
+.section-card.task-completed {
+    border-color: var(--success-color);
+    background: linear-gradient(135deg, var(--bg-color), rgba(119, 191, 126, 0.05));
+}
+
+.section-card.task-completed::after {
+    content: '완료';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--success-color);
+    background: rgba(119, 191, 126, 0.12);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* ================================================ */
+
 /* Fill in the Blanks */
 .fillblanks-container {
     max-width: 900px;
