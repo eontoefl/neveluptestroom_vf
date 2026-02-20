@@ -57,7 +57,6 @@ function initScheduleScreen() {
             renderSchedule(currentUser.program);
             ProgressTracker.renderTotalProgressBar(pt);
         });
-        }
     }
 }
 
