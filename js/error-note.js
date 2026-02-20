@@ -67,13 +67,15 @@ var ErrorNote = {
                 '<textarea id="errorNoteTextarea" class="error-note-textarea" ' +
                     'placeholder="틀린 문제에 대한 오답 분석, 핵심 개념 정리, 다음에 주의할 점 등을 자유롭게 작성해주세요..."></textarea>' +
                 '<div class="error-note-footer">' +
-                    '<div class="error-note-word-count">' +
-                        '<span id="errorNoteWordCount">0</span>단어' +
-                        '<span class="error-note-min"> (최소 20단어)</span>' +
+                    '<div class="error-note-notice">' +
+                        '<i class="fas fa-info-circle"></i> 20단어 이상 작성 시 인정됩니다' +
                     '</div>' +
                     '<button id="errorNoteSubmitBtn" class="error-note-submit-btn" onclick="ErrorNote.handleSubmit()">' +
                         '<i class="fas fa-paper-plane"></i> 제출' +
                     '</button>' +
+                '</div>' +
+                '<div class="error-note-resize-handle" id="errorNoteResizeHandle">' +
+                    '<div class="resize-bar"></div>' +
                 '</div>' +
             '</div>';
 
@@ -82,10 +84,61 @@ var ErrorNote = {
 
         // 이벤트 연결
         var textarea = document.getElementById('errorNoteTextarea');
-        if (textarea) {
-            textarea.addEventListener('input', function() {
-                ErrorNote.updateWordCount();
+
+        // 드래그로 패널 크기 조절
+        var resizeHandle = document.getElementById('errorNoteResizeHandle');
+        if (resizeHandle && panel) {
+            var startY = 0;
+            var startHeight = 0;
+
+            resizeHandle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                startY = e.clientY;
+                startHeight = panel.offsetHeight;
+                
+                function onMouseMove(e) {
+                    var diff = startY - e.clientY;
+                    var newHeight = Math.max(120, Math.min(window.innerHeight - 40, startHeight + diff));
+                    panel.style.height = newHeight + 'px';
+                    // textarea 높이도 같이 늘리기
+                    var ta = document.getElementById('errorNoteTextarea');
+                    if (ta) {
+                        var taHeight = newHeight - 180;
+                        if (taHeight > 60) ta.style.height = taHeight + 'px';
+                    }
+                }
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
             });
+
+            // 터치 지원
+            resizeHandle.addEventListener('touchstart', function(e) {
+                var touch = e.touches[0];
+                startY = touch.clientY;
+                startHeight = panel.offsetHeight;
+                
+                function onTouchMove(e) {
+                    var touch = e.touches[0];
+                    var diff = startY - touch.clientY;
+                    var newHeight = Math.max(120, Math.min(window.innerHeight - 40, startHeight + diff));
+                    panel.style.height = newHeight + 'px';
+                    var ta = document.getElementById('errorNoteTextarea');
+                    if (ta) {
+                        var taHeight = newHeight - 180;
+                        if (taHeight > 60) ta.style.height = taHeight + 'px';
+                    }
+                }
+                function onTouchEnd() {
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                }
+                document.addEventListener('touchmove', onTouchMove);
+                document.addEventListener('touchend', onTouchEnd);
+            }, { passive: true });
         }
 
         var toggle = document.getElementById('errorNoteToggle');
