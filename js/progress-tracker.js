@@ -185,7 +185,12 @@ var ProgressTracker = {
         } else if (type === 'vocab' || type === 'intro-book') {
             // vocab, intro-book은 week_day 기반으로 판단
             // week/day 정보가 있으면 날짜별 매칭, 없으면 module_number 매칭
-            return this.isTaskCompleted(type, 1);
+            var ct = window.currentTest;
+if (ct && ct.currentWeek && ct.currentDay) {
+    var wdKey = type + '_w' + ct.currentWeek + '_' + ct.currentDay;
+    return !!this._completedTasks[wdKey];
+}
+return false;
         } else {
             return false;
         }
