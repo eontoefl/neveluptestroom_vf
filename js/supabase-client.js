@@ -179,7 +179,7 @@ async function getStudentProgram(userEmail) {
     console.log('✅ [Supabase] 프로그램:', app.assigned_program || app.preferred_program);
 
     return {
-        program: app.preferred_program || '내벨업챌린지 - Standard',
+        program: app.assigned_program || app.preferred_program || '내벨업챌린지 - Standard',
         startDate: app.schedule_start || app.preferred_start_date,
         applicationId: app.id,
         currentStep: app.current_step,
