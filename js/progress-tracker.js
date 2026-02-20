@@ -440,14 +440,26 @@ return false;
     // 과제 완료 후 캐시 즉시 갱신 (재조회 없이)
     // ========================================
     markCompleted(taskType, moduleNumber) {
-        var key = taskType + '_' + moduleNumber;
-        this._completedTasks[key] = {
-            week: window.currentTest ? window.currentTest.currentWeek : 1,
-            day: window.currentTest ? window.currentTest.currentDay : '월',
+    var key = taskType + '_' + moduleNumber;
+    var ct = window.currentTest;
+    var week = ct ? ct.currentWeek : 1;
+    var day = ct ? ct.currentDay : '월';
+    this._completedTasks[key] = {
+        week: week,
+        day: day,
+        completedAt: new Date().toISOString()
+    };
+    if (taskType === 'vocab' || taskType === 'intro-book') {
+        var wdKey = taskType + '_w' + week + '_' + day;
+        this._completedTasks[wdKey] = {
+            week: week,
+            day: day,
             completedAt: new Date().toISOString()
         };
-        console.log('📊 [ProgressTracker] 캐시 업데이트:', key);
+        console.log('📊 [ProgressTracker] 캐시 업데이트:', wdKey);
     }
+    console.log('📊 [ProgressTracker] 캐시 업데이트:', key);
+}
 };
 
 // ========================================
