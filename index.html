@@ -608,9 +608,6 @@
             <button class="btn btn-primary btn-large" onclick="showRetakeDetailPage(1)">
                 유형별 세부 결과 보기 →
             </button>
-            <button class="btn btn-secondary btn-large" onclick="FlowController.finish()" style="margin-top:10px;">
-                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
-            </button>
         </div>
     </div>
 
@@ -806,8 +803,8 @@
             <button class="btn btn-secondary" onclick="showRetakeDetailPage(3)">
                 <i class="fas fa-arrow-left"></i> 이전: 일상리딩 2
             </button>
-            <button class="btn btn-primary" onclick="backToRetakeResult()">
-                2차 결과로 돌아가기 <i class="fas fa-check"></i>
+            <button class="btn btn-primary" onclick="FlowController.finish()">
+                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
             </button>
         </div>
     </div>
@@ -933,9 +930,6 @@
         <div class="retake-navigation">
             <button class="btn btn-primary btn-large" onclick="showListeningRetakeDetailPage(1)">
                 유형별 세부 결과 보기 →
-            </button>
-            <button class="btn btn-secondary btn-large" onclick="FlowController.finish()" style="margin-top:10px;">
-                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
             </button>
         </div>
     </div>
@@ -1805,7 +1799,7 @@
     <!-- Listening - 렉쳐 채점 결과 화면 -->
     <div id="listeningLectureResultScreen" class="screen">
         <div class="test-header">
-            <button class="btn-back-to-schedule" onclick="backToScheduleFromLectureResult()">
+            <button class="btn-back-to-schedule" onclick="FlowController.finish()">
                 <i class="fas fa-arrow-left"></i> 학습 일정
             </button>
             <div class="test-title">
@@ -1845,7 +1839,7 @@
                 </div>
                 
                 <div class="result-actions">
-                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromLectureResult()">
+                    <button class="btn btn-primary btn-large" onclick="FlowController.finish()">
                         <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
                     </button>
                 </div>
