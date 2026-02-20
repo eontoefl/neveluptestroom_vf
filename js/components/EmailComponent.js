@@ -99,6 +99,15 @@ class EmailComponent {
     async loadData() {
         console.log('[EmailComponent] 데이터 로드 시작');
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.data = supabaseResult;
+            return;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [EmailComponent] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.gid}`;
         console.log('[EmailComponent] CSV URL:', csvUrl);
         
@@ -117,6 +126,56 @@ class EmailComponent {
         } catch (error) {
             console.error('[EmailComponent] 데이터 로드 실패, 데모 데이터 사용:', error);
             this.data = this.getDemoData();
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [EmailComponent] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_writing_email', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [EmailComponent] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [EmailComponent] Supabase에서 ${rows.length}개 세트 로드 성공`);
+            
+            const sets = rows.map(row => {
+                const bullets = [];
+                for (let b = 1; b <= 3; b++) {
+                    bullets.push({
+                        bulletNum: b,
+                        must: row[`bullet${b}_must`] || '',
+                        sample: row[`bullet${b}_sample`] || '',
+                        points: row[`bullet${b}_points`] || '',
+                        key: row[`bullet${b}_key`] || ''
+                    });
+                }
+                
+                return {
+                    id: row.id,
+                    scenario: row.scenario || '',
+                    task: row.task || '',
+                    instruction1: row.instruction1 || '',
+                    instruction2: row.instruction2 || '',
+                    instruction3: row.instruction3 || '',
+                    to: row.to_recipient || '',
+                    subject: row.subject || '',
+                    sampleAnswer: row.sample_answer || '',
+                    bullets: bullets
+                };
+            });
+            
+            return { type: 'writing_email', timeLimit: this.TIME_LIMIT, sets };
+            
+        } catch (error) {
+            console.error('❌ [EmailComponent] Supabase 로드 실패:', error);
+            return null;
         }
     }
     

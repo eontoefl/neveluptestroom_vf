@@ -108,6 +108,15 @@ class DiscussionComponent {
     async loadDiscussionData() {
         console.log('📥 [Discussion] 데이터 로드 시작...');
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.writingDiscussionData = supabaseResult;
+            return supabaseResult;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [Discussion] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.DISCUSSION_SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.DISCUSSION_SHEET_CONFIG.sheetGid}`;
         
         try {
@@ -117,13 +126,79 @@ class DiscussionComponent {
             const csvText = await response.text();
             this.writingDiscussionData = this.parseDiscussionCSV(csvText);
             
-            console.log('✅ [Discussion] 데이터 로드 성공:', this.writingDiscussionData);
+            console.log('✅ [Discussion] Google Sheets 데이터 로드 성공:', this.writingDiscussionData);
             return this.writingDiscussionData;
         } catch (error) {
             console.error('❌ [Discussion] 데이터 로드 실패:', error);
             console.log('📦 Demo 데이터 사용');
             this.writingDiscussionData = this.getDiscussionDemoData();
             return this.writingDiscussionData;
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [Discussion] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_writing_discussion', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [Discussion] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [Discussion] Supabase에서 ${rows.length}개 세트 로드 성공`);
+            
+            const sets = rows.map(row => {
+                const setData = {
+                    setNumber: row.id || '',
+                    classContext: row.class_context || '',
+                    topic: row.topic || '',
+                    student1Opinion: row.student1_opinion || '',
+                    student2Opinion: row.student2_opinion || '',
+                    sampleAnswer: row.sample_answer || '',
+                    bullet1Sentence: row.bullet1_sentence || '',
+                    bullet1ETS: row.bullet1_ets || '',
+                    bullet1Strategy: row.bullet1_strategy || '',
+                    bullet2Sentence: row.bullet2_sentence || '',
+                    bullet2ETS: row.bullet2_ets || '',
+                    bullet2Strategy: row.bullet2_strategy || '',
+                    bullet3Sentence: row.bullet3_sentence || '',
+                    bullet3ETS: row.bullet3_ets || '',
+                    bullet3Strategy: row.bullet3_strategy || '',
+                    bullet4Sentence: row.bullet4_sentence || '',
+                    bullet4ETS: row.bullet4_ets || '',
+                    bullet4Strategy: row.bullet4_strategy || '',
+                    bullet5Sentence: row.bullet5_sentence || '',
+                    bullet5ETS: row.bullet5_ets || '',
+                    bullet5Strategy: row.bullet5_strategy || ''
+                };
+                
+                // Bullets 배열 구성 (빈 값 제외)
+                setData.bullets = [];
+                for (let i = 1; i <= 5; i++) {
+                    const sentence = setData[`bullet${i}Sentence`];
+                    if (sentence && sentence.trim()) {
+                        setData.bullets.push({
+                            bulletNum: i,
+                            sentence: sentence,
+                            ets: setData[`bullet${i}ETS`] || '',
+                            strategy: setData[`bullet${i}Strategy`] || ''
+                        });
+                    }
+                }
+                
+                return setData;
+            });
+            
+            return sets;
+            
+        } catch (error) {
+            console.error('❌ [Discussion] Supabase 로드 실패:', error);
+            return null;
         }
     }
     
