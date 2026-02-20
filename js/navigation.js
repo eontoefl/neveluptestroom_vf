@@ -10,10 +10,20 @@ function backToSchedule() {
     const isTaskListScreen = currentScreenId === 'welcomeScreen';
     
     // 실제 시험 화면인 경우에만 경고 표시
-    let shouldConfirm = !isTaskListScreen;
-    
-    if (shouldConfirm) {
-        if (!confirm('진행 중인 과제를 종료하고 학습 일정으로 돌아가시겠습니까?\n(현재까지의 답안은 저장되지 않습니다)')) {
+    if (!isTaskListScreen) {
+        // AuthMonitor 상태로 구간 판별
+        var hasSubmitted = window.AuthMonitor && (AuthMonitor._step1Done || AuthMonitor._step2Done);
+        var msg;
+        
+        if (hasSubmitted) {
+            // 1차 이후 (30%~60% 확보 상태)
+            msg = '⚠️ 지금 나가면 남은 인증률을 받을 수 없습니다.\n나가시겠습니까?';
+        } else {
+            // 1차 풀이 중 (아직 제출 전)
+            msg = '⚠️ 지금 나가면 모든 답안이 사라집니다.\n나가시겠습니까?';
+        }
+        
+        if (!confirm(msg)) {
             return; // 취소하면 함수 종료
         }
     }
