@@ -146,9 +146,11 @@ function executeTask(taskName) {
     
     // ── 4시 마감 체크 ──
     if (isTaskDeadlinePassed()) {
-        alert('마감 시간(새벽 4시)이 지나 제출할 수 없습니다.');
-        return;
-    }
+    alert('마감 시간이 지난 과제입니다. 연습용으로 풀 수 있지만 인증률에는 반영되지 않습니다.');
+    window._deadlinePassedMode = true;
+} else {
+    window._deadlinePassedMode = false;
+}
     
     const parsed = parseTaskName(taskName);
     console.log('  파싱 결과:', parsed);
