@@ -215,12 +215,16 @@ const AuthMonitor = {
 
         // 결과 데이터 추출
         var firstResult = null;
-        var sectionType = this.sectionType;
-        var moduleNumber = this.moduleNumber;
+        // ★ 스냅샷이 있으면 스냅샷에서, 없으면 현재 상태에서 데이터 가져오기
+        var snap = this._snapshot || {};
+        var sectionType = snap.sectionType || this.sectionType;
+        var moduleNumber = snap.moduleNumber || this.moduleNumber;
 
         if (sectionType === 'writing' && wf && wf.arrange1stResult) {
             // WritingFlow에서 결과 추출
             firstResult = wf.arrange1stResult;
+        } else if (snap.firstAttemptResult) {
+            firstResult = snap.firstAttemptResult;
         } else if (fc) {
             firstResult = fc.firstAttemptResult;
         }
@@ -335,18 +339,26 @@ const AuthMonitor = {
             return originalAfterFirst();
         };
 
-        // 3) FlowController.finish 감싸기 → 기록 저장 + 감시 종료 + 모든 화면 숨기기
+        // 3) FlowController.finish 감싸기 → 데이터 스냅샷 → 기록 저장 → 화면 정리
         var originalFinish = fc.finish.bind(fc);
         fc.finish = async function() {
+            // ★ cleanup 전에 FlowController 데이터를 미리 복사
+            AuthMonitor._snapshot = {
+                sectionType: fc.sectionType,
+                moduleNumber: fc.moduleNumber,
+                firstAttemptResult: fc.firstAttemptResult
+            };
             AuthMonitor.recordWorkflowComplete();
-            await AuthMonitor.saveRecords();
-            AuthMonitor.stop();
             // ★ result-screen, test-screen 등 모든 화면 숨기기
-            // backToSchedule()이 .screen만 정리하므로, 나머지도 여기서 처리
             document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
                 el.style.display = 'none';
             });
-            return originalFinish();
+            // ★ 먼저 원래 finish 실행 (cleanup + backToSchedule)
+            originalFinish();
+            // ★ 그 다음 비동기로 저장 (화면 전환에 영향 없음)
+            await AuthMonitor.saveRecords();
+            AuthMonitor.stop();
+            AuthMonitor._snapshot = null;
         };
 
         console.log('✅ [AuthMonitor] FlowController 통합 완료');
