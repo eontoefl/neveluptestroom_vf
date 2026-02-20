@@ -115,6 +115,10 @@ var AuthMonitor = {
     // Supabase 저장: tr_study_records + tr_auth_records
     // ========================================
     saveRecords: async function() {
+        if (window._deadlinePassedMode) {
+    console.log('🔒 [Auth] 마감 지난 과제 — 저장 생략');
+    return;
+}
         var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
         if (!user || !user.id || user.id === 'dev-user-001') {
             console.log('🔒 [Auth] 개발 모드 — 저장 생략');
