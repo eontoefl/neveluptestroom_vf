@@ -160,22 +160,25 @@ async function loginWithCredentials(email, password) {
 async function getStudentProgram(userEmail) {
     console.log('📋 [Supabase] 프로그램 정보 조회:', userEmail);
 
-    // applications 테이블에서 가장 최근 신청서 조회
+    // applications 테이블에서 가장 최근 신청서 조회 (입금확인 포함)
     const apps = await supabaseSelect(
         'applications',
-        `email=eq.${encodeURIComponent(userEmail)}&order=created_at.desc&limit=1&select=id,preferred_program,assigned_program,preferred_start_date,schedule_start,current_step,status`
+        `email=eq.${encodeURIComponent(userEmail)}&order=created_at.desc&limit=1&select=id,preferred_program,assigned_program,preferred_start_date,schedule_start,current_step,status,deposit_confirmed_by_admin`
     );
 
     if (!apps || apps.length === 0) {
-        console.log('⚠️ [Supabase] 신청서 없음, 기본값(Standard) 사용');
-        return {
-            program: '내벨업챌린지 - Standard',
-            startDate: null,
-            applicationId: null
-        };
+        console.log('⚠️ [Supabase] 신청서 없음');
+        return { error: 'no_application' };
     }
 
     const app = apps[0];
+
+    // 입금 확인 여부 체크
+    if (!app.deposit_confirmed_by_admin) {
+        console.log('⚠️ [Supabase] 입금 미확인:', userEmail);
+        return { error: 'not_confirmed' };
+    }
+
     console.log('✅ [Supabase] 프로그램:', app.assigned_program || app.preferred_program);
 
     return {
