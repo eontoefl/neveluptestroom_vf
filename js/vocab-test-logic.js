@@ -316,7 +316,7 @@ function submitVocabTest() {
 }
 
 // 채점 결과 화면 표시
-function showVocabTestResult() {
+async function showVocabTestResult() {
     console.log('📊 채점 결과 표시');
     
     // 채점
@@ -358,7 +358,11 @@ function showVocabTestResult() {
     const percentage = Math.round((correctCount / totalCount) * 100);
     
     // ── Supabase에 보카 학습 기록 저장 ──
-    saveVocabRecord(correctCount, totalCount, percentage);
+    try {
+    await saveVocabRecord(correctCount, totalCount, percentage);
+} catch(e) {
+    console.error('📝 [Vocab] 저장 에러:', e);
+}
     
     // 결과 렌더링
     renderVocabResult(results, correctCount, totalCount, percentage);
