@@ -325,29 +325,41 @@ const AuthMonitor = {
         var fc = window.FlowController;
         if (!fc) return; // 아직 로드 안 됨 → 다음 시도 때 재확인
 
-        // 1) FlowController.start 감싸기 → AuthMonitor 시작
+        // 1) FlowController.start 감싸기 → AuthMonitor 시작 + 기본 정보 즉시 저장
         var originalStart = fc.start.bind(fc);
         fc.start = function(sectionType, moduleNumber) {
             AuthMonitor.start(sectionType, moduleNumber);
+            // ★ start 시점에 sectionType, moduleNumber를 확실히 보관
+            AuthMonitor._snapshot = {
+                sectionType: sectionType,
+                moduleNumber: moduleNumber,
+                firstAttemptResult: null
+            };
             return originalStart(sectionType, moduleNumber);
         };
 
-        // 2) FlowController.afterFirstAttempt 감싸기 → 1차 종료 시각 기록
+        // 2) FlowController.afterFirstAttempt 감싸기 → 1차 종료 시각 기록 + 결과 스냅샷
         var originalAfterFirst = fc.afterFirstAttempt.bind(fc);
         fc.afterFirstAttempt = function() {
             AuthMonitor.recordFirstAttemptEnd();
+            // ★ 1차 결과를 스냅샷에 저장 (cleanup 전에 확보)
+            if (AuthMonitor._snapshot && fc.firstAttemptResult) {
+                AuthMonitor._snapshot.firstAttemptResult = fc.firstAttemptResult;
+            }
             return originalAfterFirst();
         };
 
-        // 3) FlowController.finish 감싸기 → 데이터 스냅샷 → 기록 저장 → 화면 정리
+        // 3) FlowController.finish 감싸기 → 기록 저장 → 화면 정리
         var originalFinish = fc.finish.bind(fc);
         fc.finish = async function() {
-            // ★ cleanup 전에 FlowController 데이터를 미리 복사
-            AuthMonitor._snapshot = {
-                sectionType: fc.sectionType,
-                moduleNumber: fc.moduleNumber,
-                firstAttemptResult: fc.firstAttemptResult
-            };
+            // ★ finish 시점에도 한번 더 스냅샷 시도 (아직 cleanup 전이면 잡힘)
+            if (fc.sectionType) {
+                AuthMonitor._snapshot = {
+                    sectionType: fc.sectionType,
+                    moduleNumber: fc.moduleNumber,
+                    firstAttemptResult: fc.firstAttemptResult
+                };
+            }
             AuthMonitor.recordWorkflowComplete();
             // ★ result-screen, test-screen 등 모든 화면 숨기기
             document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
