@@ -2,6 +2,46 @@
  * 입문서 정독 PDF 모달 관련 함수
  */
 
+/**
+ * 4시 마감 체크 (데드라인 방식)
+ * N일 과제 → N+1일 04:00 KST 마감
+ * 미리 하는 건 OK, 지난 과제만 차단
+ * 
+ * @returns {boolean} true면 마감 지남 (과제 시작 불가)
+ */
+function isTaskDeadlinePassed() {
+    var ct = window.currentTest;
+    if (!ct || !ct.currentWeek || !ct.currentDay) return false;
+
+    // 학생의 시작일 정보
+    var user = window.currentUser;
+    if (!user || !user.startDate) return false;
+
+    // 요일 → 오프셋 (일=0, 월=1, ..., 금=5, 토=6)
+    var dayMap = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
+    var dayOffset = dayMap[ct.currentDay];
+    if (dayOffset === undefined) return false;
+
+    // 과제 날짜 계산: startDate + (week-1)*7 + dayOffset
+    var startDate = new Date(user.startDate);
+    if (isNaN(startDate.getTime())) return false;
+
+    var taskDate = new Date(startDate);
+    taskDate.setDate(taskDate.getDate() + (ct.currentWeek - 1) * 7 + dayOffset);
+
+    // 데드라인 = 과제 날짜 다음날 04:00
+    var deadline = new Date(taskDate);
+    deadline.setDate(deadline.getDate() + 1);
+    deadline.setHours(4, 0, 0, 0);
+
+    var now = new Date();
+    if (now > deadline) {
+        console.log('⏰ [마감] 데드라인 초과:', deadline.toLocaleString());
+        return true;
+    }
+    return false;
+}
+
 // 입문서 정독 모달 열기
 function openIntroBookModal(taskName) {
     const modal = document.getElementById('introBookModal');
@@ -18,6 +58,71 @@ function openIntroBookModal(taskName) {
 function closeIntroBookModal() {
     const modal = document.getElementById('introBookModal');
     modal.classList.remove('active');
+    // 메모 초기화
+    var memo = document.getElementById('introBookMemo');
+    if (memo) memo.value = '';
+}
+
+// 입문서 제출 (메모 + Supabase 저장)
+async function submitIntroBook() {
+    var memo = document.getElementById('introBookMemo');
+    var memoText = memo ? memo.value.trim() : '';
+
+    var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!user || !user.id || user.id === 'dev-user-001') {
+        console.log('📖 [IntroBook] 개발 모드 — 저장 생략');
+        alert('제출 완료! (개발 모드)');
+        closeIntroBookModal();
+        return;
+    }
+
+    var scheduleInfo = { week: 1, day: '월' };
+    var ct = window.currentTest;
+    if (ct && ct.currentWeek) {
+        scheduleInfo = { week: ct.currentWeek, day: ct.currentDay || '월' };
+    }
+
+    try {
+        // tr_study_records 저장
+        var studyRecord = await saveStudyRecord({
+            user_id: user.id,
+            week: scheduleInfo.week,
+            day: scheduleInfo.day,
+            task_type: 'intro-book',
+            module_number: 1,
+            attempt: 1,
+            score: 1,
+            total: 1,
+            time_spent: 0,
+            detail: {},
+            memo_text: memoText,
+            completed_at: new Date().toISOString()
+        });
+
+        if (studyRecord && studyRecord.id) {
+            // tr_auth_records 저장 (제출 = 100%)
+            await saveAuthRecord({
+                user_id: user.id,
+                study_record_id: studyRecord.id,
+                auth_rate: 100,
+                step1_completed: true,
+                step2_completed: false,
+                explanation_completed: false,
+                fraud_flag: false
+            });
+            console.log('📖 [IntroBook] 기록 저장 완료, 인증률: 100%');
+
+            // ProgressTracker 캐시 갱신
+            if (window.ProgressTracker) {
+                ProgressTracker.markCompleted('intro-book', 1);
+            }
+        }
+    } catch (e) {
+        console.error('📖 [IntroBook] 저장 실패:', e);
+    }
+
+    alert('입문서 정독 제출 완료!');
+    closeIntroBookModal();
 }
 
 // 모달 외부 클릭 시 닫기
@@ -38,6 +143,12 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function executeTask(taskName) {
     console.log(`📝 [과제실행] ${taskName}`);
+    
+    // ── 4시 마감 체크 ──
+    if (isTaskDeadlinePassed()) {
+        alert('마감 시간(새벽 4시)이 지나 제출할 수 없습니다.');
+        return;
+    }
     
     const parsed = parseTaskName(taskName);
     console.log('  파싱 결과:', parsed);

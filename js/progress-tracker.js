@@ -18,6 +18,8 @@ var ProgressTracker = {
     _completedTasks: {},
     _loaded: false,
     _loading: false,
+    _authRecords: [],
+    _avgAuthRate: null,
 
     // ========================================
     // Supabase에서 학습 기록 조회 → 캐시
@@ -59,11 +61,38 @@ var ProgressTracker = {
 
             this._loaded = true;
             console.log('📊 [ProgressTracker] 완료 과제:', Object.keys(this._completedTasks).length, '건');
+
+            // 인증 기록도 조회
+            await this.loadAuthRecords(user.id);
         } catch (e) {
             console.error('❌ [ProgressTracker] 조회 실패:', e);
         }
 
         this._loading = false;
+    },
+
+    // ========================================
+    // Supabase에서 인증 기록 조회
+    // ========================================
+    async loadAuthRecords(userId) {
+        try {
+            if (typeof getAuthRecords === 'function') {
+                var records = await getAuthRecords(userId);
+                this._authRecords = records || [];
+                
+                // 평균 인증률 계산
+                if (this._authRecords.length > 0) {
+                    var sum = 0;
+                    this._authRecords.forEach(function(r) { sum += (r.auth_rate || 0); });
+                    this._avgAuthRate = Math.round(sum / this._authRecords.length);
+                } else {
+                    this._avgAuthRate = null;
+                }
+                console.log('📊 [ProgressTracker] 인증률:', this._avgAuthRate, '% (' + this._authRecords.length + '건)');
+            }
+        } catch (e) {
+            console.error('📊 [ProgressTracker] 인증 기록 조회 실패:', e);
+        }
     },
 
     // ========================================
@@ -198,6 +227,18 @@ var ProgressTracker = {
             }
         }
 
+        // 인증률 표시 (데이터 있을 때만)
+        var authRateHtml = '';
+        if (this._avgAuthRate !== null) {
+            var grade = this.getGrade(this._avgAuthRate);
+            authRateHtml = 
+                '<div class="auth-rate-display">' +
+                    '<span class="auth-rate-label">인증률</span>' +
+                    '<span class="auth-rate-value" style="color:' + grade.color + '">' + this._avgAuthRate + '%</span>' +
+                    '<span class="auth-rate-grade" style="background:' + grade.color + '">' + grade.letter + '</span>' +
+                '</div>';
+        }
+
         container.innerHTML = 
             '<div class="total-progress-header">' +
                 '<span class="total-progress-label">전체 진도율</span>' +
@@ -206,7 +247,21 @@ var ProgressTracker = {
             '<div class="total-progress-bar-track">' +
                 '<div class="total-progress-bar-fill" style="width: ' + progress.percent + '%"></div>' +
             '</div>' +
-            '<div class="total-progress-percent">' + progress.percent + '%</div>';
+            '<div class="total-progress-bottom">' +
+                '<div class="total-progress-percent">' + progress.percent + '%</div>' +
+                authRateHtml +
+            '</div>';
+    },
+
+    // ========================================
+    // 등급 판정 (인증률 → 등급)
+    // ========================================
+    getGrade(rate) {
+        if (rate >= 95) return { letter: 'A', color: '#22c55e' };
+        if (rate >= 90) return { letter: 'B', color: '#3b82f6' };
+        if (rate >= 80) return { letter: 'C', color: '#f59e0b' };
+        if (rate >= 70) return { letter: 'D', color: '#f97316' };
+        return { letter: 'F', color: '#ef4444' };
     },
 
     // ========================================

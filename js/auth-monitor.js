@@ -1,239 +1,140 @@
 /**
  * ================================================
- * auth-monitor.js
- * 인증시스템 — 학습 행동 감지 + 인증률 계산 + Supabase 기록 저장
+ * auth-monitor.js v2
+ * 인증시스템 — 체크리스트 방식 (30/30/40)
  * ================================================
  * 
- * 감지 항목:
- * 1. 화면 이탈 (포커스 상실) — 위반은 아니지만 횟수 기록
- * 2. 시간 50% 미만 사용 — 1차 풀이에서 너무 빨리 끝낸 경우
- * 3. 2차 풀이에서 선택 안 함 — 더블체크를 건너뛴 경우 (reading/listening)
- * 4. 채점 화면에서 텍스트 없음 — 리뷰를 하지 않은 경우 (추후 구현)
- * 5. 전체 워크플로우 완료 여부 — 끝까지 진행했는지
+ * 체크리스트:
+ *   1차 제출 완료 → 30%
+ *   2차 제출 완료 → 30%
+ *   해설 확인 + 오답노트(20단어↑) → 40%
  * 
- * ★ 기존 코드를 수정하지 않습니다.
- *   FlowController.start / .finish 를 감싸서(wrap) 시작/종료 시점을 감지합니다.
- *   WritingFlow.runStep12 도 감싸서 라이팅 종료를 감지합니다.
+ * 호출 시점:
+ *   FlowController/WritingFlow wrap을 통해 자동 감지
+ *   오답노트 제출 이벤트(errorNoteSubmitted)로 해설 단계 감지
  */
 
-const AuthMonitor = {
+var AuthMonitor = {
     // ========================================
-    // 상태 추적 변수
+    // 상태
     // ========================================
-    isActive: false,                // 과제 진행 중 여부
-    sectionType: null,              // 현재 섹션 타입
-    moduleNumber: null,             // 현재 모듈 번호
-    _lastSectionType: null,         // ★ 마지막 섹션 (cleanup 후에도 유지)
-    _lastModuleNumber: null,        // ★ 마지막 모듈 (cleanup 후에도 유지)
-    _lastFirstResult: null,         // ★ 마지막 1차 결과 (cleanup 후에도 유지)
-    focusLostCount: 0,              // 화면 이탈 횟수
-    firstAttemptStartTime: null,    // 1차 풀이 시작 시각
-    firstAttemptEndTime: null,      // 1차 풀이 종료 시각
-    timeLimit: 0,                   // 제한 시간 (초)
-    secondAttemptChanged: false,    // 2차에서 답변을 변경했는지
-    gradingTextEntered: false,      // 채점 화면에서 텍스트 입력했는지
-    workflowCompleted: false,       // 전체 워크플로우 완료 여부
+    isActive: false,
+    sectionType: null,
+    moduleNumber: null,
+    _lastSectionType: null,
+    _lastModuleNumber: null,
+    _snapshot: null,
+
+    // 체크리스트 상태
+    _step1Done: false,      // 1차 제출 완료
+    _step2Done: false,      // 2차 제출 완료
+    _explanationDone: false, // 해설+오답노트 완료
+    _fraudFlag: false,      // 부정행위 플래그 (경고 무시 제출)
+    _studyRecordId: null,   // 저장된 study_record ID
 
     // ========================================
-    // 초기화 — 과제 시작 시 호출
+    // 시작 — 과제 진입 시
     // ========================================
-    start(sectionType, moduleNumber) {
-        console.log('🔒 [AuthMonitor] 감시 시작:', sectionType, '모듈', moduleNumber);
-        
+    start: function(sectionType, moduleNumber) {
+        console.log('🔒 [Auth] 시작:', sectionType, moduleNumber);
+
         this.isActive = true;
         this.sectionType = sectionType;
         this.moduleNumber = moduleNumber;
-        // ★ 백업 — cleanup 후에도 절대 안 지워짐
         this._lastSectionType = sectionType;
         this._lastModuleNumber = moduleNumber;
-        this._lastFirstResult = null;
-        this.focusLostCount = 0;
-        this.firstAttemptStartTime = Date.now();
-        this.firstAttemptEndTime = null;
-        this.timeLimit = this.getTimeLimit(sectionType);
-        this.secondAttemptChanged = false;
-        this.gradingTextEntered = false;
-        this.workflowCompleted = false;
 
-        // 화면 이탈 감지 시작
-        this.startFocusMonitoring();
+        // 체크리스트 초기화
+        this._step1Done = false;
+        this._step2Done = false;
+        this._explanationDone = false;
+        this._fraudFlag = false;
+        this._studyRecordId = null;
     },
 
     // ========================================
-    // 종료 — 과제 완료 시 호출
+    // 종료
     // ========================================
-    stop() {
-        console.log('🔒 [AuthMonitor] 감시 종료');
+    stop: function() {
+        // 종료 (silent)
         this.isActive = false;
         this.sectionType = null;
         this.moduleNumber = null;
-        this.stopFocusMonitoring();
     },
 
     // ========================================
-    // 1. 화면 이탈 감지
+    // 단계 완료 마킹
     // ========================================
-    _onVisibilityChange: null,
-    _onBlur: null,
-
-    startFocusMonitoring() {
-        // 기존 리스너가 있으면 먼저 제거
-        this.stopFocusMonitoring();
-
-        // 탭 전환 감지
-        this._onVisibilityChange = () => {
-            if (document.hidden && this.isActive) {
-                this.focusLostCount++;
-                console.log('👁️ [AuthMonitor] 화면 이탈 감지 (탭 전환) — 횟수:', this.focusLostCount);
-            }
-        };
-
-        // 창 포커스 상실 감지
-        this._onBlur = () => {
-            if (this.isActive) {
-                this.focusLostCount++;
-                console.log('👁️ [AuthMonitor] 화면 이탈 감지 (포커스 상실) — 횟수:', this.focusLostCount);
-            }
-        };
-
-        document.addEventListener('visibilitychange', this._onVisibilityChange);
-        window.addEventListener('blur', this._onBlur);
+    markStep1: function() {
+        this._step1Done = true;
+        console.log('🔒 [Auth] 1차 ✅');
     },
 
-    stopFocusMonitoring() {
-        if (this._onVisibilityChange) {
-            document.removeEventListener('visibilitychange', this._onVisibilityChange);
-            this._onVisibilityChange = null;
-        }
-        if (this._onBlur) {
-            window.removeEventListener('blur', this._onBlur);
-            this._onBlur = null;
+    markStep2: function() {
+        this._step2Done = true;
+        console.log('🔒 [Auth] 2차 ✅');
+    },
+
+    markExplanation: function(isFraud) {
+        if (isFraud) {
+            this._fraudFlag = true;
+            this._explanationDone = false;
+            console.log('🔒 [Auth] 해설 ❌ (fraud)');
+        } else {
+            this._explanationDone = true;
+            console.log('🔒 [Auth] 해설 ✅');
         }
     },
 
     // ========================================
-    // 2. 시간 50% 미만 사용 감지
+    // 인증률 계산 (30/30/40)
     // ========================================
-    getTimeLimit(sectionType) {
-        // 섹션별 기본 제한 시간 (초)
-        const limits = {
-            'reading': 1200,    // 20분
-            'listening': 600,   // 약 10분 (전체 기준)
-            'writing': 1800,    // 약 30분 (전체 기준)
-            'speaking': 600     // 약 10분
-        };
-        return limits[sectionType] || 1200;
+    calculateAuthRate: function() {
+        var rate = 0;
+        if (this._step1Done) rate += 30;
+        if (this._step2Done) rate += 30;
+        if (this._explanationDone && !this._fraudFlag) rate += 40;
+
+        console.log('🔒 [Auth] 인증률:', rate + '%');
+
+        return rate;
     },
 
-    recordFirstAttemptEnd() {
-        this.firstAttemptEndTime = Date.now();
-        const usedSeconds = Math.round((this.firstAttemptEndTime - this.firstAttemptStartTime) / 1000);
-        console.log('⏱️ [AuthMonitor] 1차 풀이 종료 기록 — 소요시간:', usedSeconds, '초');
-        // ★ 1차 결과 백업
-        var fc = window.FlowController;
-        if (fc && fc.firstAttemptResult) {
-            this._lastFirstResult = fc.firstAttemptResult;
-            console.log('📦 [AuthMonitor] 1차 결과 백업 완료');
+    // ========================================
+    // 현재 스케줄 정보
+    // ========================================
+    getCurrentScheduleInfo: function() {
+        var ct = window.currentTest;
+        if (ct && ct.currentWeek) {
+            return { week: ct.currentWeek, day: ct.currentDay || '월' };
         }
-    },
-
-    isTimeFlagTriggered() {
-        if (!this.firstAttemptStartTime || !this.firstAttemptEndTime) return false;
-        const usedTime = (this.firstAttemptEndTime - this.firstAttemptStartTime) / 1000;
-        const halfLimit = this.timeLimit / 2;
-        const triggered = usedTime < halfLimit;
-        console.log('⏱️ [AuthMonitor] 시간 체크: ' + Math.round(usedTime) + '초 사용 / 제한 ' + this.timeLimit + '초의 50% = ' + halfLimit + '초 → ' + (triggered ? '⚠️ 플래그' : '✅ 정상'));
-        return triggered;
+        return { week: 1, day: '월' };
     },
 
     // ========================================
-    // 3. 2차 풀이에서 선택 변경 여부
+    // Supabase 저장: tr_study_records + tr_auth_records
     // ========================================
-    recordSecondAttemptChange() {
-        this.secondAttemptChanged = true;
-        console.log('✏️ [AuthMonitor] 2차 풀이에서 답변 변경 감지');
-    },
-
-    // ========================================
-    // 4. 채점 화면에서 텍스트 입력 여부
-    // ========================================
-    recordGradingText() {
-        this.gradingTextEntered = true;
-        console.log('📝 [AuthMonitor] 채점 화면 텍스트 입력 감지');
-    },
-
-    // ========================================
-    // 5. 워크플로우 완료 표시
-    // ========================================
-    recordWorkflowComplete() {
-        this.workflowCompleted = true;
-        console.log('✅ [AuthMonitor] 전체 워크플로우 완료');
-    },
-
-    // ========================================
-    // 인증률 계산
-    // ========================================
-    calculateAuthRate() {
-        var rate = 100;
-        var flags = [];
-
-        // 워크플로우 미완료: 인증률 0%
-        if (!this.workflowCompleted) {
-            console.log('🔒 [AuthMonitor] 워크플로우 미완료 → 인증률 0%');
-            return { rate: 0, flags: ['workflow_incomplete'] };
-        }
-
-        // 시간 50% 미만 사용: -30%
-        if (this.isTimeFlagTriggered()) {
-            rate -= 30;
-            flags.push('time_under_50');
-        }
-
-        // 2차 풀이에서 선택 안 함: -20% (reading/listening만 해당)
-        if ((this.sectionType === 'reading' || this.sectionType === 'listening') && !this.secondAttemptChanged) {
-            rate -= 20;
-            flags.push('no_selection');
-        }
-
-        // 채점에서 텍스트 없음: -20% (추후 구현)
-        // if (!this.gradingTextEntered) {
-        //     rate -= 20;
-        //     flags.push('no_grading_text');
-        // }
-
-        // 화면 이탈: 기록만 (감점 없음)
-        if (this.focusLostCount > 0) {
-            flags.push('focus_lost_' + this.focusLostCount);
-        }
-
-        rate = Math.max(0, Math.min(100, rate));
-        console.log('🔒 [AuthMonitor] 인증률 계산: ' + rate + '% (플래그: ' + flags.join(', ') + ')');
-
-        return { rate: rate, flags: flags };
-    },
-
-    // ========================================
-    // Supabase에 기록 저장
-    // ========================================
-    async saveRecords() {
-        // FlowController 또는 WritingFlow에서 결과 가져오기
-        var fc = window.FlowController;
-        var wf = window.WritingFlow;
-
+    saveRecords: async function() {
         var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
         if (!user || !user.id || user.id === 'dev-user-001') {
-            console.log('🔒 [AuthMonitor] 개발 모드 — 기록 저장 생략');
+            console.log('🔒 [Auth] 개발 모드 — 저장 생략');
             return;
         }
 
-        // 결과 데이터 추출
-        var firstResult = null;
-        // ★ 데이터 소스 우선순위: 현재 상태 → 스냅샷 → 백업
+        // 섹션/모듈 정보 결정
         var snap = this._snapshot || {};
         var sectionType = this.sectionType || snap.sectionType || this._lastSectionType;
         var moduleNumber = this.moduleNumber || snap.moduleNumber || this._lastModuleNumber;
 
-        console.log('📦 [AuthMonitor] 데이터 소스: sectionType=' + sectionType + ', moduleNumber=' + moduleNumber);
+        if (!sectionType || !moduleNumber) {
+            console.warn('🔒 [Auth] 섹션/모듈 정보 없음 — 저장 생략');
+            return;
+        }
+
+        // 1차 결과 데이터 추출
+        var fc = window.FlowController;
+        var wf = window.WritingFlow;
+        var firstResult = null;
 
         if (sectionType === 'writing' && wf && wf.arrange1stResult) {
             firstResult = wf.arrange1stResult;
@@ -241,38 +142,24 @@ const AuthMonitor = {
             firstResult = fc.firstAttemptResult;
         } else if (snap.firstAttemptResult) {
             firstResult = snap.firstAttemptResult;
-        } else if (this._lastFirstResult) {
-            firstResult = this._lastFirstResult;
-        } else if (fc) {
-            firstResult = fc.firstAttemptResult;
         }
 
-        // 점수 추출
-        var score = 0;
-        var total = 0;
-        var timeSpent = 0;
-        var detail = {};
-
+        var score = 0, total = 0, timeSpent = 0, detail = {};
         if (firstResult) {
             score = firstResult.correctCount || 0;
             total = firstResult.totalQuestions || 0;
             timeSpent = firstResult.totalTimeSpent || 0;
-
-            // 컴포넌트별 상세 점수 추출
             if (firstResult.componentResults) {
                 firstResult.componentResults.forEach(function(comp) {
                     var key = comp.componentType + '_' + (comp.setId || '1');
-                    var correct = comp.correctCount || 0;
-                    var compTotal = comp.totalQuestions || comp.questionsPerSet || 0;
-                    detail[key] = correct + '/' + compTotal;
+                    detail[key] = (comp.correctCount || 0) + '/' + (comp.totalQuestions || comp.questionsPerSet || 0);
                 });
             }
         }
 
-        // 현재 주차/요일 정보 가져오기
         var scheduleInfo = this.getCurrentScheduleInfo();
 
-        // tr_study_records 저장
+        // ── tr_study_records 저장 ──
         var studyRecordData = {
             user_id: user.id,
             week: scheduleInfo.week,
@@ -287,51 +174,62 @@ const AuthMonitor = {
             completed_at: new Date().toISOString()
         };
 
-        console.log('💾 [AuthMonitor] 학습 기록 저장 데이터:', JSON.stringify(studyRecordData));
+        console.log('💾 [Auth] 기록 저장...');
         var studyRecord = await saveStudyRecord(studyRecordData);
-        console.log('💾 [AuthMonitor] 학습 기록 저장:', studyRecord ? '성공' : '실패');
 
-        // 인증률 계산
-        var authResult = this.calculateAuthRate();
-
-        // tr_auth_records 저장
         if (studyRecord && studyRecord.id) {
+            this._studyRecordId = studyRecord.id;
+
+            // ── tr_auth_records 저장 ──
+            var authRate = this.calculateAuthRate();
             var authRecordData = {
                 user_id: user.id,
                 study_record_id: studyRecord.id,
-                auth_rate: authResult.rate,
-                time_flag: authResult.flags.indexOf('time_under_50') !== -1,
-                no_selection_flag: authResult.flags.indexOf('no_selection') !== -1,
-                no_text_flag: authResult.flags.indexOf('no_grading_text') !== -1,
-                focus_lost_count: this.focusLostCount
+                auth_rate: authRate,
+                step1_completed: this._step1Done,
+                step2_completed: this._step2Done,
+                explanation_completed: this._explanationDone,
+                fraud_flag: this._fraudFlag,
+                focus_lost_count: 0
             };
 
             var authRecord = await saveAuthRecord(authRecordData);
-            console.log('🔒 [AuthMonitor] 인증 기록 저장:', authRecord ? '성공' : '실패');
-            console.log('🔒 [AuthMonitor] 인증률:', authResult.rate + '%');
+            console.log('🔒 [Auth] 저장 완료:', authRate + '%');
+        } else {
+            console.warn('🔒 [Auth] study_record 저장 실패');
         }
     },
 
     // ========================================
-    // 현재 스케줄 정보 가져오기
+    // 오답노트 제출 후 auth_records 업데이트
     // ========================================
-    getCurrentScheduleInfo() {
-        // main.js에서 selectDay() 호출 시 currentTest에 저장됨
-        var ct = window.currentTest;
-        if (ct && ct.currentWeek) {
-            return {
-                week: ct.currentWeek,
-                day: ct.currentDay || '월'
-            };
+    updateExplanationStatus: async function() {
+        if (!this._studyRecordId) {
+            console.warn('🔒 [Auth] studyRecordId 없음');
+            return;
         }
-        // fallback
-        return { week: 1, day: '월' };
+
+        var authRate = this.calculateAuthRate();
+
+        try {
+            await supabaseUpdate(
+                'tr_auth_records',
+                'study_record_id=eq.' + this._studyRecordId,
+                {
+                    auth_rate: authRate,
+                    explanation_completed: this._explanationDone,
+                    fraud_flag: this._fraudFlag
+                }
+            );
+            console.log('🔒 [Auth] 인증률 업데이트:', authRate + '%');
+        } catch (e) {
+            console.error('🔒 [Auth] 업데이트 실패:', e);
+        }
     }
 };
 
 // ========================================
-// FlowController + WritingFlow 통합
-// (기존 코드를 건드리지 않는 방식 — 함수 감싸기)
+// FlowController + WritingFlow 통합 (함수 감싸기)
 // ========================================
 (function() {
     var setupDone = false;
@@ -339,15 +237,13 @@ const AuthMonitor = {
     function setupIntegration() {
         if (setupDone) return;
 
-        // ----- FlowController 통합 -----
         var fc = window.FlowController;
-        if (!fc) return; // 아직 로드 안 됨 → 다음 시도 때 재확인
+        if (!fc) return;
 
-        // 1) FlowController.start 감싸기 → AuthMonitor 시작 + 기본 정보 즉시 저장
+        // ── FlowController.start → AuthMonitor 시작 ──
         var originalStart = fc.start.bind(fc);
         fc.start = function(sectionType, moduleNumber) {
             AuthMonitor.start(sectionType, moduleNumber);
-            // ★ start 시점에 sectionType, moduleNumber를 확실히 보관
             AuthMonitor._snapshot = {
                 sectionType: sectionType,
                 moduleNumber: moduleNumber,
@@ -356,21 +252,37 @@ const AuthMonitor = {
             return originalStart(sectionType, moduleNumber);
         };
 
-        // 2) FlowController.afterFirstAttempt 감싸기 → 1차 종료 시각 기록 + 결과 스냅샷
+        // ── FlowController.afterFirstAttempt → 1차 완료 ──
         var originalAfterFirst = fc.afterFirstAttempt.bind(fc);
         fc.afterFirstAttempt = function() {
-            AuthMonitor.recordFirstAttemptEnd();
-            // ★ 1차 결과를 스냅샷에 저장 (cleanup 전에 확보)
+            AuthMonitor.markStep1();
             if (AuthMonitor._snapshot && fc.firstAttemptResult) {
                 AuthMonitor._snapshot.firstAttemptResult = fc.firstAttemptResult;
             }
             return originalAfterFirst();
         };
 
-        // 3) FlowController.finish 감싸기 → 기록 저장 → 화면 정리
+        // ── FlowController.showRetakeResult → 2차 완료 (R/L) ──
+        var originalShowRetake = fc.showRetakeResult.bind(fc);
+        fc.showRetakeResult = function(secondResults) {
+            AuthMonitor.markStep2();
+            return originalShowRetake(secondResults);
+        };
+
+        // ── FlowController.showExplain → 2차 완료 (Speaking) ──
+        // 스피킹은 retakeResult를 거치지 않고 바로 explain으로 가는 경우가 있음
+        // showExplain 진입 시 step2가 아직 안 됐으면 마킹
+        var originalShowExplain = fc.showExplain.bind(fc);
+        fc.showExplain = function() {
+            if (!AuthMonitor._step2Done) {
+                AuthMonitor.markStep2();
+            }
+            return originalShowExplain();
+        };
+
+        // ── FlowController.finish → 기록 저장 ──
         var originalFinish = fc.finish.bind(fc);
         fc.finish = async function() {
-            // ★ finish 시점에도 한번 더 스냅샷 시도 (아직 cleanup 전이면 잡힘)
             if (fc.sectionType) {
                 AuthMonitor._snapshot = {
                     sectionType: fc.sectionType,
@@ -378,52 +290,78 @@ const AuthMonitor = {
                     firstAttemptResult: fc.firstAttemptResult
                 };
             }
-            AuthMonitor.recordWorkflowComplete();
-            // ★ result-screen, test-screen 등 모든 화면 숨기기
+            // result-screen, test-screen 숨기기
             document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
                 el.style.display = 'none';
             });
-            // ★ 먼저 원래 finish 실행 (cleanup + backToSchedule)
             originalFinish();
-            // ★ 그 다음 비동기로 저장 (화면 전환에 영향 없음)
             await AuthMonitor.saveRecords();
             AuthMonitor.stop();
             AuthMonitor._snapshot = null;
         };
 
-        console.log('✅ [AuthMonitor] FlowController 통합 완료');
+        console.log('✅ [Auth] FlowController 연동');
 
-        // ----- WritingFlow 통합 (writing_mixed는 FlowController 대신 WritingFlow 사용) -----
+        // ── WritingFlow 통합 ──
         var wf = window.WritingFlow;
-        if (wf && wf.runStep12) {
-            var originalStep12 = wf.runStep12.bind(wf);
-            wf.runStep12 = async function() {
-                // WritingFlow가 별도 start를 가지므로, 여기서 감시가 시작 안 됐으면 시작
-                if (!AuthMonitor.isActive) {
-                    AuthMonitor.start('writing', wf.moduleNumber || 0);
-                }
-                AuthMonitor.recordWorkflowComplete();
-                await AuthMonitor.saveRecords();
-                AuthMonitor.stop();
-                return originalStep12();
-            };
-
-            // WritingFlow.start도 감싸기 (AuthMonitor가 시작되도록)
+        if (wf) {
+            // WritingFlow.start → AuthMonitor 시작
             if (wf.start) {
                 var originalWFStart = wf.start.bind(wf);
-                wf.start = async function(moduleNumber, moduleConfig) {
+                wf.start = function(moduleNumber, moduleConfig) {
                     AuthMonitor.start('writing', moduleNumber);
                     return originalWFStart(moduleNumber, moduleConfig);
                 };
             }
 
-            console.log('✅ [AuthMonitor] WritingFlow 통합 완료');
+            // WritingFlow 1차 완료 감지 — arrange 1차 결과 후
+            // Step 4 (arrange 1차 결과)에 진입하면 1차 완료
+            if (wf.runStep4) {
+                var originalStep4 = wf.runStep4.bind(wf);
+                wf.runStep4 = function() {
+                    AuthMonitor.markStep1();
+                    return originalStep4();
+                };
+            }
+
+            // WritingFlow 2차 완료 감지 — Step 10 완료 후 Step 11 진입 시
+            if (wf.runStep11_email) {
+                var originalStep11 = wf.runStep11_email.bind(wf);
+                wf.runStep11_email = function() {
+                    AuthMonitor.markStep2();
+                    return originalStep11();
+                };
+            }
+
+            // WritingFlow.runStep12 → 기록 저장
+            if (wf.runStep12) {
+                var originalStep12 = wf.runStep12.bind(wf);
+                wf.runStep12 = async function() {
+                    if (!AuthMonitor.isActive) {
+                        AuthMonitor.start('writing', wf.moduleNumber || 0);
+                    }
+                    await AuthMonitor.saveRecords();
+                    AuthMonitor.stop();
+                    return originalStep12();
+                };
+            }
+
+            console.log('✅ [Auth] WritingFlow 연동');
         }
+
+        // ── 오답노트 제출 이벤트 감지 ──
+        window.addEventListener('errorNoteSubmitted', function(e) {
+            var detail = e.detail || {};
+            AuthMonitor.markExplanation(detail.isFraud);
+            AuthMonitor.updateExplanationStatus();
+        });
+
+        // 오답노트 이벤트 연동 완료
 
         setupDone = true;
     }
 
-    // 페이지 로드 후 연결 시도
+    // 페이지 로드 후 연결
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(setupIntegration, 500);
@@ -432,14 +370,11 @@ const AuthMonitor = {
         setTimeout(setupIntegration, 500);
     }
 
-    // 반복 체크 (FlowController가 늦게 로드될 경우 대비)
+    // 반복 체크
     var checkCount = 0;
     var checkInterval = setInterval(function() {
         if (setupDone || checkCount > 20) {
             clearInterval(checkInterval);
-            if (!setupDone) {
-                console.warn('⚠️ [AuthMonitor] FlowController를 찾을 수 없음 — 통합 실패');
-            }
             return;
         }
         setupIntegration();
@@ -447,4 +382,4 @@ const AuthMonitor = {
     }, 1000);
 })();
 
-console.log('✅ auth-monitor.js 로드 완료');
+console.log('✅ auth-monitor.js v2 로드');

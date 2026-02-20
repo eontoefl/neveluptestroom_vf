@@ -346,7 +346,7 @@ var ErrorNote = {
 
                 if (records && records.length > 0) {
                     var recordId = records[0].id;
-                    await supabaseUpdate('tr_study_records', recordId, {
+                    await supabaseUpdate('tr_study_records', 'id=eq.' + recordId, {
                         error_note_text: text,
                         error_note_word_count: wordCount
                     });

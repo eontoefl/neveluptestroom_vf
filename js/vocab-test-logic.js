@@ -357,6 +357,9 @@ function showVocabTestResult() {
     
     const percentage = Math.round((correctCount / totalCount) * 100);
     
+    // ── Supabase에 보카 학습 기록 저장 ──
+    saveVocabRecord(correctCount, totalCount, percentage);
+    
     // 결과 렌더링
     renderVocabResult(results, correctCount, totalCount, percentage);
     
@@ -469,6 +472,80 @@ function cleanupVocabTest() {
     vocabTestData = [];
     vocabUserAnswers = {};
     currentPages = '';
+}
+
+// ========================================
+// Supabase 보카 기록 저장
+// ========================================
+async function saveVocabRecord(correctCount, totalCount, percentage) {
+    var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!user || !user.id || user.id === 'dev-user-001') {
+        console.log('📝 [Vocab] 개발 모드 — 저장 생략');
+        return;
+    }
+
+    var scheduleInfo = { week: 1, day: '월' };
+    var ct = window.currentTest;
+    if (ct && ct.currentWeek) {
+        scheduleInfo = { week: ct.currentWeek, day: ct.currentDay || '월' };
+    }
+
+    var accuracyRate = percentage / 100;  // 0~1 float
+
+    // 인증률 결정: 정답률 30% 미만 → 0%, 그 외 → 100%
+    var authRate = (percentage < 30) ? 0 : 100;
+
+    try {
+        // tr_study_records 저장
+        var studyRecord = await saveStudyRecord({
+            user_id: user.id,
+            week: scheduleInfo.week,
+            day: scheduleInfo.day,
+            task_type: 'vocab',
+            module_number: 1,
+            attempt: 1,
+            score: correctCount,
+            total: totalCount,
+            time_spent: 0,
+            detail: { pages: currentPages, accuracy: percentage },
+            vocab_accuracy_rate: accuracyRate,
+            completed_at: new Date().toISOString()
+        });
+
+        if (studyRecord && studyRecord.id) {
+            // tr_auth_records 저장
+            await saveAuthRecord({
+                user_id: user.id,
+                study_record_id: studyRecord.id,
+                auth_rate: authRate,
+                step1_completed: true,
+                step2_completed: false,
+                explanation_completed: false,
+                fraud_flag: (percentage < 30)
+            });
+            console.log('📝 [Vocab] 기록 저장 완료, 인증률:', authRate + '%');
+
+            // ProgressTracker 캐시 갱신
+            if (window.ProgressTracker) {
+                ProgressTracker.markCompleted('vocab', 1);
+            }
+        }
+    } catch (e) {
+        console.error('📝 [Vocab] 저장 실패:', e);
+    }
+
+    // 정답률 30% 미만 안내 문구
+    if (percentage < 30) {
+        setTimeout(function() {
+            var container = document.getElementById('vocabResultContainer');
+            if (container) {
+                var notice = document.createElement('div');
+                notice.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin:16px 0;text-align:center;color:#856404;font-size:14px;';
+                notice.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 정답률이 30% 미만이므로 미인정 처리되었습니다.';
+                container.insertBefore(notice, container.firstChild.nextSibling);
+            }
+        }, 100);
+    }
 }
 
 console.log('✅ vocab-test-logic.js 로드 완료');
