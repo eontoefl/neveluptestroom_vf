@@ -80,19 +80,75 @@ var ProgressTracker = {
                 var records = await getAuthRecords(userId);
                 this._authRecords = records || [];
                 
-                // 평균 인증률 계산
-                if (this._authRecords.length > 0) {
+                // B방식: 오늘까지 해야 할 과제 전부 기준, 안 한 건 0%
+                var totalTasksDue = this._countTasksDueToday();
+                
+                if (totalTasksDue > 0) {
+                    var sum = 0;
+                    this._authRecords.forEach(function(r) { sum += (r.auth_rate || 0); });
+                    // 제출한 과제의 합계 / 오늘까지 해야 할 전체 과제 수
+                    this._avgAuthRate = Math.round(sum / totalTasksDue);
+                } else if (this._authRecords.length > 0) {
+                    // 스케줄 계산 실패 시 기존 방식 폴백
                     var sum = 0;
                     this._authRecords.forEach(function(r) { sum += (r.auth_rate || 0); });
                     this._avgAuthRate = Math.round(sum / this._authRecords.length);
                 } else {
                     this._avgAuthRate = null;
                 }
-                console.log('📊 [ProgressTracker] 인증률:', this._avgAuthRate, '% (' + this._authRecords.length + '건)');
+                console.log('📊 [ProgressTracker] 인증률:', this._avgAuthRate, '% (제출', this._authRecords.length + '건 / 마감', totalTasksDue + '건)');
             }
         } catch (e) {
             console.error('📊 [ProgressTracker] 인증 기록 조회 실패:', e);
         }
+    },
+
+    // ========================================
+    // 오늘까지 해야 할 과제 수 계산
+    // ========================================
+    _countTasksDueToday() {
+        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
+        if (!user || !user.startDate) return 0;
+        if (typeof getDayTasks !== 'function') return 0;
+
+        var programType = user.programType || (user.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
+        var totalWeeks = programType === 'standard' ? 8 : 4;
+        var dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+        var startDate = new Date(user.startDate + 'T00:00:00');
+        if (isNaN(startDate.getTime())) return 0;
+
+        // 현재 시간 기준 마감 판단: 새벽 4시 기준
+        var now = new Date();
+        var cutoff = new Date(now);
+        cutoff.setHours(4, 0, 0, 0);
+        // 새벽 4시 전이면 어제까지가 마감
+        if (now < cutoff) {
+            cutoff.setDate(cutoff.getDate() - 1);
+        }
+
+        var totalTasks = 0;
+
+        for (var w = 1; w <= totalWeeks; w++) {
+            for (var d = 0; d < dayOrder.length; d++) {
+                // 해당 날짜 계산
+                var taskDate = new Date(startDate);
+                taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
+
+                // 마감 = 과제 다음날 04:00
+                var deadline = new Date(taskDate);
+                deadline.setDate(deadline.getDate() + 1);
+                deadline.setHours(4, 0, 0, 0);
+
+                // 마감이 지금보다 과거 또는 같으면 = 해야 할 과제
+                if (deadline <= now) {
+                    var tasks = getDayTasks(programType, w, dayOrder[d]);
+                    totalTasks += tasks.length;
+                }
+            }
+        }
+
+        return totalTasks;
     },
 
     // ========================================
