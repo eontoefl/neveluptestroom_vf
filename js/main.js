@@ -49,7 +49,7 @@ function initScheduleScreen() {
     renderSchedule(currentUser.program);
     
     // 진도율 Progress Bar 표시
-    if (window.ProgressTracker) {
+    if (typeof ProgressTracker !== 'undefined') {
         const pt = currentUser.programType || (currentUser.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
         if (ProgressTracker._loaded) {
             ProgressTracker.renderTotalProgressBar(pt);
@@ -118,7 +118,7 @@ function renderSchedule(program) {
             
             // 진도율 표시 (ProgressTracker가 로드됐으면)
             let progressHTML = '';
-            if (tasks.length > 0 && window.ProgressTracker && ProgressTracker._loaded) {
+            if (tasks.length > 0 && typeof ProgressTracker !== 'undefined' && ProgressTracker._loaded) {
                 const progress = ProgressTracker.getDayProgress(programType, week, dayEn);
                 if (progress.total > 0) {
                     if (progress.completed === progress.total) {
