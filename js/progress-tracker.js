@@ -55,6 +55,15 @@ var ProgressTracker = {
                                 completedAt: rec.completed_at
                             };
                         }
+                        // vocab, intro-book은 week_day 키도 추가 (날짜별 구분)
+                        if ((rec.task_type === 'vocab' || rec.task_type === 'intro-book') && rec.week && rec.day) {
+                            var wdKey = rec.task_type + '_w' + rec.week + '_' + rec.day;
+                            ProgressTracker._completedTasks[wdKey] = {
+                                week: rec.week,
+                                day: rec.day,
+                                completedAt: rec.completed_at
+                            };
+                        }
                     }
                 });
             }
@@ -173,8 +182,11 @@ var ProgressTracker = {
             moduleNum = parsed.params.module;
         } else if (type === 'writing' || type === 'speaking') {
             moduleNum = parsed.params.number;
+        } else if (type === 'vocab' || type === 'intro-book') {
+            // vocab, intro-book은 week_day 기반으로 판단
+            // week/day 정보가 있으면 날짜별 매칭, 없으면 module_number 매칭
+            return this.isTaskCompleted(type, 1);
         } else {
-            // vocab, intro-book 등은 진도율 대상 아님
             return false;
         }
 
@@ -192,17 +204,31 @@ var ProgressTracker = {
         var total = 0;
         var completed = 0;
 
+        // 요일 영문 → 한글 매핑 (study_records의 day는 한글)
+        var dayEnToKr = {
+            sunday: '일', monday: '월', tuesday: '화',
+            wednesday: '수', thursday: '목', friday: '금', saturday: '토'
+        };
+        var dayKr = dayEnToKr[dayEn] || '';
+
         tasks.forEach(function(taskName) {
             var parsed = (typeof parseTaskName === 'function') ? parseTaskName(taskName) : null;
             if (!parsed) return;
 
-            // vocab, intro-book은 진도율 대상 제외
-            if (parsed.type === 'vocab' || parsed.type === 'intro-book' || parsed.type === 'unknown') {
+            // unknown 타입만 제외
+            if (parsed.type === 'unknown') {
                 return;
             }
 
             total++;
-            if (ProgressTracker.isTaskNameCompleted(taskName)) {
+
+            // vocab, intro-book은 week_day 키로 날짜별 완료 확인
+            if (parsed.type === 'vocab' || parsed.type === 'intro-book') {
+                var wdKey = parsed.type + '_w' + week + '_' + dayKr;
+                if (ProgressTracker._completedTasks[wdKey]) {
+                    completed++;
+                }
+            } else if (ProgressTracker.isTaskNameCompleted(taskName)) {
                 completed++;
             }
         });
