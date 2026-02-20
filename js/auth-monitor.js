@@ -23,6 +23,9 @@ const AuthMonitor = {
     isActive: false,                // 과제 진행 중 여부
     sectionType: null,              // 현재 섹션 타입
     moduleNumber: null,             // 현재 모듈 번호
+    _lastSectionType: null,         // ★ 마지막 섹션 (cleanup 후에도 유지)
+    _lastModuleNumber: null,        // ★ 마지막 모듈 (cleanup 후에도 유지)
+    _lastFirstResult: null,         // ★ 마지막 1차 결과 (cleanup 후에도 유지)
     focusLostCount: 0,              // 화면 이탈 횟수
     firstAttemptStartTime: null,    // 1차 풀이 시작 시각
     firstAttemptEndTime: null,      // 1차 풀이 종료 시각
@@ -40,6 +43,10 @@ const AuthMonitor = {
         this.isActive = true;
         this.sectionType = sectionType;
         this.moduleNumber = moduleNumber;
+        // ★ 백업 — cleanup 후에도 절대 안 지워짐
+        this._lastSectionType = sectionType;
+        this._lastModuleNumber = moduleNumber;
+        this._lastFirstResult = null;
         this.focusLostCount = 0;
         this.firstAttemptStartTime = Date.now();
         this.firstAttemptEndTime = null;
@@ -122,6 +129,12 @@ const AuthMonitor = {
         this.firstAttemptEndTime = Date.now();
         const usedSeconds = Math.round((this.firstAttemptEndTime - this.firstAttemptStartTime) / 1000);
         console.log('⏱️ [AuthMonitor] 1차 풀이 종료 기록 — 소요시간:', usedSeconds, '초');
+        // ★ 1차 결과 백업
+        var fc = window.FlowController;
+        if (fc && fc.firstAttemptResult) {
+            this._lastFirstResult = fc.firstAttemptResult;
+            console.log('📦 [AuthMonitor] 1차 결과 백업 완료');
+        }
     },
 
     isTimeFlagTriggered() {
@@ -215,16 +228,21 @@ const AuthMonitor = {
 
         // 결과 데이터 추출
         var firstResult = null;
-        // ★ 스냅샷이 있으면 스냅샷에서, 없으면 현재 상태에서 데이터 가져오기
+        // ★ 데이터 소스 우선순위: 현재 상태 → 스냅샷 → 백업
         var snap = this._snapshot || {};
-        var sectionType = snap.sectionType || this.sectionType;
-        var moduleNumber = snap.moduleNumber || this.moduleNumber;
+        var sectionType = this.sectionType || snap.sectionType || this._lastSectionType;
+        var moduleNumber = this.moduleNumber || snap.moduleNumber || this._lastModuleNumber;
+
+        console.log('📦 [AuthMonitor] 데이터 소스: sectionType=' + sectionType + ', moduleNumber=' + moduleNumber);
 
         if (sectionType === 'writing' && wf && wf.arrange1stResult) {
-            // WritingFlow에서 결과 추출
             firstResult = wf.arrange1stResult;
+        } else if (fc && fc.firstAttemptResult) {
+            firstResult = fc.firstAttemptResult;
         } else if (snap.firstAttemptResult) {
             firstResult = snap.firstAttemptResult;
+        } else if (this._lastFirstResult) {
+            firstResult = this._lastFirstResult;
         } else if (fc) {
             firstResult = fc.firstAttemptResult;
         }
