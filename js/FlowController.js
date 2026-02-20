@@ -389,6 +389,11 @@ const FlowController = {
         this.state = 'RETAKE_RESULT';
         console.log('📊 [FlowController] 2차 결과 화면 표시');
         
+        // ★ 리딩/리스닝: 2차 결과 = 해설이 합쳐진 구조이므로 여기서 오답노트 표시
+        if (typeof ErrorNote !== 'undefined') {
+            ErrorNote.show(this.sectionType, this.moduleNumber);
+        }
+        
         // 기존 retake-result 함수들을 그대로 사용
         if (this.sectionType === 'reading' && typeof window.showReadingRetakeResult === 'function') {
             window.showReadingRetakeResult(secondResults);
