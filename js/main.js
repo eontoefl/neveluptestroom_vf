@@ -45,18 +45,25 @@ function initScheduleScreen() {
         programBadgeElement.textContent = currentUser.program;
     }
     
-    // 프로그램에 따른 일정 생성
-    renderSchedule(currentUser.program);
+    // Supabase 스케줄 로드 → 완료 후 렌더링
+    const doRender = () => {
+        renderSchedule(currentUser.program);
+        
+        // 진도율 Progress Bar 표시
+        if (typeof ProgressTracker !== 'undefined') {
+            const pt = currentUser.programType || (currentUser.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
+            ProgressTracker._loaded = false;
+            ProgressTracker.loadCompletedTasks().then(function() {
+                renderSchedule(currentUser.program);
+                ProgressTracker.renderTotalProgressBar(pt);
+            });
+        }
+    };
     
-    // 진도율 Progress Bar 표시
-    if (typeof ProgressTracker !== 'undefined') {
-        const pt = currentUser.programType || (currentUser.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
-        // ★ 매번 Supabase에서 최신 데이터 조회 후 렌더링
-        ProgressTracker._loaded = false;
-        ProgressTracker.loadCompletedTasks().then(function() {
-            renderSchedule(currentUser.program);
-            ProgressTracker.renderTotalProgressBar(pt);
-        });
+    if (typeof loadScheduleFromSupabase === 'function') {
+        loadScheduleFromSupabase().then(doRender).catch(doRender);
+    } else {
+        doRender();
     }
 }
 
@@ -343,12 +350,12 @@ function showTaskListScreen(week, dayKr, tasks) {
             }
             
             card.onclick = () => {
-    console.log(`🎯 [과제 실행] ${taskName}`);
-    // 마감 체크를 위해 currentTest에 주차/요일 보장
-    if (!currentTest.currentWeek) currentTest.currentWeek = week;
-    if (!currentTest.currentDay) currentTest.currentDay = dayKr;
-    executeTask(taskName);
-};
+                console.log(`🎯 [과제 실행] ${taskName}`);
+                // 마감 체크를 위해 currentTest에 주차/요일 보장
+                if (!currentTest.currentWeek) currentTest.currentWeek = week;
+                if (!currentTest.currentDay) currentTest.currentDay = dayKr;
+                executeTask(taskName);
+            };
             
             card.innerHTML = `
                 <i class="${icon}"></i>

@@ -4,7 +4,7 @@
  * Standard 프로그램: 8주 과정
  */
 
-const SCHEDULE_DATA = {
+let SCHEDULE_DATA = {
     // Fast 프로그램 (4주)
     fast: {
         week1: {
@@ -369,6 +369,86 @@ const SCHEDULE_DATA = {
         }
     }
 };
+
+// ============================================
+// Supabase 우선 + 하드코딩 폴백
+// ============================================
+
+/**
+ * Supabase에서 스케줄 데이터를 로드하여 SCHEDULE_DATA를 덮어씁니다.
+ * 실패 시 위의 하드코딩 데이터가 그대로 유지됩니다.
+ */
+async function loadScheduleFromSupabase() {
+    if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) {
+        console.log('ℹ️ [Schedule] USE_SUPABASE=false, 하드코딩 데이터 사용');
+        return SCHEDULE_DATA;
+    }
+    if (typeof supabaseSelect !== 'function') {
+        console.log('ℹ️ [Schedule] supabaseSelect 함수 없음, 하드코딩 데이터 사용');
+        return SCHEDULE_DATA;
+    }
+
+    try {
+        console.log('📥 [Schedule] Supabase에서 스케줄 데이터 로드...');
+        const rows = await supabaseSelect('tr_schedule', 'select=*&order=id.asc');
+
+        if (!rows || rows.length === 0) {
+            console.warn('⚠️ [Schedule] Supabase 데이터 없음, 하드코딩 데이터 사용');
+            return SCHEDULE_DATA;
+        }
+
+        console.log(`✅ [Schedule] Supabase에서 ${rows.length}개 행 로드`);
+
+        // rows → SCHEDULE_DATA 형태로 변환
+        const newData = { fast: {}, standard: {} };
+
+        rows.forEach(row => {
+            const program = (row.program || '').toLowerCase();   // 'fast' or 'standard'
+            const week = `week${row.week}`;                      // 'week1' ~ 'week8'
+            const day = (row.day || '').toLowerCase();            // 'sunday' ~ 'saturday'
+
+            if (!program || !row.week || !day) return;
+
+            if (!newData[program]) newData[program] = {};
+            if (!newData[program][week]) {
+                newData[program][week] = {
+                    sunday: [], monday: [], tuesday: [], wednesday: [],
+                    thursday: [], friday: [], saturday: []
+                };
+            }
+
+            // tasks: JSON 배열 또는 쉼표 구분 문자열
+            let tasks = [];
+            if (Array.isArray(row.tasks)) {
+                tasks = row.tasks;
+            } else if (typeof row.tasks === 'string') {
+                try {
+                    tasks = JSON.parse(row.tasks);
+                } catch {
+                    tasks = row.tasks.split(',').map(t => t.trim()).filter(t => t);
+                }
+            }
+
+            newData[program][week][day] = tasks;
+        });
+
+        // 비어있지 않은 프로그램만 덮어쓰기
+        if (Object.keys(newData.fast).length > 0) {
+            SCHEDULE_DATA.fast = newData.fast;
+        }
+        if (Object.keys(newData.standard).length > 0) {
+            SCHEDULE_DATA.standard = newData.standard;
+        }
+
+        console.log('✅ [Schedule] Supabase 데이터로 SCHEDULE_DATA 업데이트 완료');
+        return SCHEDULE_DATA;
+
+    } catch (error) {
+        console.error('❌ [Schedule] Supabase 로드 실패:', error);
+        console.log('📦 [Schedule] 하드코딩 데이터 사용');
+        return SCHEDULE_DATA;
+    }
+}
 
 /**
  * 요일 영문명 → 한글명 매핑

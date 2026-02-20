@@ -62,6 +62,52 @@ function parsePageRange(pageRange) {
     return [parseInt(str)].filter(n => !isNaN(n));
 }
 
+// --- Supabase에서 보카 데이터 로드 ---
+async function _loadVocabFromSupabase(pages) {
+    if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+    if (typeof supabaseSelect !== 'function') return null;
+    
+    try {
+        console.log('📥 [Vocab] Supabase에서 데이터 로드...');
+        const rows = await supabaseSelect('tr_vocab', 'select=*&order=page.asc,id.asc');
+        
+        if (!rows || rows.length === 0) {
+            console.warn('⚠️ [Vocab] Supabase 데이터 없음');
+            return null;
+        }
+        
+        console.log(`✅ [Vocab] Supabase에서 ${rows.length}개 행 로드`);
+        
+        // 해당 페이지의 단어만 필터링
+        const filtered = [];
+        rows.forEach(row => {
+            const page = parseInt(row.page);
+            const headword = (row.headword || '').trim();
+            
+            if (pages.includes(page) && headword) {
+                const synonyms = [];
+                for (let j = 1; j <= 8; j++) {
+                    const syn = row[`synonym${j}`];
+                    if (syn && syn.trim()) {
+                        synonyms.push(syn.trim());
+                    }
+                }
+                
+                if (synonyms.length > 0) {
+                    filtered.push({ page, headword, synonyms });
+                }
+            }
+        });
+        
+        console.log(`✅ [Vocab] Supabase 필터링 결과: ${filtered.length}개 단어 (페이지: ${pages.join(', ')})`);
+        return filtered;
+        
+    } catch (error) {
+        console.error('❌ [Vocab] Supabase 로드 실패:', error);
+        return null;
+    }
+}
+
 // 데이터 로드
 async function loadVocabData(pageRange) {
     console.log('📚 내벨업보카 데이터 로드 시작 - 페이지:', pageRange);
@@ -70,6 +116,16 @@ async function loadVocabData(pageRange) {
     const pages = parsePageRange(pageRange);
     console.log('📖 시험 페이지:', pages.join(', '));
     
+    // 1) Supabase 우선 시도
+    const supabaseResult = await _loadVocabFromSupabase(pages);
+    if (supabaseResult && supabaseResult.length > 0) {
+        vocabTestData = supabaseResult;
+        console.log(`✅ ${vocabTestData.length}개의 단어 로드 완료 (Supabase)`);
+        return;
+    }
+    
+    // 2) Google Sheets 폴백
+    console.log('🔄 [Vocab] Google Sheets 폴백 시도...');
     try {
         const csvUrl = `https://docs.google.com/spreadsheets/d/${VOCAB_SPREADSHEET_ID}/export?format=csv&gid=${VOCAB_SHEET_GID}`;
         console.log('CSV URL:', csvUrl);
