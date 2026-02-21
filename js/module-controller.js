@@ -345,8 +345,10 @@ class ModuleController {
      */
     updateHeaderTitle(componentType) {
         // Week/요일 정보 가져오기
-        const currentTest = JSON.parse(sessionStorage.getItem('currentTest') || '{"week":"Week 1","day":"일"}');
-        const weekDay = `${currentTest.week || 'Week 1'} - ${currentTest.day || '일'}요일`;
+        const ct = window.currentTest || {};
+const week = ct.currentWeek || 'Week 1';
+const day = ct.currentDay || '일';
+const weekDay = `${week} - ${day}요일`;
         
         // 유형별 Font Awesome 아이콘 + 한글명 매핑
         const typeMap = {
