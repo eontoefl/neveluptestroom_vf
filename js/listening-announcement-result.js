@@ -64,7 +64,7 @@ function showAnnouncementResults() {
         console.log('✅ 오디오 리스너 초기화 완료');
         
         // 툴팁 이벤트 리스너 추가
-        const highlightedWords = document.querySelectorAll('.announcement-keyword-highlight');
+        const highlightedWords = document.querySelectorAll('.announce-keyword');
         highlightedWords.forEach(word => {
             word.addEventListener('mouseenter', showAnnouncementTooltip);
             word.addEventListener('mouseleave', hideAnnouncementTooltip);
@@ -86,45 +86,65 @@ function renderAnnouncementSetResult(setResult, setIdx) {
     const scriptTrans = setResult.scriptTrans || (setResult.answers[0] && setResult.answers[0].scriptTrans) || '';
     const scriptHighlights = setResult.scriptHighlights || (setResult.answers[0] && setResult.answers[0].scriptHighlights) || [];
     
+    const setNumber = setIdx + 1;
+    const questionCount = setResult.answers.length;
+    const setMeta = setResult.setDescription || `안내방송 · ${questionCount}문제`;
+    
     let html = `
-        <div class="result-set-section">
-            <div class="result-section-title">
-                <i class="fas fa-headphones"></i>
-                <span>공지사항 결과</span>
+        <div class="announce-set">
+            <!-- 세트 헤더 -->
+            <div class="announce-set-header">
+                <span class="announce-set-badge">
+                    <i class="fas fa-bullhorn"></i>
+                    Announcement Set ${setNumber}
+                </span>
+                <span class="announce-set-meta">${setMeta}</span>
             </div>
             
-            <!-- 공지사항 오디오 섹션 (세트당 한 번만) -->
+            <!-- 안내문 오디오 -->
             ${audioUrl ? `
-            <div class="audio-section">
-                <div class="audio-title">
+            <div class="announce-audio-section">
+                <div class="announce-audio-title">
                     <i class="fas fa-volume-up"></i>
-                    <span>공지사항 오디오 다시 듣기</span>
+                    <span>안내문 다시 듣기</span>
                 </div>
-                <div class="audio-player-container">
-                    <button class="audio-play-btn" onclick="toggleAnnouncementAudio('${audioId}')">
+                <div class="announce-audio-player">
+                    <button class="announce-play-btn" onclick="toggleAnnouncementAudio('${audioId}')">
                         <i class="fas fa-play" id="${audioId}-icon"></i>
                     </button>
-                    <div class="audio-seek-container">
-                        <div class="audio-seek-bar" id="${audioId}-seek" onclick="seekAnnouncementAudio('${audioId}', event)">
-                            <div class="audio-seek-progress" id="${audioId}-progress" style="width: 0%">
-                                <div class="audio-seek-handle"></div>
+                    <div class="announce-seek-container">
+                        <div class="announce-seek-bar" id="${audioId}-seek" onclick="seekAnnouncementAudio('${audioId}', event)">
+                            <div class="announce-seek-progress" id="${audioId}-progress" style="width: 0%">
+                                <div class="announce-seek-handle"></div>
                             </div>
                         </div>
-                        <div class="audio-time">
-                            <span id="${audioId}-current">0:00</span> / <span id="${audioId}-duration">0:00</span>
+                        <div class="announce-audio-time">
+                            <span id="${audioId}-current">0:00</span> <span id="${audioId}-duration">0:00</span>
                         </div>
                     </div>
                     <audio id="${audioId}" src="${convertGoogleDriveUrl(audioUrl)}"></audio>
                 </div>
-                ${script ? renderAnnouncementScript(script, scriptTrans, scriptHighlights) : ''}
             </div>
-            ` : (script ? `
-            <div class="audio-section">
-                ${renderAnnouncementScript(script, scriptTrans, scriptHighlights)}
-            </div>
-            ` : '')}
+            ` : ''}
             
-            <div class="questions-section">
+            <!-- 전체 스크립트 -->
+            ${script ? `
+            <div class="announce-script-section">
+                <button class="announce-script-toggle" onclick="toggleAnnounceScriptSection('announce-script-${setIdx}')">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="toggle-text">안내문 전체 스크립트 보기</span>
+                    <i class="fas fa-chevron-down" id="announce-script-${setIdx}-icon"></i>
+                </button>
+                <div id="announce-script-${setIdx}" class="announce-script-body" style="display: none;">
+                    ${renderAnnouncementScript(script, scriptTrans, scriptHighlights)}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- 구분선: 문제 영역 -->
+            <div class="announce-questions-divider">
+                <span>문제 해설</span>
+            </div>
     `;
     
     // 각 문제 렌더링
@@ -132,22 +152,34 @@ function renderAnnouncementSetResult(setResult, setIdx) {
         html += renderAnnouncementAnswer(answer, qIdx, setIdx);
     });
     
-    html += `
+    // 안내문 요약 (데이터에 summaryText가 있는 경우)
+    if (setResult.summaryText) {
+        html += `
+            <div class="announce-summary-section">
+                <div class="announce-summary-title">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>안내문 핵심 포인트</span>
+                </div>
+                <div class="announce-summary-text">${setResult.summaryText}</div>
+                ${setResult.keyPoints ? `
+                <div class="announce-key-points">
+                    ${setResult.keyPoints.map(point => `<div class="announce-key-point">${point}</div>`).join('')}
+                </div>
+                ` : ''}
             </div>
+        `;
+    }
+    
+    html += `
         </div>
     `;
     
     return html;
 }
 
-// 스크립트 렌더링 (컨버와 동일, 화자 구분 없음)
+// 스크립트 렌더링 (안내문 단락 구조)
 function renderAnnouncementScript(script, scriptTrans, scriptHighlights = []) {
     if (!script) return '';
-    
-    console.log('=== 스크립트 파싱 디버깅 ===');
-    console.log('script:', script);
-    console.log('scriptTrans:', scriptTrans);
-    console.log('scriptHighlights:', scriptHighlights);
     
     // "Woman:" 제거
     let cleanScript = script.replace(/^Woman:\s*/i, '').trim();
@@ -158,30 +190,22 @@ function renderAnnouncementScript(script, scriptTrans, scriptHighlights = []) {
     // 한국어 번역도 문장 단위로 분리 (. 기준)
     const translations = scriptTrans ? scriptTrans.split(/(?<=[.!?])\s+/) : [];
     
-    console.log('  → 영어 문장 수:', sentences.length);
-    console.log('  → 한국어 번역 수:', translations.length);
+    let html = '';
     
-    let html = '<div class="audio-script">';
-    
-    // 각 문장마다 영어 → 한국어 순서로 표시
+    // 각 문장마다 단락 구조로 표시
     sentences.forEach((sentence, index) => {
         const translation = translations[index] || '';
         
         html += `
-            <div class="script-turn">
-                <div class="script-text">
+            <div class="announce-paragraph">
+                <div class="announce-paragraph-text">
                     ${highlightAnnouncementScript(sentence, scriptHighlights)}
                 </div>
-                ${translation ? `
-                <div class="script-translation">
-                    ${translation}
-                </div>
-                ` : ''}
+                ${translation ? `<span class="announce-paragraph-translation">${translation}</span>` : ''}
             </div>
         `;
     });
     
-    html += '</div>';
     return html;
 }
 
@@ -218,7 +242,7 @@ function highlightAnnouncementScript(scriptText, highlights) {
         const beforeReplace = highlightedText;
         highlightedText = highlightedText.replace(regex, (match) => {
             console.log(`    ✅ "${word}" 매칭됨!`);
-            return `<span class="announcement-keyword-highlight" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
+            return `<span class="announce-keyword" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
         });
         
         if (beforeReplace === highlightedText) {
@@ -240,71 +264,72 @@ function renderAnnouncementAnswer(answer, qIdx, setIdx) {
     // 옵션 A, B, C, D 레이블
     const optionLabels = ['A', 'B', 'C', 'D'];
     
+    const correctIcon = isCorrect 
+        ? '<i class="fas fa-check-circle" style="color: #77bf7e;"></i>' 
+        : '<i class="fas fa-times-circle" style="color: #e74c5e;"></i>';
+    
     return `
-        <div class="conver-result-item ${statusClass}">
-            <div class="question-header">
-                <span class="question-number">
-                    <i class="fas ${statusIcon}"></i>
-                    문제 ${answer.questionNum || (qIdx + 1)} - ${statusText}
-                </span>
+        <div class="announce-question">
+            <div class="announce-question-header">
+                <span class="announce-q-number">Question ${answer.questionNum || (qIdx + 1)}</span>
+                <span class="announce-q-status">${correctIcon}</span>
             </div>
+            <div class="announce-q-text">${answer.question || answer.questionText || ''}</div>
+            ${(answer.questionTrans || answer.questionTextTrans) ? `<div class="announce-q-translation">${answer.questionTrans || answer.questionTextTrans}</div>` : ''}
             
-            <div class="question-content">
-                <div class="question-text">${answer.question || answer.questionText || ''}</div>
-                ${(answer.questionTrans || answer.questionTextTrans) ? `<div class="question-translation">→ ${answer.questionTrans || answer.questionTextTrans}</div>` : ''}
-            </div>
-            
-            <div class="answer-details" style="margin-top: 12px;">
-                <div class="conver-answer-row">
-                    <span class="conver-answer-label">내 답변:</span>
-                    <span class="conver-answer-value ${isCorrect ? '' : 'incorrect'}">${answer.userAnswer ? optionLabels[answer.userAnswer - 1] : '미선택'}</span>
+            <div class="announce-answer-summary">
+                <div class="announce-answer-row">
+                    <span class="announce-answer-label">내 답변:</span>
+                    <span class="announce-answer-value ${isCorrect ? 'correct' : 'incorrect'}">${answer.userAnswer ? answer.options[answer.userAnswer - 1] : '미선택'}</span>
                 </div>
-                <div class="conver-answer-row">
-                    <span class="conver-answer-label">정답:</span>
-                    <span class="conver-answer-value correct">${optionLabels[(answer.correctAnswer || 1) - 1]}</span>
+                <div class="announce-answer-row">
+                    <span class="announce-answer-label">정답:</span>
+                    <span class="announce-answer-value correct">${answer.options[(answer.correctAnswer || 1) - 1]}</span>
                 </div>
             </div>
             
-            ${renderAnnouncementOptionsExplanation(answer)}
+            ${renderAnnouncementOptionsExplanation(answer, qIdx, setIdx)}
         </div>
     `;
 }
 
 // 선택지 설명 렌더링
-function renderAnnouncementOptionsExplanation(answer) {
+function renderAnnouncementOptionsExplanation(answer, qIdx, setIdx) {
     const optionLabels = ['A', 'B', 'C', 'D'];
     const options = answer.options || [];
     
     if (!options.length) return '';
+    
+    const toggleId = `announce-toggle-q${setIdx || 0}-${qIdx || 0}`;
     
     let optionsHtml = '';
     options.forEach((option, idx) => {
         const isCorrect = (idx + 1) === answer.correctAnswer;
         const translation = (answer.optionTranslations || answer.translations || [])[idx] || '';
         const explanation = (answer.optionExplanations || answer.explanations || [])[idx] || '';
-        const explanationClass = isCorrect ? 'correct' : 'incorrect';
-        const icon = isCorrect
-            ? '<i class="fas fa-check-circle" style="color: #10b981;"></i>'
-            : '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';
+        const optionLetter = optionLabels[idx];
         
         optionsHtml += `
-            <div class="option-detail">
-                <div class="option-text">${icon} ${optionLabels[idx]}. ${option}</div>
-                ${translation ? `<div class="option-translation">번역: ${translation}</div>` : ''}
-                ${explanation ? `<div class="option-explanation ${explanationClass}"><strong>해설:</strong> ${explanation}</div>` : ''}
+            <div class="announce-option ${isCorrect ? 'correct' : ''}">
+                <div class="announce-option-text"><span class="announce-option-marker">${optionLetter}</span>${option}</div>
+                ${translation ? `<div class="announce-option-translation">${translation}</div>` : ''}
+                ${explanation ? `
+                <div class="announce-option-explanation ${isCorrect ? 'correct' : 'incorrect'}">
+                    <strong>${isCorrect ? '정답 이유:' : '오답 이유:'}</strong> ${explanation}
+                </div>
+                ` : ''}
             </div>
         `;
     });
     
     return `
-        <div class="options-explanation-section">
-            <button class="toggle-explanation-btn" onclick="toggleAnnouncementExplanation(this)">
-                선택지 상세 해설 보기 <i class="fas fa-chevron-down"></i>
+            <button class="announce-toggle-btn" onclick="toggleAnnouncementExplanationById('${toggleId}')">
+                <span class="toggle-text">보기 상세 해설 펼치기</span>
+                <i class="fas fa-chevron-down" id="${toggleId}-icon"></i>
             </button>
-            <div class="options-details" style="display: none;">
+            <div id="${toggleId}" class="announce-options-details" style="display: none;">
                 ${optionsHtml}
             </div>
-        </div>
     `;
 }
 
@@ -346,7 +371,43 @@ function showAnnouncementTooltip(e) {
     tooltip.style.opacity = '1';
 }
 
-// 해설 토글
+// 해설 토글 (ID 기반)
+function toggleAnnouncementExplanationById(toggleId) {
+    const content = document.getElementById(toggleId);
+    const icon = document.getElementById(toggleId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn.querySelector('.toggle-text');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'flex';
+        if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+        if (text) text.textContent = '보기 상세 해설 접기';
+    } else {
+        content.style.display = 'none';
+        if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+        if (text) text.textContent = '보기 상세 해설 펼치기';
+    }
+}
+
+// 스크립트 토글
+function toggleAnnounceScriptSection(scriptId) {
+    const content = document.getElementById(scriptId);
+    const icon = document.getElementById(scriptId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn.querySelector('.toggle-text');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+        if (text) text.textContent = '안내문 전체 스크립트 접기';
+    } else {
+        content.style.display = 'none';
+        if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+        if (text) text.textContent = '안내문 전체 스크립트 보기';
+    }
+}
+
+// 해설 토글 (button 기반 - 레거시 호환)
 function toggleAnnouncementExplanation(button) {
     const content = button.nextElementSibling;
     if (content.style.display === 'none') {

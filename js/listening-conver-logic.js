@@ -79,7 +79,12 @@ async function initListeningConver(setNumber = 1) {
 function nextConverQuestion() {
     if (currentConverComponent) {
         const hasNext = currentConverComponent.nextQuestion();
-        if (!hasNext) {
+        if (hasNext) {
+            // 다음 문제 → 타이머 리셋 (20초)
+            if (window.moduleController && window.moduleController.startQuestionTimer) {
+                window.moduleController.startQuestionTimer(20);
+            }
+        } else {
             // 마지막 문제 - 제출
             submitListeningConver();
         }
@@ -216,7 +221,7 @@ function showConverResults() {
         console.log('✅ 오디오 리스너 초기화 완료');
         
         // 툴팁 이벤트 리스너 추가
-        const highlightedWords = document.querySelectorAll('.conver-keyword-highlight');
+        const highlightedWords = document.querySelectorAll('.conver-keyword');
         highlightedWords.forEach(word => {
             word.addEventListener('mouseenter', showConverTooltip);
             word.addEventListener('mouseleave', hideConverTooltip);
@@ -232,41 +237,66 @@ function showConverResults() {
 function renderConverSetResult(setResult, setIdx) {
     const audioId = `conver-main-audio-${setIdx}`;
     
+    const setNumber = setIdx + 1;
+    const questionCount = setResult.answers.length;
+    // 세트 메타 정보: setResult.setDescription이 있으면 사용
+    const setMeta = setResult.setDescription || `대화 듣기 · ${questionCount}문제`;
+    
     let html = `
-        <div class="result-set-section">
-            <div class="result-section-title">
-                <i class="fas fa-headphones"></i>
-                <span>컨버 결과</span>
+        <div class="conver-set">
+            <!-- 세트 헤더 -->
+            <div class="conver-set-header">
+                <span class="conver-set-badge">
+                    <i class="fas fa-comments"></i>
+                    Conversation Set ${setNumber}
+                </span>
+                <span class="conver-set-meta">${setMeta}</span>
             </div>
             
-            <!-- 대화 오디오 섹션 -->
+            <!-- 전체 대화 오디오 -->
             ${setResult.answers[0].audioUrl ? `
-            <div class="audio-section">
-                <div class="audio-title">
+            <div class="conver-audio-section">
+                <div class="conver-audio-title">
                     <i class="fas fa-volume-up"></i>
-                    <span>대화 오디오 다시 듣기</span>
+                    <span>전체 대화 다시 듣기</span>
                 </div>
-                <div class="audio-player-container">
-                    <button class="audio-play-btn" onclick="toggleConverAudio('${audioId}')">
+                <div class="conver-audio-player">
+                    <button class="conver-play-btn" onclick="toggleConverAudio('${audioId}')">
                         <i class="fas fa-play" id="${audioId}-icon"></i>
                     </button>
-                    <div class="audio-seek-container">
-                        <div class="audio-seek-bar" id="${audioId}-seek" onclick="seekConverAudio('${audioId}', event)">
-                            <div class="audio-seek-progress" id="${audioId}-progress" style="width: 0%">
-                                <div class="audio-seek-handle"></div>
+                    <div class="conver-seek-container">
+                        <div class="conver-seek-bar" id="${audioId}-seek" onclick="seekConverAudio('${audioId}', event)">
+                            <div class="conver-seek-progress" id="${audioId}-progress" style="width: 0%">
+                                <div class="conver-seek-handle"></div>
                             </div>
                         </div>
-                        <div class="audio-time">
-                            <span id="${audioId}-current">0:00</span> / <span id="${audioId}-duration">0:00</span>
+                        <div class="conver-audio-time">
+                            <span id="${audioId}-current">0:00</span> <span id="${audioId}-duration">0:00</span>
                         </div>
                     </div>
                     <audio id="${audioId}" src="${convertGoogleDriveUrl(setResult.answers[0].audioUrl)}"></audio>
                 </div>
-                ${setResult.answers[0].script ? renderConverScript(setResult.answers[0].script, setResult.answers[0].scriptTrans, setResult.answers[0].scriptHighlights || []) : ''}
             </div>
             ` : ''}
             
-            <div class="questions-section">
+            <!-- 전체 스크립트 -->
+            ${setResult.answers[0].script ? `
+            <div class="conver-script-section">
+                <button class="conver-script-toggle" onclick="toggleConverScriptSection('conver-script-${setIdx}')">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="toggle-text">전체 대화 스크립트 보기</span>
+                    <i class="fas fa-chevron-down" id="conver-script-${setIdx}-icon"></i>
+                </button>
+                <div id="conver-script-${setIdx}" class="conver-script-body" style="display: none;">
+                    ${renderConverScript(setResult.answers[0].script, setResult.answers[0].scriptTrans, setResult.answers[0].scriptHighlights || [])}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- 구분선: 문제 영역 -->
+            <div class="conver-questions-divider">
+                <span>문제 해설</span>
+            </div>
     `;
     
     // 각 문제 렌더링
@@ -274,8 +304,25 @@ function renderConverSetResult(setResult, setIdx) {
         html += renderConverAnswer(answer, qIdx, setIdx);
     });
     
-    html += `
+    // 대화 요약 (데이터에 summaryText가 있는 경우)
+    if (setResult.summaryText) {
+        html += `
+            <div class="conver-summary-section">
+                <div class="conver-summary-title">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>대화 핵심 포인트</span>
+                </div>
+                <div class="conver-summary-text">${setResult.summaryText}</div>
+                ${setResult.keyPoints ? `
+                <div class="conver-key-points">
+                    ${setResult.keyPoints.map(point => `<div class="conver-key-point">${point}</div>`).join('')}
+                </div>
+                ` : ''}
             </div>
+        `;
+    }
+    
+    html += `
         </div>
     `;
     
@@ -290,7 +337,7 @@ function renderConverScript(script, scriptTrans, scriptHighlights = []) {
     const scriptParts = script.split(speakerPattern).filter(part => part.trim());
     const transParts = scriptTrans ? scriptTrans.split(/(남자:|여자:)/g).filter(part => part.trim()) : [];
     
-    let html = '<div class="audio-script">';
+    let html = '';
     let transIndex = 0;
     
     for (let i = 0; i < scriptParts.length; i += 2) {
@@ -310,23 +357,21 @@ function renderConverScript(script, scriptTrans, scriptHighlights = []) {
             }
         }
         
-        const speakerClass = speaker === 'Man:' ? 'speaker-man' : 'speaker-woman';
+        // 화자명 매핑 (Man: → Student 등, 기본값)
+        const speakerName = speaker.replace(':', '').trim();
+        const speakerBClass = speaker === 'Woman:' ? ' speaker-b' : '';
         
         html += `
-            <div class="script-turn ${speakerClass}">
+            <div class="script-line">
+                <span class="script-speaker${speakerBClass}">${speakerName}</span>
                 <div class="script-text">
                     ${highlightConverScript(text, scriptHighlights)}
+                    ${translation ? `<span class="translation">${translation}</span>` : ''}
                 </div>
-                ${translation ? `
-                <div class="script-translation">
-                    ${translation}
-                </div>
-                ` : ''}
             </div>
         `;
     }
     
-    html += '</div>';
     return html;
 }
 
@@ -347,7 +392,7 @@ function highlightConverScript(scriptText, highlights) {
         
         const regex = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'gi');
         highlightedText = highlightedText.replace(regex, (match) => {
-            return `<span class="conver-keyword-highlight" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
+            return `<span class="conver-keyword" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
         });
     });
     
@@ -408,38 +453,27 @@ function renderConverAnswer(answer, qIdx, setIdx) {
         : '<i class="fas fa-times-circle" style="color: var(--danger-color);"></i>';
     
     let html = `
-        <div class="conver-result-item ${isCorrect ? 'correct' : 'incorrect'}">
-            <div class="question-header">
-                <span class="question-number">Question ${answer.questionNum}</span>
-                <span class="result-status">${correctIcon}</span>
+        <div class="conver-question">
+            <div class="conver-question-header">
+                <span class="conver-q-number">Question ${answer.questionNum}</span>
+                <span class="conver-q-status">${correctIcon}</span>
             </div>
+            <div class="conver-q-text">${answer.question}</div>
+            ${answer.questionTrans ? `<div class="conver-q-translation">${answer.questionTrans}</div>` : ''}
             
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
-                    ${answer.question}
-                </div>
-                ${answer.questionTrans ? `
-                <div style="font-size: 14px; color: #9ca3af; font-style: italic;">
-                    ${answer.questionTrans}
-                </div>
-                ` : ''}
-            </div>
-            
-            <div class="answer-summary">
+            <div class="conver-answer-summary">
                 <div class="conver-answer-row">
                     <span class="conver-answer-label">내 답변:</span>
                     <span class="conver-answer-value ${isCorrect ? 'correct' : 'incorrect'}">
-                        ${answer.userAnswer ? `${String.fromCharCode(64 + answer.userAnswer)}. ${answer.options[answer.userAnswer - 1]}` : '미응답'}
+                        ${answer.userAnswer ? `${answer.options[answer.userAnswer - 1]}` : '미응답'}
                     </span>
                 </div>
-                ${!isCorrect ? `
                 <div class="conver-answer-row">
                     <span class="conver-answer-label">정답:</span>
                     <span class="conver-answer-value correct">
-                        ${String.fromCharCode(64 + answer.correctAnswer)}. ${answer.options[answer.correctAnswer - 1]}
+                        ${answer.options[answer.correctAnswer - 1]}
                     </span>
                 </div>
-                ` : ''}
             </div>
             
             ${renderConverOptionsExplanation(answer, qIdx, setIdx)}
@@ -463,13 +497,11 @@ function renderConverOptionsExplanation(answer, qIdx, setIdx) {
     const toggleId = `conver-toggle-q${setIdx}-${qIdx}`;
     
     let html = `
-        <div class="options-explanation-section">
-            <button class="toggle-explanation-btn" onclick="toggleConverExplanation('${toggleId}')">
+            <button class="conver-toggle-btn" onclick="toggleConverExplanation('${toggleId}')">
                 <span class="toggle-text">보기 상세 해설 펼치기</span>
-                <i class="fas fa-chevron-down"></i>
+                <i class="fas fa-chevron-down" id="${toggleId}-icon"></i>
             </button>
-            
-            <div id="${toggleId}" class="options-details" style="display: none;">
+            <div id="${toggleId}" class="conver-options-details" style="display: none;">
     `;
     
     answer.options.forEach((option, idx) => {
@@ -479,11 +511,11 @@ function renderConverOptionsExplanation(answer, qIdx, setIdx) {
         const explanation = answer.optionExplanations && answer.optionExplanations[idx] ? answer.optionExplanations[idx] : '';
         
         html += `
-            <div class="option-detail ${isCorrectOption ? 'correct' : 'incorrect'}">
-                <div class="option-text"><strong>${optionLetter}.</strong> ${option}</div>
-                ${translation ? `<div class="option-translation">${translation}</div>` : ''}
+            <div class="conver-option ${isCorrectOption ? 'correct' : ''}">
+                <div class="conver-option-text"><span class="conver-option-marker">${optionLetter}</span>${option}</div>
+                ${translation ? `<div class="conver-option-translation">${translation}</div>` : ''}
                 ${explanation ? `
-                <div class="option-explanation ${isCorrectOption ? 'correct' : 'incorrect'}">
+                <div class="conver-option-explanation ${isCorrectOption ? 'correct' : 'incorrect'}">
                     <strong>${isCorrectOption ? '정답 이유:' : '오답 이유:'}</strong> ${explanation}
                 </div>
                 ` : ''}
@@ -493,10 +525,29 @@ function renderConverOptionsExplanation(answer, qIdx, setIdx) {
     
     html += `
             </div>
-        </div>
     `;
     
     return html;
+}
+
+// 스크립트 토글
+function toggleConverScriptSection(scriptId) {
+    const content = document.getElementById(scriptId);
+    const icon = document.getElementById(scriptId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn.querySelector('.toggle-text');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = '전체 대화 스크립트 접기';
+    } else {
+        content.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        text.textContent = '전체 대화 스크립트 보기';
+    }
 }
 
 // 해설 토글
@@ -507,7 +558,7 @@ function toggleConverExplanation(toggleId) {
     const text = btn.querySelector('.toggle-text');
     
     if (content.style.display === 'none') {
-        content.style.display = 'block';
+        content.style.display = 'flex';
         icon.classList.remove('fa-chevron-down');
         icon.classList.add('fa-chevron-up');
         text.textContent = '보기 상세 해설 접기';
