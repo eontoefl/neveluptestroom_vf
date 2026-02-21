@@ -416,6 +416,10 @@ class ConverComponent {
     
     this.showingIntro = true;
     
+    // ★ 오디오 재생 중 Review 버튼 숨김
+    const reviewBtn = document.querySelector('#listeningConverScreen .review-btn');
+    if (reviewBtn) reviewBtn.style.display = 'none';
+    
     // 인트로 화면 표시
     document.getElementById('converIntroScreen').style.display = 'block';
     document.getElementById('converQuestionScreen').style.display = 'none';
@@ -569,6 +573,10 @@ class ConverComponent {
     console.log('[ConverComponent] 문제 화면 시작');
     
     this.showingIntro = false;
+    
+    // ★ 문제 화면 전환 시 Review 버튼 복원
+    const reviewBtn = document.querySelector('#listeningConverScreen .review-btn');
+    if (reviewBtn) reviewBtn.style.display = '';
     
     // 화면 전환
     document.getElementById('converIntroScreen').style.display = 'none';
@@ -1002,6 +1010,10 @@ class ConverComponent {
    * 2차 답안 가져오기 (RetakeController가 호출)
    */
   getRetakeAnswer() {
+    if (!this.setData) {
+      console.warn('[ConverComponent] getRetakeAnswer: setData가 null입니다');
+      return null;
+    }
     const questionKey = `${this.setData.id}_q${this.currentQuestion + 1}`;
     return this.answers[questionKey] || null;
   }

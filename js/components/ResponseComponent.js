@@ -1027,6 +1027,10 @@ class ResponseComponent {
    * 2차 답안 가져오기 (RetakeController가 호출)
    */
   getRetakeAnswer() {
+    if (!this.setData) {
+      console.warn('[ResponseComponent] getRetakeAnswer: setData가 null입니다');
+      return null;
+    }
     const questionKey = `${this.setData.id}_q${this.currentQuestion + 1}`;
     return this.answers[questionKey] || null;
   }

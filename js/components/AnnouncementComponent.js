@@ -383,6 +383,10 @@ class AnnouncementComponent {
         
         this.showingIntro = true;
         
+        // ★ 오디오 재생 중 Review 버튼 숨김
+        const reviewBtn = document.querySelector('#listeningAnnouncementScreen .review-btn');
+        if (reviewBtn) reviewBtn.style.display = 'none';
+        
         // 성별에 따라 이미지 선택 (직전 이미지 제외)
         const gender = this.currentSetData.gender.toLowerCase().trim();
         const isFemale = gender === 'female' || gender === 'f';
@@ -512,6 +516,10 @@ class AnnouncementComponent {
         console.log('[AnnouncementComponent] 문제 화면으로 전환');
         
         this.showingIntro = false;
+        
+        // ★ 문제 화면 전환 시 Review 버튼 복원
+        const reviewBtn = document.querySelector('#listeningAnnouncementScreen .review-btn');
+        if (reviewBtn) reviewBtn.style.display = '';
         
         document.getElementById('announcementIntroScreen').style.display = 'none';
         document.getElementById('announcementQuestionScreen').style.display = 'block';
@@ -990,6 +998,10 @@ class AnnouncementComponent {
      * 2차 답안 가져오기 (RetakeController가 호출)
      */
     getRetakeAnswer() {
+        if (!this.currentSetData) {
+            console.warn('[AnnouncementComponent] getRetakeAnswer: currentSetData가 null입니다');
+            return null;
+        }
         const questionKey = `${this.currentSetData.setId}_a${this.currentQuestion + 1}`;
         return this.answers[questionKey] || null;
     }

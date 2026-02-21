@@ -431,6 +431,10 @@ class LectureComponent {
         
         this.showingIntro = true;
         
+        // ★ 오디오 재생 중 Review 버튼 숨김
+        const reviewBtn = document.querySelector('#listeningLectureScreen .review-btn');
+        if (reviewBtn) reviewBtn.style.display = 'none';
+        
         // 성별에 따라 교수 이미지 선택 (직전 이미지 제외)
         const gender = this.currentSetData.gender.toLowerCase().trim();
         const isFemale = gender === 'female' || gender === 'f';
@@ -581,6 +585,10 @@ class LectureComponent {
         console.log('[LectureComponent] 문제 화면으로 전환');
         
         this.showingIntro = false;
+        
+        // ★ 문제 화면 전환 시 Review 버튼 복원
+        const reviewBtn = document.querySelector('#listeningLectureScreen .review-btn');
+        if (reviewBtn) reviewBtn.style.display = '';
         
         document.getElementById('lectureIntroScreen').style.display = 'none';
         document.getElementById('lectureQuestionScreen').style.display = 'block';
@@ -1041,6 +1049,10 @@ class LectureComponent {
      * 2차 답안 가져오기 (RetakeController가 호출)
      */
     getRetakeAnswer() {
+        if (!this.currentSetData) {
+            console.warn('[LectureComponent] getRetakeAnswer: currentSetData가 null입니다');
+            return null;
+        }
         const questionKey = `${this.currentSetData.setId}_q${this.currentQuestion + 1}`;
         return this.answers[questionKey] || null;
     }
