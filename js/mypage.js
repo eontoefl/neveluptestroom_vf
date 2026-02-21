@@ -104,14 +104,69 @@ function renderAll() {
 }
 
 // ================================================
+// 시작 전 여부 판별
+// ================================================
+function isBeforeStart() {
+    if (!mpUser.startDate) return false; // 시작일 정보 없으면 진행중으로 간주
+    const start = new Date(mpUser.startDate);
+    start.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now < start;
+}
+
+function getDaysUntilStart() {
+    if (!mpUser.startDate) return 0;
+    const start = new Date(mpUser.startDate);
+    start.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+}
+
+function formatStartDate(dateStr) {
+    const d = new Date(dateStr);
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    return `${d.getMonth() + 1}/${d.getDate()} (${days[d.getDay()]})`;
+}
+
+// ================================================
 // ① 학습 현황 요약 카드 렌더링
 // ================================================
 function renderSummaryCards() {
     const programType = mpUser.programType || 'standard';
     const meta = getScheduleMeta(programType);
+    const totalDays = meta.totalDays;
+    const totalTasks = meta.totalTasks;
+
+    // ★ 시작 전 분기
+    if (isBeforeStart()) {
+        const daysLeft = getDaysUntilStart();
+        const startStr = formatStartDate(mpUser.startDate);
+
+        document.getElementById('studyDays').textContent = 'D-' + daysLeft;
+        document.getElementById('studyDaysTotal').textContent = '';
+        document.getElementById('studyDaysBar').style.width = '0%';
+        document.getElementById('studyDaysPct').textContent = `${startStr} 시작`;
+
+        document.getElementById('tasksDone').textContent = '-';
+        document.getElementById('tasksTotal').textContent = ` / ${totalTasks}개`;
+        document.getElementById('tasksBar').style.width = '0%';
+        document.getElementById('tasksPct').textContent = '시작 전';
+
+        document.getElementById('currentGrade').textContent = '-';
+        const gradeHint = document.getElementById('gradeHint');
+        gradeHint.querySelector('span').textContent = `${startStr}부터 시작됩니다`;
+
+        document.getElementById('refundAmount').textContent = '-';
+        const refundStatus = document.getElementById('refundStatus');
+        refundStatus.className = 'sc-sub refund-tag';
+        refundStatus.innerHTML = '<i class="fa-solid fa-clock"></i><span>챌린지 시작 전</span>';
+
+        return;
+    }
 
     // --- 총 학습일 ---
-    // 고유한 (week + day) 조합 수
     const uniqueDays = new Set();
     mpStudyRecords.forEach(r => {
         if (r.week && r.day) {
@@ -119,7 +174,6 @@ function renderSummaryCards() {
         }
     });
     const studyDays = uniqueDays.size;
-    const totalDays = meta.totalDays;
     const daysPct = totalDays > 0 ? Math.round((studyDays / totalDays) * 100) : 0;
 
     document.getElementById('studyDays').textContent = studyDays;
@@ -129,7 +183,6 @@ function renderSummaryCards() {
 
     // --- 완료한 과제 ---
     const tasksDone = mpStudyRecords.length;
-    const totalTasks = meta.totalTasks;
     const tasksPct = totalTasks > 0 ? Math.round((tasksDone / totalTasks) * 100) : 0;
 
     document.getElementById('tasksDone').textContent = tasksDone;
@@ -138,7 +191,6 @@ function renderSummaryCards() {
     document.getElementById('tasksPct').textContent = `${tasksPct}% 완료`;
 
     // --- 현재 등급 ---
-    // 등급 기준: "성공 요일" = 해당 요일의 모든 과제를 완료 + 평균 인증률 ≥ 70%
     const successDays = countSuccessDays();
     const grade = calculateGrade(successDays, totalDays);
 
@@ -147,7 +199,7 @@ function renderSummaryCards() {
     gradeHint.querySelector('span').textContent = grade.hint;
 
     // --- 보증금 환급 예상 ---
-    const deposit = 100000; // 기본 보증금 10만원 (추후 applications에서 가져올 수 있음)
+    const deposit = 100000;
     const refundRate = grade.refundRate;
     const refundAmount = Math.round(deposit * refundRate);
 
@@ -273,29 +325,26 @@ function renderGrass() {
     const programType = mpUser.programType || 'standard';
     const gridId = programType === 'fast' ? 'grass-fast' : 'grass-standard';
 
-    // 유저 프로그램에 맞는 그리드의 잔디 셀들만 업데이트
-    // 완료된 과제를 매핑: (week, day, task_type) → completed
-    const completedMap = buildCompletedMap();
+    // ★ 시작 전이면 잔디 업데이트 안 함 (모두 empty 유지)
+    if (isBeforeStart()) {
+        console.log('📊 [MyPage] 시작 전 – 잔디 전부 empty 유지');
+        return;
+    }
 
-    // 모든 잔디 셀 업데이트
+    const completedMap = buildCompletedMap();
+    const currentDay = getCurrentScheduleDay();
+
     document.querySelectorAll(`#${gridId} .g`).forEach(cell => {
         const dayNum = parseInt(cell.dataset.day);
         const order = parseInt(cell.dataset.order);
-        const type = cell.dataset.type;
-
-        // 스케줄 진행 상황 판단
-        const currentDay = getCurrentScheduleDay();
 
         if (completedMap.has(`${dayNum}_${order}`)) {
-            // 완료
             cell.classList.remove('empty', 'fail');
             cell.classList.add('success');
         } else if (dayNum < currentDay) {
-            // 마감 지남 → 미완료
             cell.classList.remove('empty', 'success');
             cell.classList.add('fail');
         }
-        // else: 아직 예정 → empty 유지
     });
 }
 
@@ -368,14 +417,18 @@ function getCurrentScheduleDay() {
 function renderRecentRecords() {
     const tbody = document.getElementById('recordTableBody');
     
+    // ★ 시작 전 or 데이터 없음
     if (mpStudyRecords.length === 0) {
+        const beforeStart = isBeforeStart();
+        const msg = beforeStart
+            ? `<i class="fa-solid fa-calendar-day"></i>
+               <p>챌린지가 아직 시작되지 않았어요.<br><strong>${formatStartDate(mpUser.startDate)}</strong>부터 학습 기록이 쌓입니다! 🚀</p>`
+            : `<i class="fa-solid fa-inbox"></i>
+               <p>아직 학습 기록이 없어요.<br>테스트룸에서 과제를 시작해보세요! 💪</p>`;
         tbody.innerHTML = `
             <tr>
                 <td colspan="4">
-                    <div class="empty-state">
-                        <i class="fa-solid fa-inbox"></i>
-                        <p>아직 학습 기록이 없어요.<br>테스트룸에서 과제를 시작해보세요! 💪</p>
-                    </div>
+                    <div class="empty-state">${msg}</div>
                 </td>
             </tr>
         `;
