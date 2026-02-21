@@ -59,10 +59,82 @@ class RetakeController {
         }
         console.log(`❌ 틀린 문제 ${this.wrongQuestionsList.length}개:`, this.wrongQuestionsList.map(i => i + 1));
         
-        // 3. 첫 번째 문제부터 시작
+        // 3. 헤더를 2차 풀이 모드로 전환
+        this.switchHeaderToRetakeMode();
+        
+        // 4. 첫 번째 문제부터 시작
         this.currentQuestionIndex = 0;
         this.currentWrongQuestionNumber = 0;
         this.showNextQuestion();
+    }
+    
+    /**
+     * 헤더를 2차 풀이 모드로 전환 (타이머 숨기고, 2차 뱃지 표시, Next/Submit 숨기기)
+     */
+    switchHeaderToRetakeMode() {
+        console.log('🔄 [RetakeController] 헤더를 2차 풀이 모드로 전환');
+        
+        // 컴포넌트 타이머/뱃지/버튼 ID 매핑
+        const componentIds = {
+            fillblanks: { timer: 'fillBlanksTimerWrap', badge: 'fillBlanksRetakeBadge', next: 'fillBlanksNextBtn', submit: 'fillBlanksSubmitBtn' },
+            daily1: { timer: 'daily1TimerWrap', badge: 'daily1RetakeBadge', next: 'daily1NextBtn', submit: 'daily1SubmitBtn', prev: 'daily1PrevBtn' },
+            daily2: { timer: 'daily2TimerWrap', badge: 'daily2RetakeBadge', next: 'daily2NextBtn', submit: 'daily2SubmitBtn', prev: 'daily2PrevBtn' },
+            academic: { timer: 'academicTimerWrap', badge: 'academicRetakeBadge', next: 'academicNextBtn', submit: 'academicSubmitBtn', prev: 'academicPrevBtn' },
+            response: { timer: 'responseTimerWrap', badge: 'responseRetakeBadge', next: 'responseNextBtn', submit: 'responseSubmitBtn' },
+            conver: { timer: 'converTimerWrap', badge: 'converRetakeBadge', next: 'converNextBtn', submit: 'converSubmitBtn' },
+            announcement: { timer: 'announcementTimerWrap', badge: 'announcementRetakeBadge', next: 'announcementNextBtn', submit: 'announcementSubmitBtn' },
+            lecture: { timer: 'lectureTimerWrap', badge: 'lectureRetakeBadge', next: 'lectureNextBtn', submit: 'lectureSubmitBtn' }
+        };
+        
+        // 모든 리딩 컴포넌트에 대해 처리
+        Object.values(componentIds).forEach(ids => {
+            // 타이머 숨기기
+            const timer = document.getElementById(ids.timer);
+            if (timer) timer.style.display = 'none';
+            
+            // 2차 뱃지 표시
+            const badge = document.getElementById(ids.badge);
+            if (badge) badge.style.display = 'flex';
+            
+            // Next/Submit/Prev 버튼 숨기기
+            ['next', 'submit', 'prev'].forEach(key => {
+                if (ids[key]) {
+                    const btn = document.getElementById(ids[key]);
+                    if (btn) btn.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    /**
+     * 헤더를 1차 풀이 모드로 복원 (모듈 완료 시 호출)
+     */
+    restoreHeaderToFirstMode() {
+        console.log('🔄 [RetakeController] 헤더를 1차 풀이 모드로 복원');
+        
+        const componentIds = {
+            fillblanks: { timer: 'fillBlanksTimerWrap', badge: 'fillBlanksRetakeBadge', next: 'fillBlanksNextBtn' },
+            daily1: { timer: 'daily1TimerWrap', badge: 'daily1RetakeBadge', next: 'daily1NextBtn' },
+            daily2: { timer: 'daily2TimerWrap', badge: 'daily2RetakeBadge', next: 'daily2NextBtn' },
+            academic: { timer: 'academicTimerWrap', badge: 'academicRetakeBadge', next: 'academicNextBtn' },
+            response: { timer: 'responseTimerWrap', badge: 'responseRetakeBadge', next: 'responseNextBtn' },
+            conver: { timer: 'converTimerWrap', badge: 'converRetakeBadge', next: 'converNextBtn' },
+            announcement: { timer: 'announcementTimerWrap', badge: 'announcementRetakeBadge', next: 'announcementNextBtn' },
+            lecture: { timer: 'lectureTimerWrap', badge: 'lectureRetakeBadge', next: 'lectureNextBtn' }
+        };
+        
+        Object.values(componentIds).forEach(ids => {
+            const timer = document.getElementById(ids.timer);
+            if (timer) timer.style.display = 'flex';
+            
+            const badge = document.getElementById(ids.badge);
+            if (badge) badge.style.display = 'none';
+            
+            if (ids.next) {
+                const btn = document.getElementById(ids.next);
+                if (btn) btn.style.display = '';
+            }
+        });
     }
     
     /**
@@ -123,7 +195,8 @@ class RetakeController {
     
     /**
      * 문제 정보 가져오기 (어느 컴포넌트의 몇 번째 문제인지)
-     * ⚠️ 1차 결과(firstAttemptData)에서 문자열 setId를 가져옴 (Module Config는 숫자만 제공)
+     * ⚠️ moduleConfig.components 기반으로 경계를 계산하고,
+     *    동일한 componentIndex로 firstAttemptData에서 setId와 답안을 가져옴
      */
     getQuestionInfo(globalQuestionIndex) {
         let currentIndex = 0;
@@ -139,11 +212,15 @@ class RetakeController {
                 
                 console.log(`  📍 [getQuestionInfo] 컴포넌트[${componentIndex}] type=${component.type}, Module Config setId=${component.setId}, 1차 결과 setId=${actualSetId}`);
                 
+                const localIndex = globalQuestionIndex - currentIndex;
+                
                 return {
                     componentType: component.type,
                     setId: actualSetId, // ✅ 문자열 setId 사용 (예: listening_conver_2)
-                    questionIndexInComponent: globalQuestionIndex - currentIndex,
-                    questionsPerSet: questionsInComponent
+                    questionIndexInComponent: localIndex,
+                    questionsPerSet: questionsInComponent,
+                    componentIndex: componentIndex, // ✅ 컴포넌트 배열 인덱스
+                    compResult: compResult || null   // ✅ 1차 결과 컴포넌트 전체
                 };
             }
             
@@ -156,19 +233,25 @@ class RetakeController {
     
     /**
      * 1차 결과에서 해당 문제가 맞았는지 확인
+     * ⚠️ moduleConfig.components 기반으로 경계를 계산 (questionsPerSet 사용)
      */
     wasQuestionCorrect(globalQuestionIndex) {
         let currentIndex = 0;
+        let componentIndex = 0;
         
-        for (const compResult of this.firstAttemptData.componentResults) {
-            const answerArray = compResult.answers || compResult.results || [];
+        for (const component of this.moduleConfig.components) {
+            const questionsInComponent = component.questionsPerSet;
             
-            if (globalQuestionIndex < currentIndex + answerArray.length) {
+            if (globalQuestionIndex < currentIndex + questionsInComponent) {
                 const localIndex = globalQuestionIndex - currentIndex;
+                const compResult = this.firstAttemptData.componentResults[componentIndex];
+                if (!compResult) return false;
+                const answerArray = compResult.answers || compResult.results || [];
                 return answerArray[localIndex]?.isCorrect || false;
             }
             
-            currentIndex += answerArray.length;
+            currentIndex += questionsInComponent;
+            componentIndex++;
         }
         
         return false;
@@ -176,19 +259,25 @@ class RetakeController {
     
     /**
      * 1차 답안 데이터 가져오기
+     * ⚠️ moduleConfig.components 기반으로 경계를 계산 (questionsPerSet 사용)
      */
     getFirstAttemptAnswer(globalQuestionIndex) {
         let currentIndex = 0;
+        let componentIndex = 0;
         
-        for (const compResult of this.firstAttemptData.componentResults) {
-            const answerArray = compResult.answers || compResult.results || [];
+        for (const component of this.moduleConfig.components) {
+            const questionsInComponent = component.questionsPerSet;
             
-            if (globalQuestionIndex < currentIndex + answerArray.length) {
+            if (globalQuestionIndex < currentIndex + questionsInComponent) {
                 const localIndex = globalQuestionIndex - currentIndex;
+                const compResult = this.firstAttemptData.componentResults[componentIndex];
+                if (!compResult) return null;
+                const answerArray = compResult.answers || compResult.results || [];
                 return answerArray[localIndex] || null;
             }
             
-            currentIndex += answerArray.length;
+            currentIndex += questionsInComponent;
+            componentIndex++;
         }
         
         return null;
@@ -196,22 +285,27 @@ class RetakeController {
     
     /**
      * 🆕 1차 결과에서 해당 문제가 속한 컴포넌트 결과 전체 가져오기
+     * ⚠️ moduleConfig.components 기반으로 경계를 계산 (questionsPerSet 사용)
      */
     getFirstAttemptComponent(globalQuestionIndex) {
         let currentIndex = 0;
+        let componentIndex = 0;
         
-        for (const compResult of this.firstAttemptData.componentResults) {
-            const answerArray = compResult.answers || compResult.results || [];
+        for (const component of this.moduleConfig.components) {
+            const questionsInComponent = component.questionsPerSet;
             
-            if (globalQuestionIndex < currentIndex + answerArray.length) {
+            if (globalQuestionIndex < currentIndex + questionsInComponent) {
                 const localIndex = globalQuestionIndex - currentIndex;
+                const compResult = this.firstAttemptData.componentResults[componentIndex];
+                if (!compResult) return null;
                 return {
                     component: compResult,  // 전체 컴포넌트 결과
                     localIndex: localIndex  // 컴포넌트 내 인덱스
                 };
             }
             
-            currentIndex += answerArray.length;
+            currentIndex += questionsInComponent;
+            componentIndex++;
         }
         
         return null;
@@ -1299,6 +1393,8 @@ class RetakeController {
     
     /**
      * 2차 채점
+     * ⚠️ moduleConfig.components 기반으로 경계를 계산 (questionsPerSet 사용)
+     *    secondAttemptAnswers 키와 동일한 인덱싱 보장
      */
     gradeSecondAttempt() {
         console.log('📊 [RetakeController] 2차 채점 중...');
@@ -1308,19 +1404,24 @@ class RetakeController {
         const secondResults = [];
         
         let currentIndex = 0;
+        let componentIndex = 0;
         
-        for (const compResult of this.firstAttemptData.componentResults) {
-            const answerArray = compResult.answers || compResult.results || [];
+        for (const component of this.moduleConfig.components) {
+            const questionsInComponent = component.questionsPerSet;
+            const compResult = this.firstAttemptData.componentResults[componentIndex];
+            const answerArray = compResult ? (compResult.answers || compResult.results || []) : [];
             
-            for (const answerData of answerArray) {
+            for (let localIdx = 0; localIdx < questionsInComponent; localIdx++) {
+                const answerData = answerArray[localIdx];
+                
                 // 1차 결과
-                firstResults.push(answerData.isCorrect || false);
+                firstResults.push(answerData?.isCorrect || false);
                 
                 // 2차 답안 (틀린 문제만 2차 풀이를 하므로)
                 const secondAnswerKey = `q${currentIndex}`;
                 const secondAnswer = this.secondAttemptAnswers[secondAnswerKey];
                 
-                console.log(`  [채점] 문제 ${currentIndex}: 1차=${answerData.isCorrect}, secondAnswer=`, secondAnswer);
+                console.log(`  [채점] 문제 ${currentIndex}: 1차=${answerData?.isCorrect}, secondAnswer=`, secondAnswer);
                 
                 if (secondAnswer !== undefined) {
                     // 2차에서 다시 풀었음
@@ -1328,12 +1429,14 @@ class RetakeController {
                     console.log(`    → 2차 풀이함: ${secondAnswer.isCorrect}`);
                 } else {
                     // 1차에 맞아서 2차에서 안 풀었음 -> 1차 결과 유지
-                    secondResults.push(answerData.isCorrect || false);
-                    console.log(`    → 1차 결과 유지: ${answerData.isCorrect}`);
+                    secondResults.push(answerData?.isCorrect || false);
+                    console.log(`    → 1차 결과 유지: ${answerData?.isCorrect}`);
                 }
                 
                 currentIndex++;
             }
+            
+            componentIndex++;
         }
         
         const firstScore = firstResults.filter(r => r).length;
@@ -1435,6 +1538,9 @@ class RetakeController {
         console.log('  결과 데이터:', secondResults);
         console.log('  secondAttemptAnswers:', this.secondAttemptAnswers);
         console.log('  secondAttemptAnswers 키 개수:', Object.keys(this.secondAttemptAnswers).length);
+        
+        // 헤더를 1차 모드로 복원
+        this.restoreHeaderToFirstMode();
         
         // ✅ secondAttemptAnswers를 결과 데이터에 포함
         secondResults.secondAttemptAnswers = this.secondAttemptAnswers;
