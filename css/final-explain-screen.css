@@ -4,6 +4,108 @@
    Ground Rule: NO border-left anywhere
    ============================================ */
 
+/* ── 범용 CSS 충돌 리셋 ── 
+   style.css, reading-daily2-result.css, reading-academic-result.css,
+   listening-lecture-result.css 등에서 !important 없이/있이 선언된
+   범용 클래스들이 #finalExplainScreen 내부를 오염시키지 않도록 리셋 */
+
+#finalExplainScreen .question-header {
+    justify-content: space-between !important;
+    margin-bottom: 10px !important;
+}
+
+#finalExplainScreen .question-number {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1e1e2f !important;
+    margin-bottom: 0 !important;
+    text-align: left !important;
+}
+
+#finalExplainScreen .result-status i {
+    font-size: 18px !important;
+}
+
+#finalExplainScreen .toggle-explanation-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: #f5f3fa !important;
+    border: 1px solid rgba(148,128,197,0.15) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #9480c5 !important;
+    box-shadow: none !important;
+}
+
+#finalExplainScreen .toggle-explanation-btn:hover {
+    background: #eee9f7 !important;
+}
+
+#finalExplainScreen .options-details {
+    display: none;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-top: 10px !important;
+}
+
+#finalExplainScreen .option-detail {
+    padding: 12px 14px !important;
+    border-radius: 10px !important;
+    background: #f9f7ff !important;
+    border: 1px solid rgba(148,128,197,0.10) !important;
+}
+
+#finalExplainScreen .option-detail.correct {
+    background: #f0faf1 !important;
+    border-color: rgba(119,191,126,0.25) !important;
+}
+
+#finalExplainScreen .option-text {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1e1e2f !important;
+    margin-bottom: 4px !important;
+}
+
+#finalExplainScreen .option-translation {
+    font-size: 12px !important;
+    color: #8890a4 !important;
+    margin-bottom: 6px !important;
+    padding-left: 30px !important;
+}
+
+#finalExplainScreen .option-explanation {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    margin-left: 30px !important;
+}
+
+#finalExplainScreen .answer-summary {
+    background: #f9f7ff !important;
+    border-radius: 10px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 12px !important;
+    margin-top: 0 !important;
+    display: block !important;
+    flex-wrap: unset !important;
+    gap: unset !important;
+}
+
+#finalExplainScreen .audio-section {
+    padding: 0 !important;
+    margin-bottom: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 #finalExplainScreen {
     font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
     background: #f7f6fb;
