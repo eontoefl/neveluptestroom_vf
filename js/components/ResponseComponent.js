@@ -559,8 +559,11 @@ class ResponseComponent {
     if (this.audioPlayer) {
       try {
         this.audioPlayer.pause();
-        this.audioPlayer.currentTime = 0;
-        this.audioPlayer.src = ''; // 소스 제거
+        // ★ 이벤트 리스너 먼저 제거 (src='' 시 error 이벤트 트리거 방지)
+        this.audioPlayer.onended = null;
+        this.audioPlayer.onerror = null;
+        this.audioPlayer.removeAttribute('src');
+        this.audioPlayer.load(); // 리소스 해제
         this.audioPlayer = null;
         this.isAudioPlaying = false;
         console.log('[ResponseComponent] 🛑 오디오 완전 정리 완료');
@@ -644,6 +647,8 @@ class ResponseComponent {
     // 기존 오디오 정리
     if (this.audioPlayer) {
       this.audioPlayer.pause();
+      this.audioPlayer.removeAttribute('src');
+      this.audioPlayer.load();
       this.audioPlayer = null;
     }
     
@@ -666,6 +671,8 @@ class ResponseComponent {
     });
     
     this.audioPlayer.addEventListener('error', (e) => {
+      // ★ stopAudio()로 정리된 후 발생하는 error 이벤트 무시
+      if (!this.audioPlayer) return;
       console.error('[ResponseComponent] 오디오 재생 실패:', e);
       alert('오디오 재생에 실패했습니다.\n\nGoogle Drive 파일 공유 설정을 확인해주세요.');
       this.isAudioPlaying = false;
