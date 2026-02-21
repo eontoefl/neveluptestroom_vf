@@ -6,11 +6,16 @@ function backToSchedule() {
     
     console.log('🔙 [뒤로가기] 현재 화면:', currentScreenId);
     
-    // 과제 목록 화면(welcomeScreen)에서는 경고 없이 바로 돌아가기
+    // 경고 없이 바로 돌아가도 되는 화면들
     const isTaskListScreen = currentScreenId === 'welcomeScreen';
+    const isResultScreen = currentScreenId && (
+        currentScreenId.includes('Result') || 
+        currentScreenId === 'vocabResultScreen' ||
+        currentScreenId === 'resultScreen'
+    );
     
-    // 실제 시험 화면인 경우에만 경고 표시
-    if (!isTaskListScreen) {
+    // 실제 시험 화면인 경우에만 경고 표시 (과제목록/결과화면은 스킵)
+    if (!isTaskListScreen && !isResultScreen) {
         // AuthMonitor 상태로 구간 판별
         var hasSubmitted = window.AuthMonitor && (AuthMonitor._step1Done || AuthMonitor._step2Done);
         var msg;
