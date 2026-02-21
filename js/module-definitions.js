@@ -186,18 +186,20 @@ const MODULE_DEFINITIONS = {
         ],
         
         generateModule(moduleNumber) {
-            const baseSetId = (moduleNumber - 1) * this.setsPerModule + 1;
             const components = [];
-            let currentSetOffset = 0;
+            const typeCounters = {};
             
             this.componentStructure.forEach(structure => {
+                if (!typeCounters[structure.type]) {
+                    typeCounters[structure.type] = (moduleNumber - 1) * structure.count + 1;
+                }
                 for (let i = 0; i < structure.count; i++) {
                     components.push({
                         type: structure.type,
-                        setId: baseSetId + currentSetOffset,
+                        setId: typeCounters[structure.type],
                         questionsPerSet: structure.questionsPerSet
                     });
-                    currentSetOffset++;
+                    typeCounters[structure.type]++;
                 }
             });
             
