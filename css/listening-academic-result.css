@@ -4,17 +4,22 @@
    Ground Rule: NO border-left anywhere
    ============================================ */
 
+/* ── 리셋: final-explain-screen.css의 #finalExplainScreen * { all: revert } 로 충분 ──
+   .academic-set * 리셋은 자식 요소(<strong>, <div> 등)의 스타일까지 초기화하므로 제거 */
+
 /* ── 루트 ── */
-#listeningAcademicExplainScreen {
-    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f7f6fb;
-    min-height: 100vh;
-    padding-bottom: 40px;
-    color: #1e1e2f;
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) {
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    background: #f7f6fb !important;
+    min-height: 100vh !important;
+    padding-bottom: 40px !important;
+    color: #1e1e2f !important;
+    position: relative !important;
+    box-sizing: border-box !important;
 }
 
 /* ── 헤더 ── */
-#listeningAcademicExplainScreen .academic-header {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-header {
     background: linear-gradient(135deg, #9480c5, #7a66b0);
     padding: 24px 24px;
     text-align: center;
@@ -23,7 +28,7 @@
     z-index: 100;
 }
 
-#listeningAcademicExplainScreen .academic-header h2 {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-header h2 {
     color: #fff;
     font-size: 18px;
     font-weight: 700;
@@ -34,7 +39,7 @@
     gap: 8px;
 }
 
-#listeningAcademicExplainScreen .academic-icon {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -47,13 +52,13 @@
 }
 
 /* ── 요약 통계 ── */
-#listeningAcademicExplainScreen .academic-summary {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-summary {
     max-width: 880px;
     margin: 0 auto;
     padding: 20px 20px 0;
 }
 
-#listeningAcademicExplainScreen .academic-stats {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
@@ -63,7 +68,7 @@
     box-shadow: 0 2px 12px rgba(148,128,197,0.1);
 }
 
-#listeningAcademicExplainScreen .academic-stat-box {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-box {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -71,37 +76,37 @@
     padding: 18px 8px;
     border-right: 1px solid #f0edf5;
 }
-#listeningAcademicExplainScreen .academic-stat-box:last-child {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-box:last-child {
     border-right: none;
 }
 
-#listeningAcademicExplainScreen .academic-stat-label {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-label {
     font-size: 11px;
     font-weight: 600;
     color: #999;
     letter-spacing: 0.5px;
 }
 
-#listeningAcademicExplainScreen .academic-stat-value {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-value {
     font-size: 19px;
     font-weight: 800;
     color: #9480c5;
 }
-#listeningAcademicExplainScreen .academic-stat-value.first {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-value.first {
     color: #8fa5bb;
 }
-#listeningAcademicExplainScreen .academic-stat-value.second {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-value.second {
     color: #9480c5;
 }
 
 /* ── 세트 카드 ── */
-#listeningAcademicExplainScreen .academic-content {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-content {
     max-width: 880px;
     margin: 20px auto 0;
     padding: 0 20px;
 }
 
-#listeningAcademicExplainScreen .academic-set {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-set {
     background: #fff;
     border-radius: 14px;
     overflow: hidden;
@@ -109,7 +114,7 @@
     margin-bottom: 20px;
 }
 
-#listeningAcademicExplainScreen .academic-set-header {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-set-header {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -118,7 +123,7 @@
     border-bottom: 1px solid #f0edf5;
 }
 
-#listeningAcademicExplainScreen .academic-set-badge {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-set-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -127,11 +132,11 @@
     color: #9480c5;
 }
 
-#listeningAcademicExplainScreen .academic-set-badge i {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-set-badge i {
     font-size: 14px;
 }
 
-#listeningAcademicExplainScreen .academic-set-meta {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-set-meta {
     font-size: 12px;
     color: #999;
     font-weight: 500;
@@ -139,11 +144,11 @@
 }
 
 /* ── 강의 오디오 ── */
-#listeningAcademicExplainScreen .academic-audio-section {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-audio-section {
     padding: 20px 20px 16px;
 }
 
-#listeningAcademicExplainScreen .academic-audio-title {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-audio-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -153,14 +158,14 @@
     margin-bottom: 10px;
 }
 
-#listeningAcademicExplainScreen .academic-audio-player {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-audio-player {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 0;
 }
 
-#listeningAcademicExplainScreen .academic-play-btn {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-play-btn {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -176,18 +181,18 @@
     transition: background 0.2s;
 }
 
-#listeningAcademicExplainScreen .academic-play-btn:hover {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-play-btn:hover {
     opacity: 0.85;
 }
 
-#listeningAcademicExplainScreen .academic-seek-container {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-seek-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-#listeningAcademicExplainScreen .academic-seek-bar {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-seek-bar {
     width: 100%;
     height: 4px;
     background: #e8e4f0;
@@ -196,14 +201,14 @@
     overflow: hidden;
 }
 
-#listeningAcademicExplainScreen .academic-seek-progress {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-seek-progress {
     height: 100%;
     background: #9480c5;
     border-radius: 2px;
     position: relative;
 }
 
-#listeningAcademicExplainScreen .academic-seek-handle {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-seek-handle {
     position: absolute;
     right: -6px;
     top: 50%;
@@ -216,7 +221,7 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
-#listeningAcademicExplainScreen .academic-audio-time {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-audio-time {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
@@ -225,11 +230,11 @@
 }
 
 /* ── 강의 스크립트 ── */
-#listeningAcademicExplainScreen .academic-script-section {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-script-section {
     padding: 0 20px 16px;
 }
 
-#listeningAcademicExplainScreen .academic-script-toggle {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-script-toggle {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -246,16 +251,16 @@
     transition: background 0.2s;
 }
 
-#listeningAcademicExplainScreen .academic-script-toggle:hover {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-script-toggle:hover {
     background: #eee9f7;
 }
 
-#listeningAcademicExplainScreen .academic-script-toggle .toggle-text {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-script-toggle .toggle-text {
     flex: 1;
     text-align: left;
 }
 
-#listeningAcademicExplainScreen .academic-script-body {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-script-body {
     margin-top: 12px;
     padding: 16px;
     background: #faf9fd;
@@ -263,26 +268,26 @@
     border: 1px solid rgba(148,128,197,0.10);
 }
 
-#listeningAcademicExplainScreen .academic-paragraph {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-paragraph {
     margin-bottom: 16px;
     padding-bottom: 16px;
     border-bottom: 1px dashed rgba(148,128,197,0.15);
 }
 
-#listeningAcademicExplainScreen .academic-paragraph:last-child {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-paragraph:last-child {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
 }
 
-#listeningAcademicExplainScreen .academic-paragraph-text {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-paragraph-text {
     font-size: 14px;
     line-height: 1.8;
     color: #1e1e2f;
     margin-bottom: 8px;
 }
 
-#listeningAcademicExplainScreen .academic-paragraph-translation {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-paragraph-translation {
     display: block;
     font-size: 13px;
     line-height: 1.6;
@@ -291,7 +296,7 @@
 }
 
 /* 키워드 하이라이트 */
-#listeningAcademicExplainScreen .academic-keyword {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-keyword {
     color: #9480c5;
     font-weight: 600;
     text-decoration: underline;
@@ -301,7 +306,7 @@
     position: relative;
 }
 
-#listeningAcademicExplainScreen .academic-keyword:hover::after {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-keyword:hover::after {
     content: attr(data-translation) " — " attr(data-explanation);
     position: absolute;
     bottom: calc(100% + 6px);
@@ -322,12 +327,12 @@
 }
 
 /* ── 문제 영역 구분선 ── */
-#listeningAcademicExplainScreen .academic-questions-divider {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-questions-divider {
     padding: 0 20px;
     margin-bottom: 8px;
 }
 
-#listeningAcademicExplainScreen .academic-questions-divider span {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-questions-divider span {
     display: inline-block;
     font-size: 13px;
     font-weight: 700;
@@ -336,32 +341,32 @@
 }
 
 /* ── 문제 카드 ── */
-#listeningAcademicExplainScreen .academic-question {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-question {
     padding: 16px 20px 16px;
 }
 
-#listeningAcademicExplainScreen .academic-question + .academic-question {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-question + .academic-question {
     border-top: 1px solid #f0edf5;
 }
 
-#listeningAcademicExplainScreen .academic-question-header {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-question-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
 }
 
-#listeningAcademicExplainScreen .academic-q-number {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-q-number {
     font-size: 14px;
     font-weight: 700;
     color: #9480c5;
 }
 
-#listeningAcademicExplainScreen .academic-q-status {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-q-status {
     font-size: 18px;
 }
 
-#listeningAcademicExplainScreen .academic-q-text {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-q-text {
     font-size: 15px;
     font-weight: 600;
     color: #1e1e2f;
@@ -369,32 +374,32 @@
     margin-bottom: 6px;
 }
 
-#listeningAcademicExplainScreen .academic-q-translation {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-q-translation {
     font-size: 13px;
     color: #8890a4;
     margin-bottom: 14px;
 }
 
 /* ── 답변 비교 ── */
-#listeningAcademicExplainScreen .academic-answer-summary {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-summary {
     background: #f9f7ff;
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 12px;
 }
 
-#listeningAcademicExplainScreen .academic-answer-row {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
     margin-bottom: 6px;
 }
 
-#listeningAcademicExplainScreen .academic-answer-row:last-child {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-row:last-child {
     margin-bottom: 0;
 }
 
-#listeningAcademicExplainScreen .academic-answer-label {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-label {
     font-size: 12px;
     font-weight: 600;
     color: #8890a4;
@@ -402,22 +407,22 @@
     min-width: 52px;
 }
 
-#listeningAcademicExplainScreen .academic-answer-value {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-value {
     font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
 }
 
-#listeningAcademicExplainScreen .academic-answer-value.correct {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-value.correct {
     color: #77bf7e;
 }
 
-#listeningAcademicExplainScreen .academic-answer-value.incorrect {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-answer-value.incorrect {
     color: #d94452;
 }
 
 /* ── 보기 토글 ── */
-#listeningAcademicExplainScreen .academic-toggle-btn {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-toggle-btn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -434,36 +439,36 @@
     transition: background 0.2s;
 }
 
-#listeningAcademicExplainScreen .academic-toggle-btn:hover {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-toggle-btn:hover {
     background: #eee9f7;
 }
 
-#listeningAcademicExplainScreen .academic-toggle-btn .toggle-text {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-toggle-btn .toggle-text {
     flex: 1;
     text-align: left;
 }
 
 /* ── 보기 상세 ── */
-#listeningAcademicExplainScreen .academic-options-details {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-options-details {
     display: none;
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
 }
 
-#listeningAcademicExplainScreen .academic-option {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option {
     padding: 12px 14px;
     border-radius: 10px;
     background: #f9f7ff;
     border: 1px solid rgba(148,128,197,0.10);
 }
 
-#listeningAcademicExplainScreen .academic-option.correct {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option.correct {
     background: #f0faf1;
     border-color: rgba(119,191,126,0.25);
 }
 
-#listeningAcademicExplainScreen .academic-option-text {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option-text {
     font-size: 14px;
     font-weight: 600;
     color: #1e1e2f;
@@ -473,7 +478,7 @@
     gap: 8px;
 }
 
-#listeningAcademicExplainScreen .academic-option-marker {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option-marker {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -487,19 +492,19 @@
     flex-shrink: 0;
 }
 
-#listeningAcademicExplainScreen .academic-option.correct .academic-option-marker {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option.correct .academic-option-marker {
     background: #d4f5d6;
     color: #3a9142;
 }
 
-#listeningAcademicExplainScreen .academic-option-translation {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option-translation {
     font-size: 12px;
     color: #8890a4;
     margin-bottom: 6px;
     padding-left: 30px;
 }
 
-#listeningAcademicExplainScreen .academic-option-explanation {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option-explanation {
     font-size: 12px;
     line-height: 1.5;
     padding: 8px 12px;
@@ -507,24 +512,24 @@
     margin-left: 30px;
 }
 
-#listeningAcademicExplainScreen .academic-option-explanation.correct {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option-explanation.correct {
     background: rgba(119,191,126,0.08);
     color: #3a9142;
 }
 
-#listeningAcademicExplainScreen .academic-option-explanation.incorrect {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-option-explanation.incorrect {
     background: rgba(231,76,94,0.06);
     color: #c0392b;
 }
 
 /* ── 핵심 포인트 요약 ── */
-#listeningAcademicExplainScreen .academic-summary-section {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-summary-section {
     padding: 20px 20px 16px;
     margin-top: 4px;
     background: #faf9fd;
 }
 
-#listeningAcademicExplainScreen .academic-summary-title {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-summary-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -534,23 +539,23 @@
     margin-bottom: 10px;
 }
 
-#listeningAcademicExplainScreen .academic-summary-title i {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-summary-title i {
     font-size: 13px;
 }
 
-#listeningAcademicExplainScreen .academic-summary-text {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-summary-text {
     font-size: 14px;
     line-height: 1.8;
     color: #555;
 }
 
-#listeningAcademicExplainScreen .academic-key-points {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-key-points {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-#listeningAcademicExplainScreen .academic-key-point {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-key-point {
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -559,7 +564,7 @@
     color: #555;
 }
 
-#listeningAcademicExplainScreen .academic-key-point::before {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-key-point::before {
     content: '•';
     color: #9480c5;
     font-weight: 700;
@@ -567,7 +572,7 @@
 }
 
 /* ── 네비게이션 ── */
-#listeningAcademicExplainScreen .academic-navigation {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation {
     max-width: 880px;
     margin: 32px auto 0;
     padding: 0 20px;
@@ -576,7 +581,7 @@
     gap: 12px;
 }
 
-#listeningAcademicExplainScreen .academic-navigation .btn {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation .btn {
     font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 600;
@@ -590,64 +595,64 @@
     gap: 6px;
 }
 
-#listeningAcademicExplainScreen .academic-navigation .btn-primary {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation .btn-primary {
     background: #9480c5;
     color: #fff;
 }
 
-#listeningAcademicExplainScreen .academic-navigation .btn-primary:hover {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation .btn-primary:hover {
     background: #7a66b0;
 }
 
-#listeningAcademicExplainScreen .academic-navigation .btn-secondary {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation .btn-secondary {
     background: #fff;
     color: #9480c5;
     border: 1.5px solid #d8d0eb;
 }
 
-#listeningAcademicExplainScreen .academic-navigation .btn-secondary:hover {
+:is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation .btn-secondary:hover {
     background: #f7f5fc;
 }
 
 /* ── 반응형 ── */
 @media (max-width: 640px) {
-    #listeningAcademicExplainScreen .academic-stats {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stats {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    #listeningAcademicExplainScreen .academic-header h2 {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-header h2 {
         font-size: 15px;
     }
 
-    #listeningAcademicExplainScreen .academic-stat-value {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-stat-value {
         font-size: 15px;
     }
 
-    #listeningAcademicExplainScreen .academic-set-header {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-set-header {
         padding: 14px 16px;
     }
 
-    #listeningAcademicExplainScreen .academic-audio-section,
-    #listeningAcademicExplainScreen .academic-script-section,
-    #listeningAcademicExplainScreen .academic-questions-divider {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-audio-section,
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-script-section,
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-questions-divider {
         padding-left: 16px;
         padding-right: 16px;
     }
 
-    #listeningAcademicExplainScreen .academic-question {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-question {
         padding-left: 16px;
         padding-right: 16px;
     }
 
-    #listeningAcademicExplainScreen .academic-navigation {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation {
         flex-direction: column;
     }
 
-    #listeningAcademicExplainScreen .academic-navigation .btn {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-navigation .btn {
         width: 100%;
     }
 
-    #listeningAcademicExplainScreen .academic-summary-section {
+    :is(#listeningAcademicExplainScreen, #finalExplainScreen) .academic-summary-section {
         padding-left: 16px;
         padding-right: 16px;
     }
