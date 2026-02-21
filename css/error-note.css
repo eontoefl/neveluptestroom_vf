@@ -323,6 +323,156 @@
 }
 
 /* ========================================
+   Speaking 녹음 파일 업로드
+   ======================================== */
+
+.speaking-upload-section {
+    margin-top: 12px;
+    padding: 14px;
+    background: #f0ecfa;
+    border: 1px solid #d8cff0;
+    border-radius: 10px;
+}
+
+.speaking-upload-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5B4A9E;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.speaking-upload-title i {
+    color: #9480c5;
+}
+
+.speaking-upload-desc {
+    font-size: 11px;
+    color: #8a7ab8;
+    margin-bottom: 12px;
+}
+
+.speaking-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.speaking-upload-row:last-child {
+    margin-bottom: 0;
+}
+
+.speaking-upload-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5B4A9E;
+    min-width: 52px;
+    flex-shrink: 0;
+}
+
+.speaking-upload-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: white;
+    border: 1.5px dashed #b9a0df;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #7a68aa;
+    cursor: pointer;
+    transition: all 0.18s;
+    overflow: hidden;
+}
+
+.speaking-upload-btn:hover {
+    border-color: #9480c5;
+    background: #f7f5fd;
+}
+
+.speaking-upload-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.speaking-upload-btn-selected {
+    background: #e8e0f7;
+    border-style: solid;
+    border-color: #9480c5;
+    color: #5B4A9E;
+    font-weight: 600;
+}
+
+.speaking-upload-btn-selected i {
+    color: #22c55e;
+}
+
+.speaking-upload-remove {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fee2e2;
+    border: none;
+    border-radius: 50%;
+    color: #dc2626;
+    font-size: 11px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.speaking-upload-remove:hover {
+    background: #fca5a5;
+}
+
+/* 파일 첨부 상태 표시 */
+.speaking-file-status {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.speaking-file-status-empty {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.speaking-file-status-partial {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.speaking-file-status-ok {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+/* Speaking 경고 팝업 아이콘 */
+.speaking-file-warning-icon {
+    background: #fef2f2 !important;
+}
+
+.speaking-file-warning-icon i {
+    color: #dc2626 !important;
+}
+
+/* ========================================
    반응형 (모바일)
    ======================================== */
 
