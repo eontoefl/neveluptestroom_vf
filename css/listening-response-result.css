@@ -4,38 +4,6 @@
    Ground Rule: NO border-left anywhere
    ============================================ */
 
-/* ── 범용 CSS 충돌 리셋 ── */
-#listeningResponseResultScreen .question-header {
-    justify-content: space-between !important;
-}
-#listeningResponseResultScreen .question-number {
-    margin-bottom: 0 !important;
-    text-align: left !important;
-}
-#listeningResponseResultScreen .answer-summary {
-    display: block !important;
-    flex-wrap: unset !important;
-}
-#listeningResponseResultScreen .toggle-explanation-btn {
-    width: 100% !important;
-    box-shadow: none !important;
-}
-#listeningResponseResultScreen .option-detail {
-    padding: 12px 14px !important;
-    background: #f9f7ff !important;
-    border: 1px solid rgba(148,128,197,0.10) !important;
-    border-radius: 10px !important;
-}
-#listeningResponseResultScreen .option-detail.correct {
-    background: #f0faf1 !important;
-    border-color: rgba(119,191,126,0.25) !important;
-}
-#listeningResponseResultScreen .audio-section {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
 #listeningResponseResultScreen {
     font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
     background: #f7f6fb;

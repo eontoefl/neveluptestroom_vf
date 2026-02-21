@@ -4,22 +4,17 @@
    Ground Rule: NO border-left anywhere
    ============================================ */
 
-/* ── 리셋: final-explain-screen.css의 #finalExplainScreen * { all: revert } 로 충분 ──
-   .announce-set * 리셋은 자식 요소(<strong>, <div> 등)의 스타일까지 초기화하므로 제거 */
-
 /* ── 루트 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) {
-    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    background: #f7f6fb !important;
-    min-height: 100vh !important;
-    padding-bottom: 40px !important;
-    color: #1e1e2f !important;
-    position: relative !important;
-    box-sizing: border-box !important;
+#listeningAnnouncementExplainScreen {
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f7f6fb;
+    min-height: 100vh;
+    padding-bottom: 40px;
+    color: #1e1e2f;
 }
 
 /* ── 헤더 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-header {
+#listeningAnnouncementExplainScreen .announce-header {
     background: linear-gradient(135deg, #9480c5, #7a66b0);
     padding: 24px 24px;
     text-align: center;
@@ -28,7 +23,7 @@
     z-index: 100;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-header h2 {
+#listeningAnnouncementExplainScreen .announce-header h2 {
     color: #fff;
     font-size: 18px;
     font-weight: 700;
@@ -39,7 +34,7 @@
     gap: 8px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-icon {
+#listeningAnnouncementExplainScreen .announce-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -52,13 +47,13 @@
 }
 
 /* ── 요약 통계 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-summary {
+#listeningAnnouncementExplainScreen .announce-summary {
     max-width: 880px;
     margin: 0 auto;
     padding: 20px 20px 0;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stats {
+#listeningAnnouncementExplainScreen .announce-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
@@ -68,7 +63,7 @@
     box-shadow: 0 2px 12px rgba(148,128,197,0.1);
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-box {
+#listeningAnnouncementExplainScreen .announce-stat-box {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -76,41 +71,41 @@
     padding: 18px 8px;
     border-right: 1px solid #f0edf5;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-box:last-child {
+#listeningAnnouncementExplainScreen .announce-stat-box:last-child {
     border-right: none;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-label {
+#listeningAnnouncementExplainScreen .announce-stat-label {
     font-size: 11px;
     font-weight: 600;
     color: #999;
     letter-spacing: 0.5px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-value {
+#listeningAnnouncementExplainScreen .announce-stat-value {
     font-size: 19px;
     font-weight: 800;
     color: #9480c5;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-value.first {
+#listeningAnnouncementExplainScreen .announce-stat-value.first {
     color: #8fa5bb;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-value.second {
+#listeningAnnouncementExplainScreen .announce-stat-value.second {
     color: #9480c5;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-box.improvement .announce-stat-value {
+#listeningAnnouncementExplainScreen .announce-stat-box.improvement .announce-stat-value {
     color: #5ea065;
 }
 
 /* ── 컨텐츠 영역 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-content {
+#listeningAnnouncementExplainScreen .announce-content {
     max-width: 880px;
     margin: 20px auto 0;
     padding: 0 20px;
 }
 
 /* ── 안내문 세트 카드 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-set {
+#listeningAnnouncementExplainScreen .announce-set {
     background: #fff;
     border-radius: 14px;
     overflow: hidden;
@@ -120,7 +115,7 @@
 }
 
 /* ── 세트 헤더 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-set-header {
+#listeningAnnouncementExplainScreen .announce-set-header {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -129,7 +124,7 @@
     border-bottom: 1px solid #f0edf5;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-set-badge {
+#listeningAnnouncementExplainScreen .announce-set-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -138,11 +133,11 @@
     color: #9480c5;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-set-badge i {
+#listeningAnnouncementExplainScreen .announce-set-badge i {
     font-size: 14px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-set-meta {
+#listeningAnnouncementExplainScreen .announce-set-meta {
     font-size: 12px;
     color: #999;
     font-weight: 500;
@@ -150,11 +145,11 @@
 }
 
 /* ── 안내문 오디오 영역 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-audio-section {
+#listeningAnnouncementExplainScreen .announce-audio-section {
     padding: 20px 20px 16px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-audio-title {
+#listeningAnnouncementExplainScreen .announce-audio-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -164,14 +159,14 @@
     margin-bottom: 10px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-audio-player {
+#listeningAnnouncementExplainScreen .announce-audio-player {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 0;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-play-btn {
+#listeningAnnouncementExplainScreen .announce-play-btn {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -186,18 +181,18 @@
     flex-shrink: 0;
     transition: opacity 0.2s;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-play-btn:hover {
+#listeningAnnouncementExplainScreen .announce-play-btn:hover {
     opacity: 0.85;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-seek-container {
+#listeningAnnouncementExplainScreen .announce-seek-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-seek-bar {
+#listeningAnnouncementExplainScreen .announce-seek-bar {
     width: 100%;
     height: 4px;
     background: #e8e4f0;
@@ -206,14 +201,14 @@
     position: relative;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-seek-progress {
+#listeningAnnouncementExplainScreen .announce-seek-progress {
     height: 100%;
     background: #9480c5;
     border-radius: 2px;
     position: relative;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-seek-handle {
+#listeningAnnouncementExplainScreen .announce-seek-handle {
     position: absolute;
     right: -5px;
     top: 50%;
@@ -226,7 +221,7 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-audio-time {
+#listeningAnnouncementExplainScreen .announce-audio-time {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
@@ -235,11 +230,11 @@
 }
 
 /* ── 전체 스크립트 영역 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-script-section {
+#listeningAnnouncementExplainScreen .announce-script-section {
     padding: 0 20px 20px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-script-toggle {
+#listeningAnnouncementExplainScreen .announce-script-toggle {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -255,30 +250,30 @@
     color: #9480c5;
     transition: background 0.2s;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-script-toggle:hover {
+#listeningAnnouncementExplainScreen .announce-script-toggle:hover {
     background: #eee9f7;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-script-toggle .toggle-text {
+#listeningAnnouncementExplainScreen .announce-script-toggle .toggle-text {
     flex: 1;
     text-align: left;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-script-body {
+#listeningAnnouncementExplainScreen .announce-script-body {
     margin-top: 12px;
 }
 
 /* 안내문 단락 — 대화와 달리 단일 화자, 문단 구조 */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-paragraph {
+#listeningAnnouncementExplainScreen .announce-paragraph {
     padding: 8px 0;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-paragraph-text {
+#listeningAnnouncementExplainScreen .announce-paragraph-text {
     font-size: 14px;
     line-height: 1.9;
     color: #333;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-paragraph-translation {
+#listeningAnnouncementExplainScreen .announce-paragraph-translation {
     display: block;
     font-size: 13px;
     color: #999;
@@ -287,7 +282,7 @@
 }
 
 /* 키워드 하이라이트 */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-keyword {
+#listeningAnnouncementExplainScreen .announce-keyword {
     color: #7a66b0;
     font-weight: 600;
     text-decoration: underline;
@@ -296,10 +291,10 @@
     cursor: help;
     position: relative;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-keyword:hover {
+#listeningAnnouncementExplainScreen .announce-keyword:hover {
     text-decoration-color: rgba(148,128,197,0.7);
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-keyword:hover::after {
+#listeningAnnouncementExplainScreen .announce-keyword:hover::after {
     content: attr(data-translation) ' — ' attr(data-explanation);
     position: absolute;
     bottom: calc(100% + 6px);
@@ -314,7 +309,7 @@
     white-space: nowrap;
     z-index: 1000;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-keyword:hover::before {
+#listeningAnnouncementExplainScreen .announce-keyword:hover::before {
     content: '';
     position: absolute;
     bottom: 100%;
@@ -326,43 +321,43 @@
 }
 
 /* ── 문제 영역 구분 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-questions-divider {
+#listeningAnnouncementExplainScreen .announce-questions-divider {
     padding: 14px 20px 4px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-questions-divider span {
+#listeningAnnouncementExplainScreen .announce-questions-divider span {
     font-size: 12px;
     font-weight: 700;
     color: #9480c5;
 }
 
 /* ── 문제 카드 (세트 내부) ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-question {
+#listeningAnnouncementExplainScreen .announce-question {
     padding: 16px 20px 16px;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-question + .announce-question {
+#listeningAnnouncementExplainScreen .announce-question + .announce-question {
     border-top: 1px solid #f0edf5;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-question-header {
+#listeningAnnouncementExplainScreen .announce-question-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-q-number {
+#listeningAnnouncementExplainScreen .announce-q-number {
     font-size: 14px;
     font-weight: 700;
     color: #1e1e2f;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-q-status i {
+#listeningAnnouncementExplainScreen .announce-q-status i {
     font-size: 18px;
 }
 
 /* 문제 본문 */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-q-text {
+#listeningAnnouncementExplainScreen .announce-q-text {
     font-size: 14px;
     line-height: 1.7;
     color: #333;
@@ -370,7 +365,7 @@
     margin-bottom: 6px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-q-translation {
+#listeningAnnouncementExplainScreen .announce-q-translation {
     font-size: 13px;
     color: #999;
     line-height: 1.5;
@@ -378,25 +373,25 @@
 }
 
 /* 답변 비교 */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-summary {
+#listeningAnnouncementExplainScreen .announce-answer-summary {
     background: #f9f7ff;
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 12px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-row {
+#listeningAnnouncementExplainScreen .announce-answer-row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
     margin-bottom: 6px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-row:last-child {
+#listeningAnnouncementExplainScreen .announce-answer-row:last-child {
     margin-bottom: 0;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-label {
+#listeningAnnouncementExplainScreen .announce-answer-label {
     font-size: 12px;
     font-weight: 600;
     color: #8890a4;
@@ -404,22 +399,22 @@
     min-width: 52px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-value {
+#listeningAnnouncementExplainScreen .announce-answer-value {
     font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-value.correct {
+#listeningAnnouncementExplainScreen .announce-answer-value.correct {
     color: #77bf7e;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-answer-value.incorrect {
+#listeningAnnouncementExplainScreen .announce-answer-value.incorrect {
     color: #d94452;
 }
 
 /* ── 보기 해설 토글 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-toggle-btn {
+#listeningAnnouncementExplainScreen .announce-toggle-btn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -435,35 +430,35 @@
     color: #9480c5;
     transition: background 0.2s;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-toggle-btn:hover {
+#listeningAnnouncementExplainScreen .announce-toggle-btn:hover {
     background: #eee9f7;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-toggle-btn .toggle-text {
+#listeningAnnouncementExplainScreen .announce-toggle-btn .toggle-text {
     flex: 1;
     text-align: left;
 }
 
 /* 보기 상세 */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-options-details {
+#listeningAnnouncementExplainScreen .announce-options-details {
     display: none;
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option {
+#listeningAnnouncementExplainScreen .announce-option {
     padding: 12px 14px;
     border-radius: 10px;
     background: #f9f7ff;
     border: 1px solid rgba(148,128,197,0.10);
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option.correct {
+#listeningAnnouncementExplainScreen .announce-option.correct {
     background: #f0faf1;
     border-color: rgba(119,191,126,0.25);
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option-text {
+#listeningAnnouncementExplainScreen .announce-option-text {
     font-size: 14px;
     font-weight: 600;
     color: #1e1e2f;
@@ -473,7 +468,7 @@
     gap: 8px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option-marker {
+#listeningAnnouncementExplainScreen .announce-option-marker {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -487,19 +482,19 @@
     flex-shrink: 0;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option.correct .announce-option-marker {
+#listeningAnnouncementExplainScreen .announce-option.correct .announce-option-marker {
     background: #d4f5d6;
     color: #3a9142;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option-translation {
+#listeningAnnouncementExplainScreen .announce-option-translation {
     font-size: 12px;
     color: #8890a4;
     margin-bottom: 6px;
     padding-left: 30px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option-explanation {
+#listeningAnnouncementExplainScreen .announce-option-explanation {
     font-size: 12px;
     line-height: 1.5;
     padding: 8px 12px;
@@ -507,24 +502,24 @@
     margin-left: 30px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option-explanation.correct {
+#listeningAnnouncementExplainScreen .announce-option-explanation.correct {
     background: rgba(119,191,126,0.08);
     color: #3a9142;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-option-explanation.incorrect {
+#listeningAnnouncementExplainScreen .announce-option-explanation.incorrect {
     background: rgba(231,76,94,0.06);
     color: #c0392b;
 }
 
 /* ── 안내문 요약 / 핵심 포인트 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-summary-section {
+#listeningAnnouncementExplainScreen .announce-summary-section {
     padding: 20px 20px 16px;
     margin-top: 4px;
     background: #faf9fd;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-summary-title {
+#listeningAnnouncementExplainScreen .announce-summary-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -534,24 +529,24 @@
     margin-bottom: 10px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-summary-title i {
+#listeningAnnouncementExplainScreen .announce-summary-title i {
     font-size: 13px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-summary-text {
+#listeningAnnouncementExplainScreen .announce-summary-text {
     font-size: 14px;
     line-height: 1.8;
     color: #555;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-key-points {
+#listeningAnnouncementExplainScreen .announce-key-points {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-key-point {
+#listeningAnnouncementExplainScreen .announce-key-point {
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -560,7 +555,7 @@
     color: #555;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-key-point::before {
+#listeningAnnouncementExplainScreen .announce-key-point::before {
     content: '•';
     color: #9480c5;
     font-weight: 700;
@@ -568,7 +563,7 @@
 }
 
 /* ── 하단 네비게이션 ── */
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation {
+#listeningAnnouncementExplainScreen .announce-navigation {
     max-width: 880px;
     margin: 32px auto 0;
     padding: 0 20px;
@@ -577,7 +572,7 @@
     gap: 12px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation .btn {
+#listeningAnnouncementExplainScreen .announce-navigation .btn {
     font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 600;
@@ -591,43 +586,43 @@
     gap: 6px;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation .btn-secondary {
+#listeningAnnouncementExplainScreen .announce-navigation .btn-secondary {
     background: #fff;
     color: #9480c5;
     border: 1.5px solid #d8d0eb;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation .btn-secondary:hover {
+#listeningAnnouncementExplainScreen .announce-navigation .btn-secondary:hover {
     background: #f7f5fc;
 }
 
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation .btn-primary {
+#listeningAnnouncementExplainScreen .announce-navigation .btn-primary {
     background: #9480c5;
     color: #fff;
 }
-:is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation .btn-primary:hover {
+#listeningAnnouncementExplainScreen .announce-navigation .btn-primary:hover {
     background: #7a66b0;
 }
 
 /* ── 반응형 ── */
 @media (max-width: 640px) {
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stats {
+    #listeningAnnouncementExplainScreen .announce-stats {
         grid-template-columns: repeat(2, 1fr);
     }
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-box:nth-child(2) {
+    #listeningAnnouncementExplainScreen .announce-stat-box:nth-child(2) {
         border-right: none;
     }
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-box:nth-child(1),
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-stat-box:nth-child(2) {
+    #listeningAnnouncementExplainScreen .announce-stat-box:nth-child(1),
+    #listeningAnnouncementExplainScreen .announce-stat-box:nth-child(2) {
         border-bottom: 1px solid #f0edf5;
     }
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation {
+    #listeningAnnouncementExplainScreen .announce-navigation {
         flex-direction: column;
     }
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-navigation .btn {
+    #listeningAnnouncementExplainScreen .announce-navigation .btn {
         width: 100%;
         justify-content: center;
     }
-    :is(#listeningAnnouncementExplainScreen, #finalExplainScreen) .announce-header h2 {
+    #listeningAnnouncementExplainScreen .announce-header h2 {
         font-size: 16px;
     }
 }

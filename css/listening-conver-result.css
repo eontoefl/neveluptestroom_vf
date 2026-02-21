@@ -4,22 +4,17 @@
    Ground Rule: NO border-left anywhere
    ============================================ */
 
-/* ── 리셋: final-explain-screen.css의 #finalExplainScreen * { all: revert } 로 충분 ──
-   .conver-set * 리셋은 자식 요소(<strong>, <div> 등)의 스타일까지 초기화하므로 제거 */
-
 /* ── 루트 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) {
-    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    background: #f7f6fb !important;
-    min-height: 100vh !important;
-    padding-bottom: 40px !important;
-    color: #1e1e2f !important;
-    position: relative !important;
-    box-sizing: border-box !important;
+#listeningConverExplainScreen {
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f7f6fb;
+    min-height: 100vh;
+    padding-bottom: 100px;
+    color: #1e1e2f;
 }
 
 /* ── 헤더 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-header {
+#listeningConverExplainScreen .conver-header {
     background: linear-gradient(135deg, #9480c5, #7a66b0);
     padding: 24px 24px;
     text-align: center;
@@ -28,7 +23,7 @@
     z-index: 100;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-header h2 {
+#listeningConverExplainScreen .conver-header h2 {
     color: #fff;
     font-size: 18px;
     font-weight: 700;
@@ -39,7 +34,7 @@
     gap: 8px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-icon {
+#listeningConverExplainScreen .conver-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -52,13 +47,13 @@
 }
 
 /* ── 요약 통계 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-summary {
+#listeningConverExplainScreen .conver-summary {
     max-width: 880px;
     margin: 0 auto;
     padding: 20px 20px 0;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stats {
+#listeningConverExplainScreen .conver-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
@@ -68,7 +63,7 @@
     box-shadow: 0 2px 12px rgba(148,128,197,0.1);
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-box {
+#listeningConverExplainScreen .conver-stat-box {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -76,41 +71,41 @@
     padding: 18px 8px;
     border-right: 1px solid #f0edf5;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-box:last-child {
+#listeningConverExplainScreen .conver-stat-box:last-child {
     border-right: none;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-label {
+#listeningConverExplainScreen .conver-stat-label {
     font-size: 11px;
     font-weight: 600;
     color: #999;
     letter-spacing: 0.5px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-value {
+#listeningConverExplainScreen .conver-stat-value {
     font-size: 19px;
     font-weight: 800;
     color: #9480c5;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-value.first {
+#listeningConverExplainScreen .conver-stat-value.first {
     color: #8fa5bb;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-value.second {
+#listeningConverExplainScreen .conver-stat-value.second {
     color: #9480c5;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-box.improvement .conver-stat-value {
+#listeningConverExplainScreen .conver-stat-box.improvement .conver-stat-value {
     color: #5ea065;
 }
 
 /* ── 컨텐츠 영역 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-content {
+#listeningConverExplainScreen .conver-content {
     max-width: 880px;
     margin: 20px auto 0;
     padding: 0 20px;
 }
 
 /* ── 대화 세트 카드 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-set {
+#listeningConverExplainScreen .conver-set {
     background: #fff;
     border-radius: 14px;
     overflow: hidden;
@@ -120,7 +115,7 @@
 }
 
 /* ── 세트 헤더 (Conversation Set 1 등) ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-set-header {
+#listeningConverExplainScreen .conver-set-header {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -129,7 +124,7 @@
     border-bottom: 1px solid #f0edf5;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-set-badge {
+#listeningConverExplainScreen .conver-set-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -138,11 +133,11 @@
     color: #9480c5;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-set-badge i {
+#listeningConverExplainScreen .conver-set-badge i {
     font-size: 14px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-set-meta {
+#listeningConverExplainScreen .conver-set-meta {
     font-size: 12px;
     color: #999;
     font-weight: 500;
@@ -150,11 +145,11 @@
 }
 
 /* ── 전체 대화 오디오 영역 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-audio-section {
+#listeningConverExplainScreen .conver-audio-section {
     padding: 20px 20px 16px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-audio-title {
+#listeningConverExplainScreen .conver-audio-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -164,14 +159,14 @@
     margin-bottom: 10px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-audio-player {
+#listeningConverExplainScreen .conver-audio-player {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 0;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-play-btn {
+#listeningConverExplainScreen .conver-play-btn {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -186,18 +181,18 @@
     flex-shrink: 0;
     transition: opacity 0.2s;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-play-btn:hover {
+#listeningConverExplainScreen .conver-play-btn:hover {
     opacity: 0.85;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-seek-container {
+#listeningConverExplainScreen .conver-seek-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-seek-bar {
+#listeningConverExplainScreen .conver-seek-bar {
     width: 100%;
     height: 4px;
     background: #e8e4f0;
@@ -206,14 +201,14 @@
     position: relative;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-seek-progress {
+#listeningConverExplainScreen .conver-seek-progress {
     height: 100%;
     background: #9480c5;
     border-radius: 2px;
     position: relative;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-seek-handle {
+#listeningConverExplainScreen .conver-seek-handle {
     position: absolute;
     right: -5px;
     top: 50%;
@@ -226,7 +221,7 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-audio-time {
+#listeningConverExplainScreen .conver-audio-time {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
@@ -235,47 +230,46 @@
 }
 
 /* ── 전체 스크립트 영역 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-script-section {
+#listeningConverExplainScreen .conver-script-section {
     padding: 0 20px 20px;
 }
 
-/* 스크립트 토글 */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-script-toggle {
+#listeningConverExplainScreen .conver-script-toggle {
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: #f5f3fa;
-    border: 1px solid rgba(148,128,197,0.15);
-    border-radius: 10px;
-    padding: 12px 16px;
-    width: 100%;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0;
+    background: none;
+    border: none;
     cursor: pointer;
-    font-family: 'Pretendard Variable', sans-serif;
+    color: #9480c5;
     font-size: 13px;
     font-weight: 600;
-    color: #9480c5;
-    transition: background 0.2s;
+    font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+    transition: opacity 0.15s;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-script-toggle:hover {
-    background: #eee9f7;
+#listeningConverExplainScreen .conver-script-toggle:hover {
+    opacity: 0.7;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-script-toggle .toggle-text {
-    flex: 1;
-    text-align: left;
+#listeningConverExplainScreen .conver-script-toggle i {
+    font-size: 11px;
+    transition: transform 0.25s;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-script-body {
+#listeningConverExplainScreen .conver-script-body {
     margin-top: 12px;
 }
 
 /* 대화 라인 */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .script-line {
+#listeningConverExplainScreen .script-line {
     display: flex;
     gap: 10px;
     padding: 8px 0;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .script-speaker {
+#listeningConverExplainScreen .script-speaker {
     font-size: 12px;
     font-weight: 700;
     color: #9480c5;
@@ -285,18 +279,18 @@
     padding-top: 1px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .script-speaker.speaker-b {
+#listeningConverExplainScreen .script-speaker.speaker-b {
     color: #7aaa7e;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .script-text {
+#listeningConverExplainScreen .script-text {
     flex: 1;
     font-size: 14px;
     line-height: 1.8;
     color: #333;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .script-text .translation {
+#listeningConverExplainScreen .script-text .translation {
     display: block;
     font-size: 13px;
     color: #999;
@@ -304,7 +298,7 @@
 }
 
 /* 키워드 하이라이트 */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-keyword {
+#listeningConverExplainScreen .conver-keyword {
     color: #7a66b0;
     font-weight: 600;
     text-decoration: underline;
@@ -313,10 +307,10 @@
     cursor: help;
     position: relative;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-keyword:hover {
+#listeningConverExplainScreen .conver-keyword:hover {
     text-decoration-color: rgba(148,128,197,0.7);
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-keyword:hover::after {
+#listeningConverExplainScreen .conver-keyword:hover::after {
     content: attr(data-translation) ' — ' attr(data-explanation);
     position: absolute;
     bottom: calc(100% + 6px);
@@ -331,7 +325,7 @@
     white-space: nowrap;
     z-index: 1000;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-keyword:hover::before {
+#listeningConverExplainScreen .conver-keyword:hover::before {
     content: '';
     position: absolute;
     bottom: 100%;
@@ -343,43 +337,40 @@
 }
 
 /* ── 문제 영역 구분 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-questions-divider {
+#listeningConverExplainScreen .conver-questions-divider {
     padding: 14px 20px 4px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-questions-divider span {
+#listeningConverExplainScreen .conver-questions-divider span {
     font-size: 12px;
     font-weight: 700;
     color: #9480c5;
 }
 
 /* ── 문제 카드 (세트 내부) ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-question {
+#listeningConverExplainScreen .conver-question {
     padding: 16px 20px 16px;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-question + .conver-question {
-    border-top: 1px solid #f0edf5;
-}
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-question-header {
+#listeningConverExplainScreen .conver-question-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-q-number {
+#listeningConverExplainScreen .conver-q-number {
     font-size: 14px;
     font-weight: 700;
     color: #1e1e2f;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-q-status i {
+#listeningConverExplainScreen .conver-q-status i {
     font-size: 18px;
 }
 
 /* 문제 본문 */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-q-text {
+#listeningConverExplainScreen .conver-q-text {
     font-size: 14px;
     line-height: 1.7;
     color: #333;
@@ -387,7 +378,7 @@
     margin-bottom: 6px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-q-translation {
+#listeningConverExplainScreen .conver-q-translation {
     font-size: 13px;
     color: #999;
     line-height: 1.5;
@@ -395,153 +386,156 @@
 }
 
 /* 답변 비교 */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-summary {
-    background: #f9f7ff;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
-}
-
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-row {
+#listeningConverExplainScreen .conver-answer-summary {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
     gap: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 14px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-row:last-child {
-    margin-bottom: 0;
+#listeningConverExplainScreen .conver-answer-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-label {
+#listeningConverExplainScreen .conver-answer-label {
     font-size: 12px;
-    font-weight: 600;
-    color: #8890a4;
-    white-space: nowrap;
-    min-width: 52px;
+    font-weight: 700;
+    color: #aaa;
+    width: 56px;
+    flex-shrink: 0;
+    text-align: right;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-value {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
+#listeningConverExplainScreen .conver-answer-value {
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 500;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-value.correct {
-    color: #77bf7e;
+#listeningConverExplainScreen .conver-answer-value.correct {
+    color: #4a9e52;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-answer-value.incorrect {
+#listeningConverExplainScreen .conver-answer-value.incorrect {
     color: #d94452;
 }
 
 /* ── 보기 해설 토글 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-toggle-btn {
+#listeningConverExplainScreen .conver-toggle-btn {
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: #f5f3fa;
-    border: 1px solid rgba(148,128,197,0.15);
-    border-radius: 10px;
-    padding: 10px 14px;
-    width: 100%;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0;
+    background: none;
+    border: none;
     cursor: pointer;
-    font-family: 'Pretendard Variable', sans-serif;
+    color: #9480c5;
     font-size: 13px;
     font-weight: 600;
-    color: #9480c5;
-    transition: background 0.2s;
+    font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+    transition: opacity 0.15s;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-toggle-btn:hover {
-    background: #eee9f7;
+#listeningConverExplainScreen .conver-toggle-btn:hover {
+    opacity: 0.7;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-toggle-btn .toggle-text {
-    flex: 1;
-    text-align: left;
+#listeningConverExplainScreen .conver-toggle-btn i {
+    font-size: 11px;
+    transition: transform 0.25s;
 }
 
 /* 보기 상세 */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-options-details {
-    display: none;
+#listeningConverExplainScreen .conver-options-details {
+    display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 0;
+    padding-top: 4px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option {
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: #f9f7ff;
-    border: 1px solid rgba(148,128,197,0.10);
+#listeningConverExplainScreen .conver-option {
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f3fa;
+    position: relative;
+}
+#listeningConverExplainScreen .conver-option:last-child {
+    border-bottom: none;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option.correct {
-    background: #f0faf1;
-    border-color: rgba(119,191,126,0.25);
+#listeningConverExplainScreen .conver-option-marker {
+    font-size: 12px;
+    font-weight: 700;
+    color: #bbb;
+    margin-right: 6px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option-text {
+#listeningConverExplainScreen .conver-option-text {
     font-size: 14px;
     font-weight: 600;
     color: #1e1e2f;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
+    line-height: 1.6;
+    margin-bottom: 2px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option-marker {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #e8e4f0;
-    font-size: 12px;
-    font-weight: 700;
-    color: #9480c5;
-    flex-shrink: 0;
+#listeningConverExplainScreen .conver-option.correct .conver-option-text {
+    color: #4a9e52;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option.correct .conver-option-marker {
-    background: #d4f5d6;
-    color: #3a9142;
-}
-
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option-translation {
-    font-size: 12px;
-    color: #8890a4;
-    margin-bottom: 6px;
-    padding-left: 30px;
-}
-
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option-explanation {
-    font-size: 12px;
+#listeningConverExplainScreen .conver-option-translation {
+    font-size: 13px;
+    color: #999;
     line-height: 1.5;
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin-left: 30px;
+    margin-bottom: 6px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option-explanation.correct {
-    background: rgba(119,191,126,0.08);
-    color: #3a9142;
+#listeningConverExplainScreen .conver-option-explanation {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #666;
+    padding: 0;
+    border: none;
+    background: none;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-option-explanation.incorrect {
-    background: rgba(231,76,94,0.06);
-    color: #c0392b;
+#listeningConverExplainScreen .conver-option-explanation strong {
+    font-weight: 700;
+}
+
+#listeningConverExplainScreen .conver-option-explanation.correct {
+    color: #4a9e52;
+}
+
+#listeningConverExplainScreen .conver-option-explanation.incorrect {
+    color: #888;
+}
+#listeningConverExplainScreen .conver-option-explanation.incorrect strong {
+    color: #d94452;
+}
+
+/* 정답 뱃지 */
+#listeningConverExplainScreen .conver-option.correct::after {
+    content: '✓ 정답';
+    position: absolute;
+    top: 12px;
+    right: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: #77bf7e;
+    padding: 2px 10px;
+    border-radius: 20px;
 }
 
 /* ── 대화 요약 / 핵심 포인트 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-summary-section {
+#listeningConverExplainScreen .conver-summary-section {
     padding: 20px 20px 16px;
     margin-top: 4px;
     background: #faf9fd;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-summary-title {
+#listeningConverExplainScreen .conver-summary-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -551,24 +545,24 @@
     margin-bottom: 10px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-summary-title i {
+#listeningConverExplainScreen .conver-summary-title i {
     font-size: 13px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-summary-text {
+#listeningConverExplainScreen .conver-summary-text {
     font-size: 14px;
     line-height: 1.8;
     color: #555;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-key-points {
+#listeningConverExplainScreen .conver-key-points {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-key-point {
+#listeningConverExplainScreen .conver-key-point {
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -577,7 +571,7 @@
     color: #555;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-key-point::before {
+#listeningConverExplainScreen .conver-key-point::before {
     content: '•';
     color: #9480c5;
     font-weight: 700;
@@ -585,7 +579,7 @@
 }
 
 /* ── 하단 네비게이션 ── */
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation {
+#listeningConverExplainScreen .conver-navigation {
     max-width: 880px;
     margin: 32px auto 0;
     padding: 0 20px;
@@ -594,7 +588,7 @@
     gap: 12px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation .btn {
+#listeningConverExplainScreen .conver-navigation .btn {
     font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 600;
@@ -608,46 +602,46 @@
     gap: 6px;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation .btn-secondary {
+#listeningConverExplainScreen .conver-navigation .btn-secondary {
     background: #fff;
     color: #9480c5;
     border: 1.5px solid #d8d0eb;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation .btn-secondary:hover {
+#listeningConverExplainScreen .conver-navigation .btn-secondary:hover {
     background: #f7f5fc;
 }
 
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation .btn-primary {
+#listeningConverExplainScreen .conver-navigation .btn-primary {
     background: #9480c5;
     color: #fff;
 }
-:is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation .btn-primary:hover {
+#listeningConverExplainScreen .conver-navigation .btn-primary:hover {
     background: #7a66b0;
 }
 
 /* ── 반응형 ── */
 @media (max-width: 640px) {
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stats {
+    #listeningConverExplainScreen .conver-stats {
         grid-template-columns: repeat(2, 1fr);
     }
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-box:nth-child(2) {
+    #listeningConverExplainScreen .conver-stat-box:nth-child(2) {
         border-right: none;
     }
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-box:nth-child(1),
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-stat-box:nth-child(2) {
+    #listeningConverExplainScreen .conver-stat-box:nth-child(1),
+    #listeningConverExplainScreen .conver-stat-box:nth-child(2) {
         border-bottom: 1px solid #f0edf5;
     }
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation {
+    #listeningConverExplainScreen .conver-navigation {
         flex-direction: column;
     }
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-navigation .btn {
+    #listeningConverExplainScreen .conver-navigation .btn {
         width: 100%;
         justify-content: center;
     }
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .conver-header h2 {
+    #listeningConverExplainScreen .conver-header h2 {
         font-size: 16px;
     }
-    :is(#listeningConverExplainScreen, #finalExplainScreen) .script-speaker {
+    #listeningConverExplainScreen .script-speaker {
         width: 44px;
         font-size: 11px;
     }
