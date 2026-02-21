@@ -162,13 +162,58 @@ document.addEventListener('DOMContentLoaded', function() {
  * 과제 시작 확인 팝업 (유형별 메시지)
  * @returns {boolean} true면 시작, false면 취소
  */
-function confirmTaskStart(taskName) {
-    var msg = '⚠️ 시작하면 중간에 나갈 수 없으며,\n';
-    msg += '중단 시 인증률에 불이익이 있습니다.\n\n';
-    msg += '지금 집중해서 풀 수 있는 환경이 아니라면\n';
-    msg += '취소를 누르고 준비된 후 다시 시작해주세요.';
-    
-    return confirm(msg);
+/**
+ * 과제 시작 확인 팝업 (자체 UI)
+ */
+function confirmTaskStart(taskName, onConfirm) {
+    // 기존 팝업 제거
+    var existing = document.getElementById('taskStartPopup');
+    if (existing) existing.remove();
+    var existingOverlay = document.getElementById('taskStartOverlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    // 오버레이
+    var overlay = document.createElement('div');
+    overlay.id = 'taskStartOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:99998;';
+
+    // 팝업
+    var popup = document.createElement('div');
+    popup.id = 'taskStartPopup';
+    popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;z-index:99999;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+    popup.innerHTML = 
+        '<div style="font-size:40px;margin-bottom:12px;">⚠️</div>' +
+        '<h3 style="margin:0 0 16px;font-size:17px;color:#1a1a1a;line-height:1.5;">과제를 시작하시겠습니까?</h3>' +
+        '<p style="margin:0 0 24px;font-size:14px;color:#666;line-height:1.7;">' +
+            '시작하면 중간에 나갈 수 없으며,<br>' +
+            '중단 시 <strong style="color:#ef4444;">인증률에 불이익</strong>이 있습니다.<br><br>' +
+            '지금 집중해서 풀 수 있는 환경이 아니라면<br>' +
+            '돌아가기를 눌러주세요.' +
+        '</p>' +
+        '<div style="display:flex;gap:10px;">' +
+            '<button id="taskStartBack" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;font-size:14px;font-weight:600;color:#666;cursor:pointer;">돌아가기</button>' +
+            '<button id="taskStartGo" style="flex:1;padding:12px;border-radius:10px;border:none;background:#5B4A9E;font-size:14px;font-weight:600;color:#fff;cursor:pointer;">시작하기</button>' +
+        '</div>';
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    // 돌아가기
+    document.getElementById('taskStartBack').onclick = function() {
+        overlay.remove();
+        popup.remove();
+    };
+    overlay.onclick = function() {
+        overlay.remove();
+        popup.remove();
+    };
+
+    // 시작하기
+    document.getElementById('taskStartGo').onclick = function() {
+        overlay.remove();
+        popup.remove();
+        onConfirm();
+    };
 }
 
 /**
@@ -178,12 +223,16 @@ function confirmTaskStart(taskName) {
 function executeTask(taskName) {
     console.log(`📝 [과제실행] ${taskName}`);
     
-    // ── 시작 확인 팝업 ──
-    if (!confirmTaskStart(taskName)) {
-        console.log('📝 [과제실행] 사용자 취소');
-        return;
-    }
-    
+    // ── 시작 확인 팝업 → "시작하기" 누르면 실제 실행 ──
+    confirmTaskStart(taskName, function() {
+        _executeTaskCore(taskName);
+    });
+}
+
+/**
+ * 과제 실제 실행 (팝업 확인 후 호출)
+ */
+function _executeTaskCore(taskName) {
     // ── 4시 마감 체크 ──
     if (isTaskDeadlinePassed()) {
         alert('마감 시간(새벽 4시)이 지났습니다.\n연습용으로 풀 수 있지만, 인증률에는 반영되지 않습니다.');
