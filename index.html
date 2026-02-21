@@ -22,10 +22,11 @@
 <link rel="stylesheet" href="css/reading-retake-detail.css?v=daily2_fix_001">
 <link rel="stylesheet" href="css/final-explain-screen.css?v=030_designer_clean">
 <link rel="stylesheet" href="css/listening-response-result.css?v=030_designer_clean">
-<link rel="stylesheet" href="css/listening-conver-result.css?v=030_designer_clean">
-<link rel="stylesheet" href="css/listening-announcement-result.css?v=030_designer_clean">
-<link rel="stylesheet" href="css/listening-academic-result.css?v=030_designer_clean">
-<link rel="stylesheet" href="css/listening-lecture-result.css?v=002">
+<link rel="stylesheet" href="css/listening-conver-result.css?v=032_dual_scope_fix">
+<link rel="stylesheet" href="css/listening-announcement-result.css?v=032_dual_scope_fix">
+<link rel="stylesheet" href="css/listening-academic-result.css?v=032_dual_scope_fix">
+<!-- 비활성화: 오래된 레이아웃 CSS - 새 academic/conver/announce CSS로 대체됨 -->
+<!-- <link rel="stylesheet" href="css/listening-lecture-result.css?v=002"> -->
 <link rel="stylesheet" href="css/writing-arrange-result.css?v=001">
 <link rel="stylesheet" href="css/writing-email-result.css?v=015">
 <link rel="stylesheet" href="css/writing-discussion-result.css?v=003">
@@ -1617,54 +1618,41 @@
         </div>
     </div>
 
-    <!-- Listening 섹션 - 컨버 정답 채점 결과 -->
+    <!-- Listening 섹션 - 컨버 정답 채점 결과 (웹디자이너 디자인) -->
     <div id="listeningConverResultScreen" class="screen">
-        <div class="test-header">
-            <button class="btn-back-to-schedule" onclick="backToScheduleFromConverResult()">
-                <i class="fas fa-arrow-left"></i> 학습 일정
-            </button>
-            <div class="test-title">
-                <i class="fas fa-chart-bar"></i>
-                <span>컨버 - 정답 채점 결과</span>
+        <div class="conver-header">
+            <h2>
+                <span class="conver-icon">💬</span>
+                <span id="converResultDayTitle">Conversation 해설</span>
+            </h2>
+        </div>
+        <div class="conver-summary">
+            <div class="conver-stats">
+                <div class="conver-stat-box">
+                    <span class="conver-stat-label">총 점수</span>
+                    <span class="conver-stat-value" id="converResultScoreValue">0%</span>
+                </div>
+                <div class="conver-stat-box">
+                    <span class="conver-stat-label">정답</span>
+                    <span class="conver-stat-value first" id="converResultCorrectCount">0</span>
+                </div>
+                <div class="conver-stat-box">
+                    <span class="conver-stat-label">오답</span>
+                    <span class="conver-stat-value second" id="converResultIncorrectCount">0</span>
+                </div>
+                <div class="conver-stat-box">
+                    <span class="conver-stat-label">전체</span>
+                    <span class="conver-stat-value" id="converResultTotalCount">0</span>
+                </div>
             </div>
         </div>
-        
-        <div class="test-content">
-            <div class="result-container">
-                <div class="result-header">
-                    <h2 id="converResultDayTitle">Week 1 - 월요일</h2>
-                    <div class="result-summary">
-                        <div class="result-score-card">
-                            <div class="score-label">총 점수</div>
-                            <div class="score-value" id="converResultScoreValue">100%</div>
-                        </div>
-                        <div class="result-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">정답</span>
-                                <span class="stat-value correct" id="converResultCorrectCount">2</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">오답</span>
-                                <span class="stat-value incorrect" id="converResultIncorrectCount">0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">전체</span>
-                                <span class="stat-value" id="converResultTotalCount">2</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="result-details" id="converResultDetails">
-                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
-                </div>
-                
-                <div class="result-actions">
-                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromConverResult()">
-                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
-                    </button>
-                </div>
-            </div>
+        <div class="conver-content" id="converResultDetails">
+            <!-- JS가 conver-set 카드들을 여기에 삽입 -->
+        </div>
+        <div class="conver-navigation">
+            <button class="btn btn-primary" onclick="backToScheduleFromConverResult()">
+                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+            </button>
         </div>
     </div>
 
@@ -1728,105 +1716,86 @@
         </div>
     </div>
 
-    <!-- Listening - 공지사항 채점 결과 화면 -->
+    <!-- Listening - 공지사항 채점 결과 화면 (웹디자이너 디자인) -->
     <div id="listeningAnnouncementResultScreen" class="screen">
-        <div class="test-header">
-            <button class="btn-back-to-schedule" onclick="backToScheduleFromAnnouncementResult()">
-                <i class="fas fa-arrow-left"></i> 학습 일정
-            </button>
-            <div class="test-title">
-                <i class="fas fa-chart-bar"></i>
-                <span>공지사항 - 정답 채점 결과</span>
+        <div class="announce-header">
+            <h2>
+                <span class="announce-icon">📢</span>
+                <span id="announcementResultDayTitle">Announcement 해설</span>
+            </h2>
+        </div>
+        <div class="announce-summary">
+            <div class="announce-stats">
+                <div class="announce-stat-box">
+                    <span class="announce-stat-label">총 점수</span>
+                    <span class="announce-stat-value" id="announcementResultScoreValue">0%</span>
+                </div>
+                <div class="announce-stat-box">
+                    <span class="announce-stat-label">정답</span>
+                    <span class="announce-stat-value first" id="announcementResultCorrectCount">0</span>
+                </div>
+                <div class="announce-stat-box">
+                    <span class="announce-stat-label">오답</span>
+                    <span class="announce-stat-value second" id="announcementResultIncorrectCount">0</span>
+                </div>
+                <div class="announce-stat-box">
+                    <span class="announce-stat-label">전체</span>
+                    <span class="announce-stat-value" id="announcementResultTotalCount">0</span>
+                </div>
             </div>
         </div>
-        
-        <div class="test-content">
-            <div class="result-container">
-                <div class="result-header">
-                    <h2 id="announcementResultDayTitle">Week 1 - 월요일</h2>
-                    <div class="result-summary">
-                        <div class="result-score-card">
-                            <div class="score-label">총 점수</div>
-                            <div class="score-value" id="announcementResultScoreValue">100%</div>
-                        </div>
-                        <div class="result-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">정답</span>
-                                <span class="stat-value correct" id="announcementResultCorrectCount">2</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">오답</span>
-                                <span class="stat-value incorrect" id="announcementResultIncorrectCount">0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">전체</span>
-                                <span class="stat-value" id="announcementResultTotalCount">2</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="result-details" id="announcementResultDetails">
-                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
-                </div>
-                
-                <div class="result-actions">
-                    <button class="btn btn-primary btn-large" onclick="backToScheduleFromAnnouncementResult()">
-                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
-                    </button>
-                </div>
-            </div>
+        <div class="announce-content" id="announcementResultDetails">
+            <!-- JS가 announce-set 카드들을 여기에 삽입 -->
+        </div>
+        <div class="announce-navigation">
+            <button class="btn btn-primary" onclick="backToScheduleFromAnnouncementResult()">
+                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+            </button>
         </div>
     </div>
 
-    <!-- Listening - 렉쳐 채점 결과 화면 -->
+    <!-- Listening - 렉쳐 채점 결과 화면 (Academic 디자인) -->
     <div id="listeningLectureResultScreen" class="screen">
-        <div class="test-header">
-            <button class="btn-back-to-schedule" onclick="FlowController.finish()">
-                <i class="fas fa-arrow-left"></i> 학습 일정
-            </button>
-            <div class="test-title">
-                <i class="fas fa-chart-bar"></i>
-                <span>렉쳐 - 정답 채점 결과</span>
+        <!-- 헤더 -->
+        <div class="academic-header">
+            <h2>
+                <span class="academic-icon">🎓</span>
+                <span id="lectureResultDayTitle">렉처 (Academic) 해설</span>
+            </h2>
+        </div>
+
+        <!-- 요약 통계 -->
+        <div class="academic-summary">
+            <div class="academic-stats">
+                <div class="academic-stat-box">
+                    <span class="academic-stat-label">총 점수</span>
+                    <span class="academic-stat-value" id="lectureResultScoreValue">0%</span>
+                </div>
+                <div class="academic-stat-box">
+                    <span class="academic-stat-label">정답</span>
+                    <span class="academic-stat-value first" id="lectureResultCorrectCount">0</span>
+                </div>
+                <div class="academic-stat-box">
+                    <span class="academic-stat-label">오답</span>
+                    <span class="academic-stat-value second" id="lectureResultIncorrectCount">0</span>
+                </div>
+                <div class="academic-stat-box">
+                    <span class="academic-stat-label">전체</span>
+                    <span class="academic-stat-value" id="lectureResultTotalCount">0</span>
+                </div>
             </div>
         </div>
-        
-        <div class="test-content">
-            <div class="result-container">
-                <div class="result-header">
-                    <h2 id="lectureResultDayTitle">Week 1 - 목요일</h2>
-                    <div class="result-summary">
-                        <div class="result-score-card">
-                            <div class="score-label">총 점수</div>
-                            <div class="score-value" id="lectureResultScoreValue">100%</div>
-                        </div>
-                        <div class="result-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">정답</span>
-                                <span class="stat-value correct" id="lectureResultCorrectCount">4</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">오답</span>
-                                <span class="stat-value incorrect" id="lectureResultIncorrectCount">0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">전체</span>
-                                <span class="stat-value" id="lectureResultTotalCount">4</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="result-details" id="lectureResultDetails">
-                    <!-- 세부 채점 결과가 여기에 표시됩니다 -->
-                </div>
-                
-                <div class="result-actions">
-                    <button class="btn btn-primary btn-large" onclick="FlowController.finish()">
-                        <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
-                    </button>
-                </div>
-            </div>
+
+        <!-- 세트별 결과 컨테이너 -->
+        <div class="academic-content" id="lectureResultDetails">
+            <!-- JS가 academic-set 카드들을 여기에 삽입 -->
+        </div>
+
+        <!-- 네비게이션 -->
+        <div class="academic-navigation">
+            <button class="btn btn-primary" onclick="FlowController.finish()">
+                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+            </button>
         </div>
     </div>
 
@@ -3129,15 +3098,15 @@
     <script src="js/listening-response-logic.js?v=20250221_flex_fix"></script>
     <!-- 컨버 Component -->
     <script src="js/components/ConverComponent.js?v=20260219_intro_hide"></script>
-    <script src="js/listening-conver-logic.js?v=005_timer_fix"></script>
+    <script src="js/listening-conver-logic.js?v=032_css_fix"></script>
     <!-- 공지사항 Component -->
     <script src="js/components/AnnouncementComponent.js?v=004_intro_hide"></script>
     <script src="js/listening-announcement-logic.js?v=011_timer_fix"></script>
-    <script src="js/listening-announcement-result.js?v=004"></script>
+    <script src="js/listening-announcement-result.js?v=032_css_fix"></script>
     <!-- 렉쳐 Component -->
     <script src="js/components/LectureComponent.js?v=003_intro_hide"></script>
-    <script src="js/listening-lecture-logic.js?v=007_timer_fix"></script>
-    <script src="js/listening-lecture-logic-fixed.js?v=002_result_only"></script>
+    <script src="js/listening-lecture-logic.js?v=032_css_fix"></script>
+    <script src="js/listening-lecture-logic-fixed.js?v=032_css_fix"></script>
     <!-- listening-lecture-result.js 비활성화: 예전 버전(listening-lecture-logic.js) 사용 -->
 <!-- <script src="js/listening-lecture-result.js?v=20260218_001"></script> -->
     <!-- 단어배열 Component -->
