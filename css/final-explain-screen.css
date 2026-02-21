@@ -8,9 +8,7 @@
 #finalExplainScreen *:not(i):not(audio):not(source) {
     all: revert;
 }
-#finalExplainScreen {
-    all: revert;
-}
+/* #finalExplainScreen 자체는 revert 안 함 - .screen의 display:none 유지 필요 */
 
 /* ── 루트 ── */
 #finalExplainScreen {
@@ -19,7 +17,6 @@
     min-height: 100vh !important;
     padding-bottom: 40px !important;
     color: #1e1e2f !important;
-    display: block !important;
     position: relative !important;
     box-sizing: border-box !important;
 }
