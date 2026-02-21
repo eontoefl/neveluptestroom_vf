@@ -47,6 +47,8 @@ class ResponseComponent {
     this.audioPlayer = null;              // 오디오 플레이어
     this.isAudioPlaying = false;          // 오디오 재생 중 플래그
     this.isSubmitting = false;            // 중복 제출 방지
+    this._lastFemaleImage = null;          // 직전 여성 이미지 (연속 방지)
+    this._lastMaleImage = null;            // 직전 남성 이미지 (연속 방지)
     
     // 콜백 설정
     this.onComplete = config.onComplete || null;
@@ -458,6 +460,18 @@ class ResponseComponent {
   }
 
   /**
+   * 직전 이미지를 제외하고 랜덤 선택
+   */
+  _pickRandomExcludingLast(imageArray, lastKey) {
+    if (imageArray.length <= 1) return imageArray[0] || '';
+    const last = this[lastKey];
+    const candidates = last ? imageArray.filter(img => img !== last) : imageArray;
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    this[lastKey] = picked;
+    return picked;
+  }
+
+  /**
    * 사람 이미지 렌더링
    */
   renderPersonImage(gender, showPlayButton = false) {
@@ -471,11 +485,9 @@ class ResponseComponent {
     
     let imageUrl;
     if (gender === 'F' || gender === 'female') {
-      const randomIndex = Math.floor(Math.random() * this.FEMALE_IMAGES.length);
-      imageUrl = this.FEMALE_IMAGES[randomIndex];
+      imageUrl = this._pickRandomExcludingLast(this.FEMALE_IMAGES, '_lastFemaleImage');
     } else {
-      const randomIndex = Math.floor(Math.random() * this.MALE_IMAGES.length);
-      imageUrl = this.MALE_IMAGES[randomIndex];
+      imageUrl = this._pickRandomExcludingLast(this.MALE_IMAGES, '_lastMaleImage');
     }
     
     // 재생/일시정지 버튼 HTML (2차 풀이 모드에서만)

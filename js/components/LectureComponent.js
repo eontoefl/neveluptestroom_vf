@@ -431,11 +431,16 @@ class LectureComponent {
         
         this.showingIntro = true;
         
-        // 성별에 따라 교수 이미지 선택
+        // 성별에 따라 교수 이미지 선택 (직전 이미지 제외)
         const gender = this.currentSetData.gender.toLowerCase().trim();
         const isFemale = gender === 'female' || gender === 'f';
         const images = isFemale ? this.FEMALE_IMAGES : this.MALE_IMAGES;
-        this.currentImage = images[Math.floor(Math.random() * images.length)];
+        const lastKey = isFemale ? '_lastFemaleImage' : '_lastMaleImage';
+        if (!LectureComponent[lastKey]) LectureComponent[lastKey] = null;
+        const last = LectureComponent[lastKey];
+        const candidates = (last && images.length > 1) ? images.filter(img => img !== last) : images;
+        this.currentImage = candidates[Math.floor(Math.random() * candidates.length)];
+        LectureComponent[lastKey] = this.currentImage;
         
         console.log(`[LectureComponent] 성별: ${gender}, 여성: ${isFemale}, 선택된 이미지:`, this.currentImage);
         

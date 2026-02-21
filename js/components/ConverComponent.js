@@ -32,6 +32,9 @@ class ConverComponent {
     this.showingIntro = true;             // 인트로 화면 표시 여부
     this.currentImage = null;             // 현재 세트의 랜덤 이미지
     
+    // 직전 이미지 추적 (static 레벨 - 인스턴스 간 유지)
+    if (!ConverComponent._lastImage) ConverComponent._lastImage = null;
+    
     // 콜백 설정
     this.onComplete = config.onComplete || null;
     this.onError = config.onError || null;
@@ -427,11 +430,15 @@ class ConverComponent {
     const converSubmitBtn = document.getElementById('converSubmitBtn');
     if (converSubmitBtn) converSubmitBtn.style.display = 'none';
     
-    // 랜덤 이미지 선택 (세트당 1개)
+    // 랜덤 이미지 선택 (세트당 1개, 직전 이미지 제외)
     if (!this.currentImage) {
-      const randomIndex = Math.floor(Math.random() * this.CONVERSATION_IMAGES.length);
-      this.currentImage = this.CONVERSATION_IMAGES[randomIndex];
-      console.log(`[ConverComponent] 랜덤 이미지 선택: ${randomIndex + 1}/${this.CONVERSATION_IMAGES.length}`);
+      const images = this.CONVERSATION_IMAGES;
+      const last = ConverComponent._lastImage;
+      const candidates = (last && images.length > 1) ? images.filter(img => img !== last) : images;
+      const randomIndex = Math.floor(Math.random() * candidates.length);
+      this.currentImage = candidates[randomIndex];
+      ConverComponent._lastImage = this.currentImage;
+      console.log(`[ConverComponent] 랜덤 이미지 선택 (직전 제외): ${this.CONVERSATION_IMAGES.indexOf(this.currentImage) + 1}/${this.CONVERSATION_IMAGES.length}`);
     }
     
     // 이미지 렌더링

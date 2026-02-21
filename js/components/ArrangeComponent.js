@@ -308,11 +308,24 @@ class ArrangeComponent {
     }
     
     /**
-     * 랜덤 남녀 조합 생성 (남남/여여 불가)
+     * 랜덤 남녀 조합 생성 (남남/여여 불가, 직전 이미지 제외)
      */
     getRandomGenderPair() {
-        const femaleIndex = Math.floor(Math.random() * this.FEMALE_IMAGES.length);
-        const maleIndex = Math.floor(Math.random() * this.MALE_IMAGES.length);
+        // static 레벨 직전 이미지 추적
+        if (!ArrangeComponent._lastFemaleImage) ArrangeComponent._lastFemaleImage = null;
+        if (!ArrangeComponent._lastMaleImage) ArrangeComponent._lastMaleImage = null;
+        
+        const pickExcludingLast = (images, lastKey) => {
+            if (images.length <= 1) return images[0] || '';
+            const last = ArrangeComponent[lastKey];
+            const candidates = last ? images.filter(img => img !== last) : images;
+            const picked = candidates[Math.floor(Math.random() * candidates.length)];
+            ArrangeComponent[lastKey] = picked;
+            return picked;
+        };
+        
+        const femaleImage = pickExcludingLast(this.FEMALE_IMAGES, '_lastFemaleImage');
+        const maleImage = pickExcludingLast(this.MALE_IMAGES, '_lastMaleImage');
         
         // 랜덤으로 순서 결정 (50% 확률로 여자가 먼저 or 남자가 먼저)
         const femaleFirst = Math.random() < 0.5;
@@ -320,17 +333,17 @@ class ArrangeComponent {
         return {
             first: femaleFirst ? {
                 gender: 'female',
-                image: this.FEMALE_IMAGES[femaleIndex]
+                image: femaleImage
             } : {
                 gender: 'male',
-                image: this.MALE_IMAGES[maleIndex]
+                image: maleImage
             },
             second: femaleFirst ? {
                 gender: 'male',
-                image: this.MALE_IMAGES[maleIndex]
+                image: maleImage
             } : {
                 gender: 'female',
-                image: this.FEMALE_IMAGES[femaleIndex]
+                image: femaleImage
             }
         };
     }
