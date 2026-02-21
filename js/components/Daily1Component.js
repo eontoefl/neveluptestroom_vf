@@ -164,7 +164,10 @@ class Daily1Component {
         }
         
         document.getElementById(this.passageTitleId).textContent = passage.title;
-        document.getElementById(this.passageContentId).textContent = passage.content;
+        const formattedContent = (passage.content || '')
+    .replace(/\\n/g, '<br>')
+    .replace(/\n/g, '<br>');
+document.getElementById(this.passageContentId).innerHTML = formattedContent;
     }
     
     /**
