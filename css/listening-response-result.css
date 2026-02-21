@@ -5,477 +5,529 @@
    ============================================ */
 
 #listeningResponseResultScreen {
-    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f7f6fb;
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    background: #f7f6fb !important;
 }
 
 /* ── 결과 컨테이너 ── */
 #listeningResponseResultScreen .result-container {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 24px 20px 60px;
+    max-width: 880px !important;
+    margin: 0 auto !important;
+    padding: 24px 20px 60px !important;
+    background: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 /* ── 결과 헤더 ── */
+#listeningResponseResultScreen .result-header {
+    text-align: left !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
 #listeningResponseResultScreen .result-header h2 {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1e1e2f;
-    margin: 0 0 20px;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #1e1e2f !important;
+    margin: 0 0 20px !important;
+    padding: 0 !important;
 }
 
 /* ── 점수 요약 ── */
 #listeningResponseResultScreen .result-summary {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    background: #fff;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(148,128,197,0.1);
-    margin-bottom: 28px;
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 12px rgba(148,128,197,0.1) !important;
+    margin-bottom: 28px !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
 }
 
 #listeningResponseResultScreen .result-score-card {
-    text-align: center;
-    padding: 24px 32px;
-    background: #faf9fd;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-width: 130px;
+    text-align: center !important;
+    padding: 24px 32px !important;
+    background: #faf9fd !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-width: 130px !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: inherit !important;
 }
 
 #listeningResponseResultScreen .result-score-card .score-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: #999;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #999 !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 6px !important;
+    opacity: 1 !important;
+    text-transform: none !important;
 }
 
 #listeningResponseResultScreen .result-score-card .score-value {
-    font-size: 34px;
-    font-weight: 800;
-    color: #9480c5;
+    font-size: 34px !important;
+    font-weight: 800 !important;
+    color: #9480c5 !important;
+    letter-spacing: 0 !important;
 }
 
 #listeningResponseResultScreen .result-stats {
-    display: flex;
-    flex: 1;
+    display: flex !important;
+    flex: 1 !important;
+    gap: 0 !important;
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
 }
 
 #listeningResponseResultScreen .stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 20px 0;
-    flex: 1;
-    border-right: 1px solid #f0edf5;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 20px 0 !important;
+    flex: 1 !important;
+    border-right: 1px solid #f0edf5 !important;
 }
 #listeningResponseResultScreen .stat-item:last-child {
-    border-right: none;
+    border-right: none !important;
 }
 
 #listeningResponseResultScreen .stat-item .stat-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: #999;
-    letter-spacing: 0.3px;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #999 !important;
+    letter-spacing: 0.3px !important;
+    text-transform: none !important;
 }
 
 #listeningResponseResultScreen .stat-item .stat-value {
-    font-size: 22px;
-    font-weight: 800;
-    color: #4a4a6a;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    color: #4a4a6a !important;
 }
 
 #listeningResponseResultScreen .stat-item .stat-value.correct {
-    color: #4a9e52;
+    color: #4a9e52 !important;
 }
 
 #listeningResponseResultScreen .stat-item .stat-value.incorrect {
-    color: #d94452;
+    color: #d94452 !important;
 }
 
 /* ── 세트 타이틀 ── */
+#listeningResponseResultScreen .result-set-section {
+    margin-bottom: 0 !important;
+}
+
 #listeningResponseResultScreen .result-set-section > .result-section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    color: #9480c5;
-    padding: 12px 0;
-    margin-bottom: 4px;
-    border: none;
-    background: none;
-    box-shadow: none;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #9480c5 !important;
+    padding: 12px 0 !important;
+    margin-bottom: 4px !important;
+    border: none !important;
+    background: none !important;
+    box-shadow: none !important;
+    border-bottom: none !important;
 }
 
 #listeningResponseResultScreen .result-set-section > .result-section-title i {
-    font-size: 15px;
-    color: #9480c5;
+    font-size: 15px !important;
+    color: #9480c5 !important;
 }
 
 /* ── 문제 리스트 ── */
 #listeningResponseResultScreen .questions-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
 }
 
 /* ── 문제 카드 ── */
 #listeningResponseResultScreen .response-result-item {
-    background: #fff;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-    border: 1px solid #eeeaf5;
+    background: #fff !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05) !important;
+    border: 1px solid #eeeaf5 !important;
 }
 
 /* ── Q 헤더 ── */
 #listeningResponseResultScreen .question-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 20px;
-    background: #faf9fd;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 14px 20px !important;
+    background: #faf9fd !important;
+    border: none !important;
+    margin: 0 !important;
 }
 
 #listeningResponseResultScreen .question-number {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1e1e2f;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1e1e2f !important;
+    margin-bottom: 0 !important;
+    text-transform: none !important;
 }
 
 #listeningResponseResultScreen .result-status i {
-    font-size: 18px;
+    font-size: 18px !important;
 }
 
 /* ── 오디오 ── */
 #listeningResponseResultScreen .audio-section {
-    padding: 16px 20px;
+    padding: 16px 20px !important;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
 }
 
 #listeningResponseResultScreen .audio-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #9480c5;
-    margin-bottom: 10px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #9480c5 !important;
+    margin-bottom: 10px !important;
 }
 
 #listeningResponseResultScreen .audio-player-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
 }
 
 #listeningResponseResultScreen .audio-play-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #9480c5;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: opacity 0.2s;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    background: #9480c5 !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: opacity 0.2s !important;
 }
 #listeningResponseResultScreen .audio-play-btn:hover {
-    opacity: 0.85;
+    opacity: 0.85 !important;
 }
 
 #listeningResponseResultScreen .audio-seek-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
 }
 
 #listeningResponseResultScreen .audio-seek-bar {
-    width: 100%;
-    height: 4px;
-    background: #e8e4f0;
-    border-radius: 2px;
-    cursor: pointer;
-    position: relative;
+    width: 100% !important;
+    height: 4px !important;
+    background: #e8e4f0 !important;
+    border-radius: 2px !important;
+    cursor: pointer !important;
+    position: relative !important;
 }
 
 #listeningResponseResultScreen .audio-seek-progress {
-    height: 100%;
-    background: #9480c5;
-    border-radius: 2px;
-    position: relative;
+    height: 100% !important;
+    background: #9480c5 !important;
+    border-radius: 2px !important;
+    position: relative !important;
 }
 
 #listeningResponseResultScreen .audio-seek-handle {
-    position: absolute;
-    right: -5px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #9480c5;
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    position: absolute !important;
+    right: -5px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50% !important;
+    background: #9480c5 !important;
+    border: 2px solid #fff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
 }
 
 #listeningResponseResultScreen .audio-time {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: #aaa;
-    font-variant-numeric: tabular-nums;
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 11px !important;
+    color: #aaa !important;
+    font-variant-numeric: tabular-nums !important;
 }
 
 /* 스크립트 */
 #listeningResponseResultScreen .audio-script {
-    font-size: 14px;
-    line-height: 1.9;
-    color: #333;
+    font-size: 14px !important;
+    line-height: 1.9 !important;
+    color: #333 !important;
 }
 
 #listeningResponseResultScreen .audio-script strong {
-    color: #7a66b0;
-    font-weight: 700;
+    color: #7a66b0 !important;
+    font-weight: 700 !important;
 }
 
 /* 키워드 */
 #listeningResponseResultScreen .response-keyword-highlight {
-    color: #7a66b0;
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-color: rgba(148,128,197,0.35);
-    text-underline-offset: 3px;
-    cursor: help;
-    position: relative;
+    color: #7a66b0 !important;
+    font-weight: 600 !important;
+    text-decoration: underline !important;
+    text-decoration-color: rgba(148,128,197,0.35) !important;
+    text-underline-offset: 3px !important;
+    cursor: help !important;
+    position: relative !important;
 }
 #listeningResponseResultScreen .response-keyword-highlight:hover {
-    text-decoration-color: rgba(148,128,197,0.7);
+    text-decoration-color: rgba(148,128,197,0.7) !important;
 }
 #listeningResponseResultScreen .response-keyword-highlight:hover::after {
-    content: attr(data-translation) ' — ' attr(data-explanation);
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #2c2c3e;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
+    content: attr(data-translation) ' — ' attr(data-explanation) !important;
+    position: absolute !important;
+    bottom: calc(100% + 6px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: #2c2c3e !important;
+    color: #fff !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    z-index: 1000 !important;
 }
 #listeningResponseResultScreen .response-keyword-highlight:hover::before {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #2c2c3e;
-    z-index: 1000;
+    content: '' !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border: 5px solid transparent !important;
+    border-top-color: #2c2c3e !important;
+    z-index: 1000 !important;
 }
 
 /* ── 답변 비교 ── */
 #listeningResponseResultScreen .answer-summary {
-    padding: 14px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid #f0edf5;
+    padding: 14px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    border-top: 1px solid #f0edf5 !important;
 }
 
 #listeningResponseResultScreen .response-answer-row {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 12px !important;
 }
 
 #listeningResponseResultScreen .response-answer-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #aaa;
-    width: 56px;
-    flex-shrink: 0;
-    text-align: right;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #aaa !important;
+    width: 56px !important;
+    flex-shrink: 0 !important;
+    text-align: right !important;
 }
 
 #listeningResponseResultScreen .response-answer-value {
-    font-size: 14px;
-    line-height: 1.7;
-    font-weight: 500;
-    padding: 0;
-    border: none;
-    background: none;
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
 }
 
 #listeningResponseResultScreen .response-answer-value.correct {
-    color: #4a9e52;
+    color: #4a9e52 !important;
 }
 
 #listeningResponseResultScreen .response-answer-value.incorrect {
-    color: #d94452;
+    color: #d94452 !important;
 }
 
 /* ── 토글 ── */
 #listeningResponseResultScreen .options-explanation-section {
-    padding: 0;
+    padding: 0 !important;
 }
 
 #listeningResponseResultScreen .toggle-explanation-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px 20px;
-    background: #faf9fd;
-    border: none;
-    border-top: 1px solid #f0edf5;
-    cursor: pointer;
-    color: #9480c5;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
-    transition: background 0.15s;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 12px 20px !important;
+    background: #faf9fd !important;
+    border: none !important;
+    border-top: 1px solid #f0edf5 !important;
+    cursor: pointer !important;
+    color: #9480c5 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    font-family: 'Pretendard Variable', 'Pretendard', sans-serif !important;
+    transition: background 0.15s !important;
 }
 #listeningResponseResultScreen .toggle-explanation-btn:hover {
-    background: #f3f0fa;
+    background: #f3f0fa !important;
 }
 #listeningResponseResultScreen .toggle-explanation-btn i {
-    font-size: 11px;
-    transition: transform 0.25s;
+    font-size: 11px !important;
+    transition: transform 0.25s !important;
 }
 
 /* ── 보기 해설 ── */
 #listeningResponseResultScreen .options-details {
-    padding: 4px 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+    padding: 4px 20px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
 }
 
 #listeningResponseResultScreen .option-detail {
-    padding: 12px 0;
-    border-bottom: 1px solid #f5f3fa;
-    position: relative;
+    padding: 12px 0 !important;
+    border-bottom: 1px solid #f5f3fa !important;
+    position: relative !important;
 }
 #listeningResponseResultScreen .option-detail:last-child {
-    border-bottom: none;
+    border-bottom: none !important;
 }
 
 #listeningResponseResultScreen .option-text {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1e1e2f;
-    line-height: 1.6;
-    margin-bottom: 2px;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1e1e2f !important;
+    line-height: 1.6 !important;
+    margin-bottom: 2px !important;
 }
 
 #listeningResponseResultScreen .option-detail.correct .option-text {
-    color: #4a9e52;
+    color: #4a9e52 !important;
 }
 
 #listeningResponseResultScreen .option-translation {
-    font-size: 13px;
-    color: #999;
-    line-height: 1.5;
-    margin-bottom: 6px;
+    font-size: 13px !important;
+    color: #999 !important;
+    line-height: 1.5 !important;
+    margin-bottom: 6px !important;
 }
 
 #listeningResponseResultScreen .option-explanation {
-    font-size: 13px;
-    line-height: 1.7;
-    color: #666;
-    padding: 0;
-    border: none;
-    background: none;
+    font-size: 13px !important;
+    line-height: 1.7 !important;
+    color: #666 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
 }
 
 #listeningResponseResultScreen .option-explanation strong {
-    font-weight: 700;
+    font-weight: 700 !important;
 }
 
 #listeningResponseResultScreen .option-explanation.correct {
-    color: #4a9e52;
+    color: #4a9e52 !important;
 }
 
 #listeningResponseResultScreen .option-explanation.incorrect {
-    color: #888;
+    color: #888 !important;
 }
 #listeningResponseResultScreen .option-explanation.incorrect strong {
-    color: #d94452;
+    color: #d94452 !important;
 }
 
 /* 정답 뱃지 */
 #listeningResponseResultScreen .option-detail.correct::after {
-    content: '✓ 정답';
-    position: absolute;
-    top: 12px;
-    right: 0;
-    font-size: 11px;
-    font-weight: 700;
-    color: #fff;
-    background: #77bf7e;
-    padding: 2px 10px;
-    border-radius: 20px;
+    content: '✓ 정답' !important;
+    position: absolute !important;
+    top: 12px !important;
+    right: 0 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    background: #77bf7e !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
 }
 
 /* ── 하단 버튼 ── */
 #listeningResponseResultScreen .result-actions {
-    margin-top: 32px;
-    text-align: center;
+    margin-top: 32px !important;
+    text-align: center !important;
+    display: block !important;
+    gap: 0 !important;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
 }
 
 #listeningResponseResultScreen .result-actions .btn {
-    font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 12px 28px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
+    font-family: 'Pretendard Variable', 'Pretendard', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 12px 28px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    transition: all 0.2s !important;
 }
 
 #listeningResponseResultScreen .result-actions .btn-primary {
-    background: #9480c5;
-    color: #fff;
+    background: #9480c5 !important;
+    color: #fff !important;
 }
 #listeningResponseResultScreen .result-actions .btn-primary:hover {
-    background: #7a66b0;
+    background: #7a66b0 !important;
+}
+
+/* ── 결과 상세 영역 ── */
+#listeningResponseResultScreen .result-details {
+    background: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
 }
 
 /* ── 반응형 ── */
 @media (max-width: 640px) {
     #listeningResponseResultScreen .result-summary {
-        flex-direction: column;
+        flex-direction: column !important;
     }
     #listeningResponseResultScreen .result-score-card {
-        padding: 18px;
-        border-bottom: 1px solid #f0edf5;
+        padding: 18px !important;
+        border-bottom: 1px solid #f0edf5 !important;
     }
     #listeningResponseResultScreen .result-stats {
-        padding: 0;
+        padding: 0 !important;
     }
     #listeningResponseResultScreen .stat-item {
-        padding: 14px 0;
+        padding: 14px 0 !important;
     }
 }
