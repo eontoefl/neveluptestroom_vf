@@ -306,14 +306,18 @@ function renderResponseDetailSets(responseComponents, firstAttemptData, firstRes
  * 세트별 결과 렌더링 (응답고르기 정답 채점 화면과 동일한 레시피)
  */
 function renderResponseSetResultForDetail(setResult, setIdx, startGlobalIndex, firstResults, secondResults) {
+    const setNum = setIdx + 1;
+    const questionCount = setResult.answers ? setResult.answers.length : 0;
+    
     let html = `
-        <div class="result-set-section">
-            <div class="result-section-title">
+        <div class="response-set-header">
+            <span class="response-set-badge">
                 <i class="fas fa-headphones"></i>
-                <span>응답고르기 결과</span>
-            </div>
-            
-            <div class="questions-section">
+                Response Set ${setNum}
+            </span>
+            <span class="response-set-meta">응답고르기 · ${questionCount}문제</span>
+        </div>
+        <div class="questions-section">
     `;
     
     // 각 문제 렌더링
@@ -323,7 +327,6 @@ function renderResponseSetResultForDetail(setResult, setIdx, startGlobalIndex, f
     });
     
     html += `
-            </div>
         </div>
     `;
     
@@ -463,10 +466,11 @@ function renderResponseOptionsExplanationForDetail(answer, setIdx, qIdx) {
             badge = '<span class="option-badge user-only">✗ 내가 선택한 오답</span>';
         }
         
+        const optionLabel = String.fromCharCode(65 + idx); // A, B, C, D
         html += `
             <div class="option-detail ${isCorrectAnswer ? 'correct' : 'incorrect'}">
                 <div class="option-header">
-                    <div class="option-text">${option}</div>
+                    <div class="option-text"><span class="option-marker">${optionLabel}</span>${option}</div>
                     ${badge}
                 </div>
                 ${translation ? `<div class="option-translation">${translation}</div>` : ''}

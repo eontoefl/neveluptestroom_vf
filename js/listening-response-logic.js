@@ -84,7 +84,12 @@ async function initListeningResponse(setNumber = 1) {
 function nextResponseQuestion() {
     if (currentResponseComponent) {
         const hasNext = currentResponseComponent.nextQuestion();
-        if (!hasNext) {
+        if (hasNext) {
+            // 다음 문제 → 타이머 리셋 (20초)
+            if (window.moduleController && window.moduleController.startQuestionTimer) {
+                window.moduleController.startQuestionTimer(20);
+            }
+        } else {
             // 마지막 문제 - 제출
             submitListeningResponse();
         }
@@ -212,14 +217,18 @@ function showResponseResults() {
 
 // 세트별 결과 렌더링
 function renderResponseSetResult(setResult, setIdx) {
+    const setNum = setIdx + 1;
+    const questionCount = setResult.answers ? setResult.answers.length : 0;
+    
     let html = `
-        <div class="result-set-section">
-            <div class="result-section-title">
+        <div class="response-set-header">
+            <span class="response-set-badge">
                 <i class="fas fa-headphones"></i>
-                <span>응답고르기 결과</span>
-            </div>
-            
-            <div class="questions-section">
+                Response Set ${setNum}
+            </span>
+            <span class="response-set-meta">응답고르기 · ${questionCount}문제</span>
+        </div>
+        <div class="questions-section">
     `;
     
     // 각 문제 렌더링
@@ -228,7 +237,6 @@ function renderResponseSetResult(setResult, setIdx) {
     });
     
     html += `
-            </div>
         </div>
     `;
     
@@ -355,9 +363,10 @@ function renderResponseOptionsExplanation(answer) {
         const translation = answer.optionTranslations && answer.optionTranslations[idx] ? answer.optionTranslations[idx] : '';
         const explanation = answer.optionExplanations && answer.optionExplanations[idx] ? answer.optionExplanations[idx] : '';
         
+        const optionLabel = String.fromCharCode(65 + idx); // A, B, C, D
         html += `
             <div class="option-detail ${isCorrect ? 'correct' : 'incorrect'}">
-                <div class="option-text">${option}</div>
+                <div class="option-text"><span class="option-marker">${optionLabel}</span>${option}</div>
                 ${translation ? `<div class="option-translation">${translation}</div>` : ''}
                 ${explanation ? `
                 <div class="option-explanation ${isCorrect ? 'correct' : 'incorrect'}">
