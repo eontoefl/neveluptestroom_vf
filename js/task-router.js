@@ -159,11 +159,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
+ * 과제 시작 확인 팝업 (유형별 메시지)
+ * @returns {boolean} true면 시작, false면 취소
+ */
+function confirmTaskStart(taskName) {
+    var msg = '⚠️ 시작하면 중간에 나갈 수 없으며,\n';
+    msg += '중단 시 인증률에 불이익이 있습니다.\n\n';
+    msg += '지금 집중해서 풀 수 있는 환경이 아니라면\n';
+    msg += '취소를 누르고 준비된 후 다시 시작해주세요.';
+    
+    return confirm(msg);
+}
+
+/**
  * 과제 실행 함수
  * @param {string} taskName - 과제명 (예: "내벨업보카 5, 6, 7pg")
  */
 function executeTask(taskName) {
     console.log(`📝 [과제실행] ${taskName}`);
+    
+    // ── 시작 확인 팝업 ──
+    if (!confirmTaskStart(taskName)) {
+        console.log('📝 [과제실행] 사용자 취소');
+        return;
+    }
     
     // ── 4시 마감 체크 ──
     if (isTaskDeadlinePassed()) {
