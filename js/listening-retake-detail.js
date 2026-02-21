@@ -701,7 +701,7 @@ function toggleResponseDetailOptions(toggleId) {
     const text = btn.querySelector('.toggle-text');
     
     if (content.style.display === 'none') {
-        content.style.display = 'block';
+        content.style.display = 'flex';
         icon.className = 'fas fa-chevron-up';
         text.textContent = '보기 상세 해설 접기';
     } else {
@@ -1583,7 +1583,7 @@ function toggleAnnouncementDetailExplanation(toggleId) {
     const text = btn.querySelector('.toggle-text');
     
     if (content.style.display === 'none') {
-        content.style.display = 'block';
+        content.style.display = 'flex';
         icon.className = 'fas fa-chevron-up';
         text.textContent = '보기 상세 해설 접기';
     } else {

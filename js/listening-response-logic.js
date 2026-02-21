@@ -466,7 +466,7 @@ function toggleResponseOptions(toggleId) {
     const text = btn.querySelector('.toggle-text');
     
     if (content.style.display === 'none') {
-        content.style.display = 'block';
+        content.style.display = 'flex';
         icon.classList.remove('fa-chevron-down');
         icon.classList.add('fa-chevron-up');
         text.textContent = '보기 상세 해설 접기';
