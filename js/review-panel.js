@@ -502,10 +502,14 @@ const ReviewPanel = {
             }
             tr.appendChild(tdStatus);
 
-            // 클릭 이벤트 - 해당 문제로 이동
-            tr.addEventListener('click', () => {
-                this.navigateToQuestion(item, mc);
-            });
+            // 클릭 이벤트 - 해당 문제로 이동 (리스닝에서는 비활성화)
+            if (sectionType === 'listening') {
+                tr.style.cursor = 'default';
+            } else {
+                tr.addEventListener('click', () => {
+                    this.navigateToQuestion(item, mc);
+                });
+            }
 
             tbody.appendChild(tr);
         });
