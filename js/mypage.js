@@ -589,19 +589,16 @@ function renderNoteButton(record) {
 function setupPlanTabs() {
     const programType = mpUser.programType || 'standard';
 
-    // 배지에 프로그램 타입 표시 (탭 전환 없이 고정)
-    const badge = document.getElementById('planBadge');
-    if (badge) {
-        if (programType === 'fast') {
-            badge.textContent = 'Fast · 4주 과정';
-            badge.className = 'plan-badge plan-badge-fast';
-        } else {
-            badge.textContent = 'Standard · 8주 과정';
-            badge.className = 'plan-badge plan-badge-standard';
+    // 유저 프로그램에 맞는 탭을 활성화 (클릭 전환 없음 – disabled 처리)
+    const tabs = document.querySelectorAll('.plan-tab');
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.plan === programType) {
+            tab.classList.add('active');
         }
-    }
+    });
 
-    // 해당 프로그램의 잔디 그리드만 표시
+    // 해당 잔디 그리드만 표시
     document.getElementById('grass-fast').style.display = programType === 'fast' ? '' : 'none';
     document.getElementById('grass-standard').style.display = programType === 'standard' ? '' : 'none';
 
