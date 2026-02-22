@@ -2,11 +2,18 @@
 function backToSchedule() {
     // 현재 활성화된 화면 확인
     const activeScreen = document.querySelector('.screen.active');
-    // active 클래스가 없는 경우 display:block인 화면도 확인
-    const visibleScreen = activeScreen || document.querySelector('.screen[style*="display: block"], .screen[style*="display:block"]');
+    // active 클래스가 없는 경우 실제로 보이는 화면 찾기
+    let visibleScreen = activeScreen;
+    if (!visibleScreen) {
+        document.querySelectorAll('.screen').forEach(function(s) {
+            if (!visibleScreen && s.style.display && s.style.display !== 'none') {
+                visibleScreen = s;
+            }
+        });
+    }
     const currentScreenId = visibleScreen ? visibleScreen.id : null;
     
-    console.log('🔙 [뒤로가기] 현재 화면:', currentScreenId);
+    console.log('🔙 [뒤로가기] 현재 화면:', currentScreenId, 'active:', !!activeScreen, 'visible:', !!visibleScreen);
     
     // 경고 없이 바로 돌아가도 되는 화면들
     const isTaskListScreen = currentScreenId === 'welcomeScreen';
@@ -17,8 +24,17 @@ function backToSchedule() {
         currentScreenId === 'finalExplainScreen'
     );
     
-    // 실제 시험 화면인 경우에만 경고 표시 (과제목록/결과화면은 스킵)
-    if (!isTaskListScreen && !isResultScreen) {
+    // AuthMonitor가 step1+step2 모두 완료 = 과제 다 끝남 → 경고 불필요
+    var isAllStepsDone = window.AuthMonitor && AuthMonitor._step1Done && AuthMonitor._step2Done;
+    
+    // finalExplainScreen이 display:block이면 해설 화면임
+    var explainScreen = document.getElementById('finalExplainScreen');
+    var isOnExplainScreen = explainScreen && explainScreen.style.display && explainScreen.style.display !== 'none';
+    
+    console.log('🔙 [뒤로가기] isTaskList:', isTaskListScreen, 'isResult:', isResultScreen, 'isAllStepsDone:', isAllStepsDone, 'isOnExplain:', isOnExplainScreen, 'screenId:', currentScreenId);
+    
+    // 실제 시험 화면인 경우에만 경고 표시 (과제목록/결과화면/과제완료 상태는 스킵)
+    if (!isTaskListScreen && !isResultScreen && !isAllStepsDone && !isOnExplainScreen) {
         // AuthMonitor 상태로 구간 판별
         var hasSubmitted = window.AuthMonitor && (AuthMonitor._step1Done || AuthMonitor._step2Done);
         var msg;
@@ -37,7 +53,7 @@ function backToSchedule() {
     }
     
     // 해설 화면에서 오답노트 미제출 시 경고
-    if (currentScreenId === 'finalExplainScreen') {
+    if (isOnExplainScreen || currentScreenId === 'finalExplainScreen') {
         if (window.ErrorNote && !ErrorNote.isSubmitted()) {
             if (!confirm('⚠️ 오답노트를 제출하지 않았습니다.\n그래도 나가시겠습니까?')) {
                 return;

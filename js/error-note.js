@@ -134,13 +134,14 @@ var ErrorNote = {
                 
                 function onMouseMove(e) {
                     var diff = startY - e.clientY;
-                    var newHeight = Math.max(120, Math.min(window.innerHeight - 40, startHeight + diff));
+                    var newHeight = Math.max(200, Math.min(window.innerHeight - 40, startHeight + diff));
                     panel.style.height = newHeight + 'px';
-                    // textarea 높이도 같이 늘리기
+                    panel.style.overflow = 'hidden';
+                    // header(50) + guide(40) + footer(50) + resize(20) + padding = ~200
                     var ta = document.getElementById('errorNoteTextarea');
                     if (ta) {
-                        var taHeight = newHeight - 180;
-                        if (taHeight > 60) ta.style.height = taHeight + 'px';
+                        var taHeight = newHeight - 220;
+                        if (taHeight > 40) ta.style.height = taHeight + 'px';
                     }
                 }
                 function onMouseUp() {
@@ -160,12 +161,13 @@ var ErrorNote = {
                 function onTouchMove(e) {
                     var touch = e.touches[0];
                     var diff = startY - touch.clientY;
-                    var newHeight = Math.max(120, Math.min(window.innerHeight - 40, startHeight + diff));
+                    var newHeight = Math.max(200, Math.min(window.innerHeight - 40, startHeight + diff));
                     panel.style.height = newHeight + 'px';
+                    panel.style.overflow = 'hidden';
                     var ta = document.getElementById('errorNoteTextarea');
                     if (ta) {
-                        var taHeight = newHeight - 180;
-                        if (taHeight > 60) ta.style.height = taHeight + 'px';
+                        var taHeight = newHeight - 220;
+                        if (taHeight > 40) ta.style.height = taHeight + 'px';
                     }
                 }
                 function onTouchEnd() {
@@ -228,7 +230,13 @@ var ErrorNote = {
         } else {
             body.style.display = 'none';
             toggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
-            if (panel) panel.classList.remove('error-note-panel-open');
+            if (panel) {
+                panel.classList.remove('error-note-panel-open');
+                // 리사이즈로 고정된 높이/textarea 높이 초기화
+                panel.style.height = '';
+                var ta = document.getElementById('errorNoteTextarea');
+                if (ta) ta.style.height = '';
+            }
         }
     },
 
