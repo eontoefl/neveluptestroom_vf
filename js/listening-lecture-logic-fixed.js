@@ -125,54 +125,73 @@ function renderLectureSetResult(resultData, setIdx = 0) {
     
     const audioId = `lecture-main-audio-${setIdx}`;
     
-    let html = `
-        <div class="result-set-section">
-            <div class="result-set-header">
-                <span class="section-icon">🎧</span>
-                <span class="section-title">렉처 ${setIdx + 1} - ${setTitle}</span>
-            </div>
-    `;
+    const setNumber = setIdx + 1;
+    const questionCount = results.length;
+    const setMeta = resultData.setDescription || `학술강의 · ${questionCount}문제`;
     
-    // 오디오 + 스크립트
-    if (audioUrl || script) {
-        html += `
-            <div class="audio-section">
-                <div class="audio-title">
+    let html = `
+        <div class="academic-set">
+            <!-- 세트 헤더 -->
+            <div class="academic-set-header">
+                <span class="academic-set-badge">
+                    <i class="fas fa-graduation-cap"></i>
+                    Academic Set ${setNumber}
+                </span>
+                <span class="academic-set-meta">${setMeta}</span>
+            </div>
+            
+            <!-- 강의 오디오 -->
+            ${audioUrl ? `
+            <div class="academic-audio-section">
+                <div class="academic-audio-title">
                     <i class="fas fa-volume-up"></i>
-                    <span>렉처 오디오 다시 듣기</span>
+                    <span>강의 다시 듣기</span>
                 </div>
-                <div class="audio-player-container">
-                    <button class="audio-play-btn" onclick="toggleLectureAudio('${audioId}')">
+                <div class="academic-audio-player">
+                    <button class="academic-play-btn" onclick="toggleLectureAudio('${audioId}')">
                         <i class="fas fa-play" id="${audioId}-icon"></i>
                     </button>
-                    <div class="audio-seek-container">
-                        <div class="audio-seek-bar" id="${audioId}-seek" onclick="seekLectureAudio('${audioId}', event)">
-                            <div class="audio-seek-progress" id="${audioId}-progress" style="width: 0%">
-                                <div class="audio-seek-handle"></div>
+                    <div class="academic-seek-container">
+                        <div class="academic-seek-bar" id="${audioId}-seek" onclick="seekLectureAudio('${audioId}', event)">
+                            <div class="academic-seek-progress" id="${audioId}-progress" style="width: 0%">
+                                <div class="academic-seek-handle"></div>
                             </div>
                         </div>
-                        <div class="audio-time">
-                            <span id="${audioId}-current">0:00</span> / <span id="${audioId}-duration">0:00</span>
+                        <div class="academic-audio-time">
+                            <span id="${audioId}-current">0:00</span> <span id="${audioId}-duration">0:00</span>
                         </div>
                     </div>
                     <audio id="${audioId}" src="${audioUrl}"></audio>
                 </div>
-                ${script ? renderLectureScript(script, scriptTrans, scriptHighlights) : ''}
             </div>
-        `;
-    }
-    
-    html += `
-            <div class="questions-section">
+            ` : ''}
+            
+            <!-- 전체 스크립트 -->
+            ${script ? `
+            <div class="academic-script-section">
+                <button class="academic-script-toggle" onclick="toggleAcademicScriptSection('academic-script-fixed-${setIdx}')">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="toggle-text">강의 전체 스크립트 보기</span>
+                    <i class="fas fa-chevron-down" id="academic-script-fixed-${setIdx}-icon"></i>
+                </button>
+                <div id="academic-script-fixed-${setIdx}" class="academic-script-body" style="display: none;">
+                    ${renderLectureScript(script, scriptTrans, scriptHighlights)}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- 구분선: 문제 영역 -->
+            <div class="academic-questions-divider">
+                <span>문제 해설</span>
+            </div>
     `;
     
     // 각 문제 렌더링
     results.forEach((result, index) => {
-        html += renderLectureAnswer(result, index);
+        html += renderLectureAnswer(result, index, setIdx);
     });
     
     html += `
-            </div>
         </div>
     `;
     
@@ -190,39 +209,42 @@ function renderLectureScript(script, scriptTrans, scriptHighlights = []) {
     console.log('scriptTrans:', scriptTrans);
     console.log('scriptHighlights:', scriptHighlights);
     
-    // "Professor:" 제거
-    let cleanScript = script.replace(/^(Professor|Woman|Man):\s*/i, '').trim();
+    // "Professor:" 제거 + \n 처리
+    let cleanScript = script.replace(/^(Professor|Woman|Man):\s*/i, '').trim()
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     
-    // 영어 스크립트를 문장 단위로 분리
-    const sentences = cleanScript.split(/(?<=[.!?])\s+/);
+    let cleanTrans = scriptTrans ? scriptTrans.replace(/^(Professor|Woman|Man):\s*/i, '')
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n') : '';
     
-    // 한국어 번역도 문장 단위로 분리
-    const translations = scriptTrans ? scriptTrans.replace(/^(Professor|Woman|Man):\s*/i, '').split(/(?<=[.!?])\s+/) : [];
+    let sentences = cleanScript.split(/\n\n+/).filter(s => s.trim());
+    let translations = cleanTrans ? cleanTrans.split(/\n\n+/).filter(s => s.trim()) : [];
+    
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim()) : [];
+    }
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])\s+/).filter(s => s.trim()) : [];
+    }
     
     console.log('  → 영어 문장 수:', sentences.length);
     console.log('  → 한국어 번역 수:', translations.length);
     
-    let html = '<div class="audio-script">';
+    let html = '';
     
-    // 각 문장마다 영어 → 한국어 순서로 표시
     sentences.forEach((sentence, index) => {
         const translation = translations[index] || '';
         
         html += `
-            <div class="script-turn">
-                <div class="script-text">
-                    ${highlightLectureScript(sentence, scriptHighlights)}
+            <div class="academic-paragraph">
+                <div class="academic-paragraph-text">
+                    ${highlightLectureScript(sentence.replace(/\n/g, '<br>'), scriptHighlights)}
                 </div>
-                ${translation ? `
-                <div class="script-translation">
-                    ${translation}
-                </div>
-                ` : ''}
+                ${translation ? `<span class="academic-paragraph-translation">${translation.replace(/\n/g, '<br>')}</span>` : ''}
             </div>
         `;
     });
-    
-    html += '</div>';
     return html;
 }
 
@@ -245,7 +267,7 @@ function highlightLectureScript(scriptText, highlights) {
         
         const regex = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'gi');
         highlightedText = highlightedText.replace(regex, (match) => {
-            return `<span class="lecture-keyword-highlight" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
+            return `<span class="academic-keyword" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
         });
     });
     
@@ -255,86 +277,74 @@ function highlightLectureScript(scriptText, highlights) {
 /**
  * 문제별 답안 렌더링 (Announcement와 유사한 구조)
  */
-function renderLectureAnswer(result, index) {
+function renderLectureAnswer(result, index, setIdx) {
     console.log(`📝 [답안 ${index + 1}] renderLectureAnswer 시작`);
     
-    const questionText = result.questionText || '';
+    const questionNum = index + 1;
+    const questionText = result.questionText || result.question || '';
     const questionTrans = result.questionTrans || '';
     const userAnswer = result.userAnswer;
     const correctAnswer = result.correctAnswer;
     const isCorrect = result.isCorrect;
     const options = result.options || [];
-    const translations = result.translations || [];
-    const explanations = result.explanations || [];
+    const translations = result.translations || result.optionTranslations || [];
+    const explanations = result.explanations || result.optionExplanations || [];
     
-    const statusClass = isCorrect ? 'correct' : 'incorrect';
-    const statusIcon = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
-    const statusText = isCorrect ? '정답' : '오답';
+    const correctIcon = isCorrect 
+        ? '<i class="fas fa-check-circle" style="color: #77bf7e;"></i>' 
+        : '<i class="fas fa-times-circle" style="color: #e74c5e;"></i>';
     
-    const userAnswerText = userAnswer !== undefined ? options[userAnswer] : '(답안 없음)';
-    const correctAnswerText = options[correctAnswer] || '(정답 없음)';
+    const userAnswerText = userAnswer !== undefined && options[userAnswer] ? options[userAnswer] : '미응답';
+    const correctAnswerText = options[correctAnswer] || '';
     
-    // 옵션 상세 해설
-    const optionsDetailHtml = renderLectureOptionsExplanation(options, translations, explanations, correctAnswer);
+    const toggleId = `academic-fixed-toggle-q${setIdx || 0}-${index}`;
     
-    return `
-        <div class="conver-result-item ${statusClass}">
-            <div class="question-header">
-                <span class="question-number">
-                    <i class="fas ${statusIcon}"></i>
-                    문제 ${index + 1} - ${statusText}
-                </span>
-            </div>
-            
-            <div class="question-content">
-                <div class="question-text">${questionText}</div>
-                ${questionTrans ? `<div class="question-translation">${questionTrans}</div>` : ''}
-            </div>
-            
-            <div class="answer-details" style="margin-top: 12px;">
-                <div class="conver-answer-row">
-                    <span class="conver-answer-label">내 답변:</span>
-                    <span class="conver-answer-value ${isCorrect ? '' : 'incorrect'}">${userAnswerText}</span>
-                </div>
-                <div class="conver-answer-row">
-                    <span class="conver-answer-label">정답:</span>
-                    <span class="conver-answer-value correct">${correctAnswerText}</span>
-                </div>
-            </div>
-            
-            ${optionsDetailHtml}
-        </div>
-    `;
-}
-
-/**
- * 선택지 상세 해설 렌더링
- */
-function renderLectureOptionsExplanation(options, translations, explanations, correctAnswer) {
-    const optionsHtml = options.map((option, index) => {
-        const translation = translations[index] || '';
-        const explanation = explanations[index] || '';
-        const isCorrect = index === correctAnswer;
-        const explanationClass = isCorrect ? 'correct' : 'incorrect';
-        const icon = isCorrect 
-            ? '<i class="fas fa-check-circle" style="color: #10b981;"></i>' 
-            : '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';
+    // 보기 해설
+    let optionsHtml = '';
+    options.forEach((option, optIdx) => {
+        const optionLetter = String.fromCharCode(65 + optIdx);
+        const isCorrectOpt = optIdx === correctAnswer;
+        const translation = translations[optIdx] || '';
+        const explanation = explanations[optIdx] || '';
         
-        return `
-            <div class="option-detail">
-                <div class="option-text">${icon} ${option}</div>
-                ${translation ? `<div class="option-translation">번역: ${translation}</div>` : ''}
-                ${explanation ? `<div class="option-explanation ${explanationClass}"><strong>해설:</strong> ${explanation}</div>` : ''}
+        optionsHtml += `
+            <div class="academic-option ${isCorrectOpt ? 'correct' : ''}">
+                <div class="academic-option-text"><span class="academic-option-marker">${optionLetter}</span>${option}</div>
+                ${translation ? `<div class="academic-option-translation">${translation}</div>` : ''}
+                ${explanation ? `
+                <div class="academic-option-explanation ${isCorrectOpt ? 'correct' : 'incorrect'}">
+                    <strong>${isCorrectOpt ? '정답 이유:' : '오답 이유:'}</strong> ${explanation}
+                </div>
+                ` : ''}
             </div>
         `;
-    }).join('');
+    });
     
     return `
-        <div class="options-explanation-section">
-            <button class="toggle-explanation-btn" onclick="toggleLectureExplanation(this)">
-                선택지 상세 해설 보기 <i class="fas fa-chevron-down"></i>
+        <div class="academic-question">
+            <div class="academic-question-header">
+                <span class="academic-q-number">Question ${questionNum}</span>
+                <span class="academic-q-status">${correctIcon}</span>
+            </div>
+            <div class="academic-q-text">${questionText}</div>
+            ${questionTrans ? `<div class="academic-q-translation">${questionTrans}</div>` : ''}
+            
+            <div class="academic-answer-summary">
+                <div class="academic-answer-row">
+                    <span class="academic-answer-label">내 답변:</span>
+                    <span class="academic-answer-value ${isCorrect ? 'correct' : 'incorrect'}">${userAnswerText}</span>
+                </div>
+                <div class="academic-answer-row">
+                    <span class="academic-answer-label">정답:</span>
+                    <span class="academic-answer-value correct">${correctAnswerText}</span>
+                </div>
+            </div>
+            
+            <button class="academic-toggle-btn" onclick="toggleAcademicExplanationFixed('${toggleId}')">
+                <span class="toggle-text">보기 상세 해설 펼치기</span>
+                <i class="fas fa-chevron-down" id="${toggleId}-icon"></i>
             </button>
-            <div class="options-details" style="display: none;">
+            <div id="${toggleId}" class="academic-options-details" style="display: none;">
                 ${optionsHtml}
             </div>
         </div>
@@ -342,17 +352,43 @@ function renderLectureOptionsExplanation(options, translations, explanations, co
 }
 
 /**
- * 해설 토글
+ * 선택지 상세 해설 렌더링
  */
-function toggleLectureExplanation(button) {
-    const content = button.nextElementSibling;
+// Academic 해설 토글 (fixed 버전)
+function toggleAcademicExplanationFixed(toggleId) {
+    const content = document.getElementById(toggleId);
+    if (!content) return;
+    const icon = document.getElementById(toggleId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn ? btn.querySelector('.toggle-text') : null;
     
     if (content.style.display === 'none') {
         content.style.display = 'flex';
-        button.innerHTML = '선택지 상세 해설 숨기기 <i class="fas fa-chevron-up"></i>';
+        if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+        if (text) text.textContent = '보기 상세 해설 접기';
     } else {
         content.style.display = 'none';
-        button.innerHTML = '선택지 상세 해설 보기 <i class="fas fa-chevron-down"></i>';
+        if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+        if (text) text.textContent = '보기 상세 해설 펼치기';
+    }
+}
+
+// Academic 스크립트 토글 (fixed 버전)
+function toggleAcademicScriptSection(scriptId) {
+    const content = document.getElementById(scriptId);
+    if (!content) return;
+    const icon = document.getElementById(scriptId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn ? btn.querySelector('.toggle-text') : null;
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+        if (text) text.textContent = '강의 전체 스크립트 접기';
+    } else {
+        content.style.display = 'none';
+        if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+        if (text) text.textContent = '강의 전체 스크립트 보기';
     }
 }
 
@@ -362,22 +398,57 @@ function toggleLectureExplanation(button) {
 function toggleLectureAudio(audioId) {
     const audio = document.getElementById(audioId);
     const icon = document.getElementById(`${audioId}-icon`);
+    if (!audio) return;
     
     if (audio.paused) {
         audio.play();
-        icon.className = 'fas fa-pause';
+        if (icon) icon.className = 'fas fa-pause';
     } else {
         audio.pause();
-        icon.className = 'fas fa-play';
+        if (icon) icon.className = 'fas fa-play';
+    }
+    
+    // 최초 재생 시 timeupdate 리스너 등록
+    if (!audio._lectureListenerAdded) {
+        audio._lectureListenerAdded = true;
+        
+        audio.addEventListener('loadedmetadata', function() {
+            const durationEl = document.getElementById(`${audioId}-duration`);
+            if (durationEl) durationEl.textContent = formatLectureTime(audio.duration);
+        });
+        
+        audio.addEventListener('timeupdate', function() {
+            const progress = document.getElementById(`${audioId}-progress`);
+            const currentEl = document.getElementById(`${audioId}-current`);
+            
+            if (progress && audio.duration) {
+                progress.style.width = (audio.currentTime / audio.duration * 100) + '%';
+            }
+            if (currentEl) currentEl.textContent = formatLectureTime(audio.currentTime);
+        });
+        
+        audio.addEventListener('ended', function() {
+            if (icon) icon.className = 'fas fa-play';
+        });
     }
 }
 
 function seekLectureAudio(audioId, event) {
     const audio = document.getElementById(audioId);
     const seekBar = document.getElementById(`${audioId}-seek`);
+    if (!audio || !seekBar) return;
     const rect = seekBar.getBoundingClientRect();
-    const percent = (event.clientX - rect.left) / rect.width;
-    audio.currentTime = percent * audio.duration;
+    const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    if (audio.duration) {
+        audio.currentTime = percent * audio.duration;
+    }
+}
+
+function formatLectureTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
 /**
@@ -398,78 +469,15 @@ function escapeRegex(str) {
 }
 
 // ========================================
-// 🎯 어댑터 함수 (listening-lecture-logic.js에서 복구)
-// initLectureComponent, nextLectureQuestion, submitListeningLecture 등
+// 🎯 어댑터 함수는 listening-lecture-logic.js에서 관리
+// 이 파일은 결과 화면 함수만 포함 (중복 선언 방지)
 // ========================================
-
-let currentLectureComponent = null;
-
-async function initLectureComponent(setId, onCompleteCallback) {
-    console.log(`📦 [모듈] initLectureComponent - setId: ${setId}`);
-    currentLectureComponent = new LectureComponent(setId, {
-        onComplete: (results) => {
-            console.log(`✅ [모듈] Lecture Component 완료`);
-            if (onCompleteCallback) onCompleteCallback(results);
-        },
-        onError: (error) => console.error(`❌ [모듈] Lecture Component 오류:`, error),
-        onTimerStart: () => {
-            console.log(`⏰ [모듈] Lecture 타이머 시작 (30초)`);
-            if (window.moduleController) {
-                window.moduleController.startQuestionTimer(30);
-            }
-        }
-    });
-    
-    window.currentLectureComponent = currentLectureComponent;
-    await currentLectureComponent.init();
-}
-
-async function initListeningLecture(setNumber = 1) {
-    console.log(`[어댑터] initListeningLecture 호출 - setNumber: ${setNumber}`);
-    
-    try {
-        currentLectureComponent = new LectureComponent(setNumber, function(resultData) {
-            console.log('[어댑터] LectureComponent 완료 콜백 호출됨');
-            showLectureResults();
-        });
-        
-        await currentLectureComponent.init();
-        
-    } catch (error) {
-        console.error('[어댑터] initListeningLecture 실패:', error);
-        alert('렉쳐 듣기를 시작할 수 없습니다.');
-    }
-}
-
-function submitListeningLecture() {
-    console.log('[어댑터] submitListeningLecture 호출됨');
-    
-    if (!currentLectureComponent) {
-        console.error('[어댑터] currentLectureComponent가 없습니다');
-        return;
-    }
-    
-    currentLectureComponent.submit();
-}
-
-function nextLectureQuestion() {
-    if (currentLectureComponent) {
-        const hasNext = currentLectureComponent.nextQuestion();
-        if (!hasNext) {
-            submitListeningLecture();
-        }
-    }
-}
 
 function backToScheduleFromLectureResult() {
     console.log('[결과 화면] 스케줄로 돌아가기');
     showScreen('scheduleScreen');
 }
 
-window.initLectureComponent = initLectureComponent;
-window.initListeningLecture = initListeningLecture;
-window.submitListeningLecture = submitListeningLecture;
-window.nextLectureQuestion = nextLectureQuestion;
 window.backToScheduleFromLectureResult = backToScheduleFromLectureResult;
 
-console.log('✅ listening-lecture-logic-fixed.js 로드 완료 (어댑터 함수 포함)');
+console.log('✅ listening-lecture-logic-fixed.js 로드 완료 (결과 화면 전용)');

@@ -181,27 +181,35 @@ function renderAnnouncementSetResult(setResult, setIdx) {
 function renderAnnouncementScript(script, scriptTrans, scriptHighlights = []) {
     if (!script) return '';
     
-    // "Woman:" 제거
-    let cleanScript = script.replace(/^Woman:\s*/i, '').trim();
+    // "Woman:" 제거 + \n 처리
+    let cleanScript = script.replace(/^Woman:\s*/i, '').trim()
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     
-    // 영어 스크립트를 문장 단위로 분리 (. 기준)
-    const sentences = cleanScript.split(/(?<=[.!?])\s+/);
+    let cleanTrans = scriptTrans ? scriptTrans.replace(/\\n/g, '\n').replace(/\r\n/g, '\n') : '';
     
-    // 한국어 번역도 문장 단위로 분리 (. 기준)
-    const translations = scriptTrans ? scriptTrans.split(/(?<=[.!?])\s+/) : [];
+    let sentences = cleanScript.split(/\n\n+/).filter(s => s.trim());
+    let translations = cleanTrans ? cleanTrans.split(/\n\n+/).filter(s => s.trim()) : [];
+    
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim()) : [];
+    }
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])\s+/).filter(s => s.trim()) : [];
+    }
     
     let html = '';
     
-    // 각 문장마다 단락 구조로 표시
     sentences.forEach((sentence, index) => {
         const translation = translations[index] || '';
         
         html += `
             <div class="announce-paragraph">
                 <div class="announce-paragraph-text">
-                    ${highlightAnnouncementScript(sentence, scriptHighlights)}
+                    ${highlightAnnouncementScript(sentence.replace(/\n/g, '<br>'), scriptHighlights)}
                 </div>
-                ${translation ? `<span class="announce-paragraph-translation">${translation}</span>` : ''}
+                ${translation ? `<span class="announce-paragraph-translation">${translation.replace(/\n/g, '<br>')}</span>` : ''}
             </div>
         `;
     });

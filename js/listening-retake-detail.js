@@ -845,7 +845,7 @@ function renderConverDetailSets(converComponents, firstAttemptData, firstResults
     
     // 툴팁 이벤트 리스너 추가
     setTimeout(() => {
-        const highlightedWords = document.querySelectorAll('.conver-keyword-highlight');
+        const highlightedWords = document.querySelectorAll('.conver-keyword');
         highlightedWords.forEach(word => {
             word.addEventListener('mouseenter', showConverTooltip);
             word.addEventListener('mouseleave', hideConverTooltip);
@@ -859,42 +859,65 @@ function renderConverDetailSets(converComponents, firstAttemptData, firstResults
  */
 function renderConverSetResultForDetail(setResult, setIdx, startGlobalIndex, firstResults, secondResults) {
     const audioId = `conver-main-audio-${setIdx}`;
+    const setNumber = setIdx + 1;
+    const questionCount = setResult.answers.length;
+    const setMeta = setResult.setDescription || `대화 듣기 · ${questionCount}문제`;
     
     let html = `
-        <div class="result-set-section">
-            <div class="result-section-title">
-                <i class="fas fa-headphones"></i>
-                <span>컨버 결과</span>
+        <div class="conver-set">
+            <!-- 세트 헤더 -->
+            <div class="conver-set-header">
+                <span class="conver-set-badge">
+                    <i class="fas fa-comments"></i>
+                    Conversation Set ${setNumber}
+                </span>
+                <span class="conver-set-meta">${setMeta}</span>
             </div>
             
-            <!-- 대화 오디오 섹션 -->
+            <!-- 전체 대화 오디오 -->
             ${setResult.answers[0].audioUrl ? `
-            <div class="audio-section">
-                <div class="audio-title">
+            <div class="conver-audio-section">
+                <div class="conver-audio-title">
                     <i class="fas fa-volume-up"></i>
-                    <span>대화 오디오 다시 듣기</span>
+                    <span>전체 대화 다시 듣기</span>
                 </div>
-                <div class="audio-player-container">
-                    <button class="audio-play-btn" onclick="toggleConverAudio('${audioId}')">
+                <div class="conver-audio-player">
+                    <button class="conver-play-btn" onclick="toggleConverAudio('${audioId}')">
                         <i class="fas fa-play" id="${audioId}-icon"></i>
                     </button>
-                    <div class="audio-seek-container">
-                        <div class="audio-seek-bar" id="${audioId}-seek" onclick="seekConverAudio('${audioId}', event)">
-                            <div class="audio-seek-progress" id="${audioId}-progress" style="width: 0%">
-                                <div class="audio-seek-handle"></div>
+                    <div class="conver-seek-container">
+                        <div class="conver-seek-bar" id="${audioId}-seek" onclick="seekConverAudio('${audioId}', event)">
+                            <div class="conver-seek-progress" id="${audioId}-progress" style="width: 0%">
+                                <div class="conver-seek-handle"></div>
                             </div>
                         </div>
-                        <div class="audio-time">
-                            <span id="${audioId}-current">0:00</span> / <span id="${audioId}-duration">0:00</span>
+                        <div class="conver-audio-time">
+                            <span id="${audioId}-current">0:00</span> <span id="${audioId}-duration">0:00</span>
                         </div>
                     </div>
                     <audio id="${audioId}" src="${convertGoogleDriveUrl(setResult.answers[0].audioUrl)}"></audio>
                 </div>
-                ${setResult.answers[0].script ? renderConverScript(setResult.answers[0].script, setResult.answers[0].scriptTrans, setResult.answers[0].scriptHighlights || []) : ''}
             </div>
             ` : ''}
             
-            <div class="questions-section">
+            <!-- 전체 스크립트 -->
+            ${setResult.answers[0].script ? `
+            <div class="conver-script-section">
+                <button class="conver-script-toggle" onclick="toggleConverScriptSection('conver-script-detail-${setIdx}')">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="toggle-text">전체 대화 스크립트 보기</span>
+                    <i class="fas fa-chevron-down" id="conver-script-detail-${setIdx}-icon"></i>
+                </button>
+                <div id="conver-script-detail-${setIdx}" class="conver-script-body" style="display: none;">
+                    ${renderConverScript(setResult.answers[0].script, setResult.answers[0].scriptTrans, setResult.answers[0].scriptHighlights || [])}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- 구분선: 문제 영역 -->
+            <div class="conver-questions-divider">
+                <span>문제 해설</span>
+            </div>
     `;
     
     // 각 문제 렌더링
@@ -904,14 +927,13 @@ function renderConverSetResultForDetail(setResult, setIdx, startGlobalIndex, fir
     });
     
     html += `
-            </div>
         </div>
     `;
     
     return html;
 }
 
-// 컨버 스크립트 렌더링 - 원본 listening-conver-logic.js의 renderConverScript 그대로 복사
+// 컨버 스크립트 렌더링 - 웹디 구조에 맞게 수정
 function renderConverScript(script, scriptTrans, scriptHighlights = []) {
     if (!script) return '';
     
@@ -919,7 +941,7 @@ function renderConverScript(script, scriptTrans, scriptHighlights = []) {
     const scriptParts = script.split(speakerPattern).filter(part => part.trim());
     const transParts = scriptTrans ? scriptTrans.split(/(남자:|여자:)/g).filter(part => part.trim()) : [];
     
-    let html = '<div class="audio-script">';
+    let html = '';
     let transIndex = 0;
     
     for (let i = 0; i < scriptParts.length; i += 2) {
@@ -939,23 +961,20 @@ function renderConverScript(script, scriptTrans, scriptHighlights = []) {
             }
         }
         
-        const speakerClass = speaker === 'Man:' ? 'speaker-man' : 'speaker-woman';
+        const speakerName = speaker.replace(':', '').trim();
+        const speakerBClass = speaker === 'Woman:' ? ' speaker-b' : '';
         
         html += `
-            <div class="script-turn ${speakerClass}">
+            <div class="script-line">
+                <span class="script-speaker${speakerBClass}">${speakerName}</span>
                 <div class="script-text">
                     ${highlightConverScript(text, scriptHighlights)}
+                    ${translation ? `<span class="translation">${translation}</span>` : ''}
                 </div>
-                ${translation ? `
-                <div class="script-translation">
-                    ${translation}
-                </div>
-                ` : ''}
             </div>
         `;
     }
     
-    html += '</div>';
     return html;
 }
 
@@ -976,7 +995,7 @@ function highlightConverScript(scriptText, highlights) {
         
         const regex = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'gi');
         highlightedText = highlightedText.replace(regex, (match) => {
-            return `<span class="conver-keyword-highlight" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
+            return `<span class="conver-keyword" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
         });
     });
     
@@ -1012,38 +1031,29 @@ function renderConverAnswerForDetail(answer, qIdx, setIdx, globalIdx, firstResul
         : '<i class="fas fa-times-circle" style="color: var(--danger-color);"></i>';
     
     let html = `
-        <div class="conver-result-item ${isCorrect ? 'correct' : 'incorrect'}">
-            <div class="question-header">
-                <span class="question-number">Question ${answer.questionNum}</span>
-                <span class="result-status">${correctIcon}</span>
+        <div class="conver-question">
+            <div class="conver-question-header">
+                <span class="conver-q-number">Question ${answer.questionNum}</span>
+                <span class="conver-q-status">${correctIcon}</span>
             </div>
+            <div class="conver-q-text">${answer.question}</div>
+            ${answer.questionTrans ? `<div class="conver-q-translation">${answer.questionTrans}</div>` : ''}
             
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
-                    ${answer.question}
-                </div>
-                ${answer.questionTrans ? `
-                <div style="font-size: 14px; color: #9ca3af; font-style: italic;">
-                    ${answer.questionTrans}
-                </div>
-                ` : ''}
-            </div>
-            
-            <div class="answer-summary">
+            <div class="conver-answer-summary">
                 <div class="conver-answer-row">
                     <span class="conver-answer-label">내 답변:</span>
                     <span class="conver-answer-value ${userAnswerClass}">
-                        ${answer.userAnswer ? `${String.fromCharCode(64 + answer.userAnswer)}. ${answer.options[answer.userAnswer - 1]}` : '미응답'}
+                        ${answer.userAnswer ? `${answer.options[answer.userAnswer - 1]}` : '미응답'}
                     </span>
                 </div>
-                <div class="conver-answer-row" style="padding-left: 80px;">
+                <div class="conver-answer-row">
                     <span class="feedback-message-inline">${feedbackMessage}</span>
                 </div>
                 ${showCorrectAnswer ? `
                 <div class="conver-answer-row">
                     <span class="conver-answer-label">정답:</span>
                     <span class="conver-answer-value correct">
-                        ${String.fromCharCode(64 + answer.correctAnswer)}. ${answer.options[answer.correctAnswer - 1]}
+                        ${answer.options[answer.correctAnswer - 1]}
                     </span>
                 </div>
                 ` : ''}
@@ -1070,13 +1080,11 @@ function renderConverOptionsExplanationForDetail(answer, qIdx, setIdx) {
     const toggleId = `conver-toggle-q${setIdx}-${qIdx}`;
     
     let html = `
-        <div class="options-explanation-section">
-            <button class="toggle-explanation-btn" onclick="toggleConverExplanation('${toggleId}')">
+            <button class="conver-toggle-btn" onclick="toggleConverExplanation('${toggleId}')">
                 <span class="toggle-text">보기 상세 해설 펼치기</span>
-                <i class="fas fa-chevron-down"></i>
+                <i class="fas fa-chevron-down" id="${toggleId}-icon"></i>
             </button>
-            
-            <div id="${toggleId}" class="options-details" style="display: none;">
+            <div id="${toggleId}" class="conver-options-details" style="display: none;">
     `;
     
     answer.options.forEach((option, idx) => {
@@ -1088,28 +1096,21 @@ function renderConverOptionsExplanationForDetail(answer, qIdx, setIdx) {
         
         // 배지 추가
         let badge = '';
-        let badgeClass = '';
         
         if (isCorrectOption && isUserChoice) {
             badge = '<span class="option-badge correct-my-choice">✓ 내가 선택한 정답</span>';
-            badgeClass = 'correct-my-choice';
         } else if (isCorrectOption) {
             badge = '<span class="option-badge correct-not-chosen">✓ 정답</span>';
-            badgeClass = 'correct-not-chosen';
         } else if (isUserChoice) {
             badge = '<span class="option-badge wrong-my-choice">✗ 내가 선택한 오답</span>';
-            badgeClass = 'wrong-my-choice';
         }
         
         html += `
-            <div class="option-detail ${badgeClass} ${isCorrectOption ? 'correct' : 'incorrect'}">
-                <div class="option-header">
-                    <div class="option-text"><strong>${optionLetter}.</strong> ${option}</div>
-                    ${badge}
-                </div>
-                ${translation ? `<div class="option-translation">${translation}</div>` : ''}
+            <div class="conver-option ${isCorrectOption ? 'correct' : ''}">
+                <div class="conver-option-text"><span class="conver-option-marker">${optionLetter}</span>${option} ${badge}</div>
+                ${translation ? `<div class="conver-option-translation">${translation}</div>` : ''}
                 ${explanation ? `
-                <div class="option-explanation ${isCorrectOption ? 'correct' : 'incorrect'}">
+                <div class="conver-option-explanation ${isCorrectOption ? 'correct' : 'incorrect'}">
                     <strong>${isCorrectOption ? '정답 이유:' : '오답 이유:'}</strong> ${explanation}
                 </div>
                 ` : ''}
@@ -1119,7 +1120,6 @@ function renderConverOptionsExplanationForDetail(answer, qIdx, setIdx) {
     
     html += `
             </div>
-        </div>
     `;
     
     return html;
@@ -1286,42 +1286,65 @@ function renderAnnouncementDetailSets(announcementComponents, firstAttemptData, 
  */
 function renderAnnouncementSetResultForDetail(setResult, setIdx, startGlobalIndex, firstResults, secondResults) {
     const audioId = `announcement-audio-detail-${setIdx}`;
+    const setNumber = setIdx + 1;
+    const questionCount = setResult.answers.length;
+    const setMeta = setResult.setDescription || `안내방송 · ${questionCount}문제`;
     
     let html = `
-        <div class="result-set-section">
-            <div class="result-section-title">
-                <i class="fas fa-headphones"></i>
-                <span>공지사항 결과</span>
+        <div class="announce-set">
+            <!-- 세트 헤더 -->
+            <div class="announce-set-header">
+                <span class="announce-set-badge">
+                    <i class="fas fa-bullhorn"></i>
+                    Announcement Set ${setNumber}
+                </span>
+                <span class="announce-set-meta">${setMeta}</span>
             </div>
             
-            <!-- 공지사항 오디오 섹션 -->
+            <!-- 안내문 오디오 -->
             ${setResult.answers[0].audioUrl ? `
-            <div class="audio-section">
-                <div class="audio-title">
+            <div class="announce-audio-section">
+                <div class="announce-audio-title">
                     <i class="fas fa-volume-up"></i>
-                    <span>공지사항 오디오 다시 듣기</span>
+                    <span>안내문 다시 듣기</span>
                 </div>
-                <div class="audio-player-container">
-                    <button class="audio-play-btn" onclick="toggleAnnouncementDetailAudio('${audioId}')">
+                <div class="announce-audio-player">
+                    <button class="announce-play-btn" onclick="toggleAnnouncementDetailAudio('${audioId}')">
                         <i class="fas fa-play" id="${audioId}-icon"></i>
                     </button>
-                    <div class="audio-seek-container">
-                        <div class="audio-seek-bar" id="${audioId}-seek" onclick="seekAnnouncementDetailAudio('${audioId}', event)">
-                            <div class="audio-seek-progress" id="${audioId}-progress" style="width: 0%">
-                                <div class="audio-seek-handle"></div>
+                    <div class="announce-seek-container">
+                        <div class="announce-seek-bar" id="${audioId}-seek" onclick="seekAnnouncementDetailAudio('${audioId}', event)">
+                            <div class="announce-seek-progress" id="${audioId}-progress" style="width: 0%">
+                                <div class="announce-seek-handle"></div>
                             </div>
                         </div>
-                        <div class="audio-time">
-                            <span id="${audioId}-current">0:00</span> / <span id="${audioId}-duration">0:00</span>
+                        <div class="announce-audio-time">
+                            <span id="${audioId}-current">0:00</span> <span id="${audioId}-duration">0:00</span>
                         </div>
                     </div>
                     <audio id="${audioId}" src="${convertGoogleDriveUrl(setResult.answers[0].audioUrl)}"></audio>
                 </div>
-                ${setResult.answers[0].script ? renderAnnouncementScriptForDetail(setResult.answers[0].script, setResult.answers[0].scriptTrans, setResult.answers[0].scriptHighlights || []) : ''}
             </div>
             ` : ''}
             
-            <div class="questions-section">
+            <!-- 전체 스크립트 -->
+            ${setResult.answers[0].script ? `
+            <div class="announce-script-section">
+                <button class="announce-script-toggle" onclick="toggleAnnounceScriptSection('announce-script-detail-${setIdx}')">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="toggle-text">안내문 전체 스크립트 보기</span>
+                    <i class="fas fa-chevron-down" id="announce-script-detail-${setIdx}-icon"></i>
+                </button>
+                <div id="announce-script-detail-${setIdx}" class="announce-script-body" style="display: none;">
+                    ${renderAnnouncementScriptForDetail(setResult.answers[0].script, setResult.answers[0].scriptTrans, setResult.answers[0].scriptHighlights || [])}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- 구분선: 문제 영역 -->
+            <div class="announce-questions-divider">
+                <span>문제 해설</span>
+            </div>
     `;
     
     // 각 문제 렌더링
@@ -1331,38 +1354,58 @@ function renderAnnouncementSetResultForDetail(setResult, setIdx, startGlobalInde
     });
     
     html += `
-            </div>
         </div>
     `;
     
     return html;
 }
 
-// 공지사항 스크립트 렌더링
+// 공지사항 스크립트 렌더링 (단락 구조)
 function renderAnnouncementScriptForDetail(script, scriptTrans, highlights) {
-    let highlightedScript = escapeHtml(script);
+    let cleanScript = script.replace(/^Woman:\s*/i, '').trim()
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+    let cleanTrans = scriptTrans ? scriptTrans.replace(/\\n/g, '\n').replace(/\r\n/g, '\n') : '';
     
-    if (highlights && highlights.length > 0) {
-        highlights.forEach(highlight => {
-            const word = highlight.word || '';
-            const translation = highlight.translation || '';
-            const explanation = highlight.explanation || '';
-            
-            if (!word) return;
-            
-            const regex = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'gi');
-            highlightedScript = highlightedScript.replace(regex, (match) => {
-                return `<span class="announcement-keyword-highlight" data-translation="${escapeHtml(translation)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
-            });
-        });
+    let sentences = cleanScript.split(/\n\n+/).filter(s => s.trim());
+    let translations = cleanTrans ? cleanTrans.split(/\n\n+/).filter(s => s.trim()) : [];
+    
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim()) : [];
+    }
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])\s+/).filter(s => s.trim()) : [];
     }
     
-    return `
-        <div class="audio-script">
-            <strong>Script:</strong> ${highlightedScript}
-            ${scriptTrans ? `<br><strong>해석:</strong> ${scriptTrans}` : ''}
-        </div>
-    `;
+    let html = '';
+    sentences.forEach((sentence, idx) => {
+        const translation = translations[idx] || '';
+        let highlightedText = escapeHtml(sentence).replace(/\n/g, '<br>');
+        
+        if (highlights && highlights.length > 0) {
+            highlights.forEach(highlight => {
+                const word = highlight.word || '';
+                const trans = highlight.translation || '';
+                const explanation = highlight.explanation || '';
+                if (!word) return;
+                const regex = new RegExp(`\\b(${escapeRegex(word)})\\b`, 'gi');
+                highlightedText = highlightedText.replace(regex, (match) => {
+                    return `<span class="announce-keyword" data-translation="${escapeHtml(trans)}" data-explanation="${escapeHtml(explanation)}">${match}</span>`;
+                });
+            });
+        }
+        
+        html += `
+            <div class="announce-paragraph">
+                <div class="announce-paragraph-text">${highlightedText}</div>
+                ${translation ? `<span class="announce-paragraph-translation">${translation.replace(/\n/g, '<br>')}</span>` : ''}
+            </div>
+        `;
+    });
+    });
+    
+    return html;
 }
 
 // 공지사항 문제 렌더링 (1차/2차 비교 포함)
@@ -1393,38 +1436,29 @@ function renderAnnouncementAnswerForDetail(answer, qIdx, setIdx, globalIdx, firs
         : '<i class="fas fa-times-circle" style="color: var(--danger-color);"></i>';
     
     let html = `
-        <div class="announcement-result-item ${secondCorrect ? 'correct' : 'incorrect'}">
-            <div class="question-header">
-                <span class="question-number">Question ${answer.questionNum}</span>
-                <span class="result-status">${correctIcon}</span>
+        <div class="announce-question">
+            <div class="announce-question-header">
+                <span class="announce-q-number">Question ${answer.questionNum}</span>
+                <span class="announce-q-status">${correctIcon}</span>
             </div>
+            <div class="announce-q-text">${answer.question}</div>
+            ${answer.questionTrans ? `<div class="announce-q-translation">${answer.questionTrans}</div>` : ''}
             
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
-                    ${answer.question}
-                </div>
-                ${answer.questionTrans ? `
-                <div style="font-size: 14px; color: #9ca3af; font-style: italic;">
-                    ${answer.questionTrans}
-                </div>
-                ` : ''}
-            </div>
-            
-            <div class="answer-summary">
-                <div class="announcement-answer-row">
-                    <span class="announcement-answer-label">내 답변:</span>
-                    <span class="announcement-answer-value ${userAnswerClass}">
-                        ${answer.userAnswer ? `${String.fromCharCode(64 + answer.userAnswer)}. ${answer.options[answer.userAnswer - 1]}` : '미응답'}
+            <div class="announce-answer-summary">
+                <div class="announce-answer-row">
+                    <span class="announce-answer-label">내 답변:</span>
+                    <span class="announce-answer-value ${userAnswerClass}">
+                        ${answer.userAnswer ? `${answer.options[answer.userAnswer - 1]}` : '미응답'}
                     </span>
                 </div>
-                <div class="announcement-answer-row" style="padding-left: 80px;">
+                <div class="announce-answer-row">
                     <span class="feedback-message-inline">${feedbackMessage}</span>
                 </div>
                 ${showCorrectAnswer ? `
-                <div class="announcement-answer-row">
-                    <span class="announcement-answer-label">정답:</span>
-                    <span class="announcement-answer-value correct">
-                        ${String.fromCharCode(64 + answer.correctAnswer)}. ${answer.options[answer.correctAnswer - 1]}
+                <div class="announce-answer-row">
+                    <span class="announce-answer-label">정답:</span>
+                    <span class="announce-answer-value correct">
+                        ${answer.options[answer.correctAnswer - 1]}
                     </span>
                 </div>
                 ` : ''}
@@ -1451,50 +1485,35 @@ function renderAnnouncementOptionsExplanationForDetail(answer, qIdx, setIdx) {
     const toggleId = `announcement-detail-toggle-${setIdx}-${qIdx}`;
     
     let html = `
-        <div class="options-explanation-section">
-            <button class="toggle-explanation-btn" onclick="toggleAnnouncementDetailExplanation('${toggleId}')">
+            <button class="announce-toggle-btn" onclick="toggleAnnouncementDetailExplanation('${toggleId}')">
                 <span class="toggle-text">보기 상세 해설 펼치기</span>
-                <i class="fas fa-chevron-down"></i>
+                <i class="fas fa-chevron-down" id="${toggleId}-icon"></i>
             </button>
-            
-            <div id="${toggleId}" class="options-details" style="display: none;">
+            <div id="${toggleId}" class="announce-options-details" style="display: none;">
     `;
     
     answer.options.forEach((option, idx) => {
+        const optionLetter = String.fromCharCode(65 + idx);
         const isCorrect = (idx + 1) === answer.correctAnswer;
         const isUserChoice = (idx + 1) === answer.userAnswer;
         const translation = answer.optionTranslations?.[idx] || '';
         const explanation = answer.optionExplanations?.[idx] || '';
         
-        let badge = '';
-        let badgeClass = '';
-        
-        if (isCorrect && isUserChoice) {
-            badge = '<span class="option-badge correct-my-choice">✓ 내가 선택한 정답</span>';
-            badgeClass = 'correct-my-choice';
-        } else if (isCorrect) {
-            badge = '<span class="option-badge correct-not-chosen">✓ 정답</span>';
-            badgeClass = 'correct-not-chosen';
-        } else if (isUserChoice) {
-            badge = '<span class="option-badge wrong-my-choice">✗ 내가 선택한 오답</span>';
-            badgeClass = 'wrong-my-choice';
-        }
-        
         html += `
-            <div class="option-detail ${badgeClass}">
-                <div class="option-header">
-                    <strong class="option-text">${String.fromCharCode(65 + idx)}. ${option}</strong>
-                    ${badge}
+            <div class="announce-option ${isCorrect ? 'correct' : ''}">
+                <div class="announce-option-text"><span class="announce-option-marker">${optionLetter}</span>${option}</div>
+                ${translation ? `<div class="announce-option-translation">${translation}</div>` : ''}
+                ${explanation ? `
+                <div class="announce-option-explanation ${isCorrect ? 'correct' : 'incorrect'}">
+                    <strong>${isCorrect ? '정답 이유:' : '오답 이유:'}</strong> ${explanation}
                 </div>
-                ${translation ? `<div class="option-translation">${translation}</div>` : ''}
-                ${explanation ? `<div class="option-explanation ${isCorrect ? 'correct' : ''}">${explanation}</div>` : ''}
+                ` : ''}
             </div>
         `;
     });
     
     html += `
             </div>
-        </div>
     `;
     
     return html;
@@ -1711,7 +1730,7 @@ function showConverDetailInFinalExplain() {
             
             setTimeout(() => {
                 initConverResultAudioListeners();
-                const highlightedWords = document.querySelectorAll('.conver-keyword-highlight');
+                const highlightedWords = document.querySelectorAll('.conver-keyword');
                 highlightedWords.forEach(word => {
                     word.addEventListener('mouseenter', showConverTooltip);
                     word.addEventListener('mouseleave', hideConverTooltip);

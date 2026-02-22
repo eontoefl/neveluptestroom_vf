@@ -231,15 +231,30 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
                 <div class="passage-content-bilingual">
     `;
     
-    // 지문 문장 분리
-    const sentences = setResult.passage.content.match(/[^.!?]+[.!?]+/g) || [setResult.passage.content];
+    // \n 처리 + 번역 기반 문장 분리
+    const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
+    
+    let sentences;
+    if (translations.length > 0) {
+        const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
+        if (paragraphs.length === translations.length) {
+            sentences = paragraphs;
+        } else {
+            sentences = cleanContent.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+            if (sentences.length !== translations.length) {
+                sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
+            }
+        }
+    } else {
+        sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+        if (sentences.length <= 1) sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
+    }
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
         
-        // 인터랙티브 단어 하이라이트
-        let highlightedSentence = sentence.trim();
+        let highlightedSentence = sentence.trim().replace(/\n/g, '<br>');
         if (setResult.passage.interactiveWords) {
             setResult.passage.interactiveWords.forEach(wordObj => {
                 const regex = new RegExp(`\\b${wordObj.word}\\b`, 'gi');
@@ -456,15 +471,30 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
                 <div class="passage-content-bilingual">
     `;
     
-    // 지문 문장 분리
-    const sentences = setResult.passage.content.match(/[^.!?]+[.!?]+/g) || [setResult.passage.content];
+    // \n 처리 + 번역 기반 문장 분리
+    const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
+    
+    let sentences;
+    if (translations.length > 0) {
+        const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
+        if (paragraphs.length === translations.length) {
+            sentences = paragraphs;
+        } else {
+            sentences = cleanContent.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+            if (sentences.length !== translations.length) {
+                sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
+            }
+        }
+    } else {
+        sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+        if (sentences.length <= 1) sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
+    }
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
         
-        // 인터랙티브 단어 하이라이트
-        let highlightedSentence = sentence.trim();
+        let highlightedSentence = sentence.trim().replace(/\n/g, '<br>');
         if (setResult.passage.interactiveWords) {
             setResult.passage.interactiveWords.forEach(wordObj => {
                 const regex = new RegExp(`\\b${wordObj.word}\\b`, 'gi');

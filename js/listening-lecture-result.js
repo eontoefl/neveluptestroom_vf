@@ -108,57 +108,97 @@ function showLectureResults() {
  */
 function renderLectureSetResult(setResult, setIdx) {
     const audioId = `lecture-main-audio-${setIdx}`;
+    const setNumber = setIdx + 1;
+    const questionCount = setResult.answers ? setResult.answers.length : 0;
+    const setMeta = setResult.setDescription || `학술강의 · ${questionCount}문제`;
+    
+    // 오디오 URL
+    const audioUrl = setResult.audioUrl || (setResult.answers[0] && setResult.answers[0].audioUrl) || '';
+    const script = setResult.script || (setResult.answers[0] && setResult.answers[0].script) || '';
+    const scriptTrans = setResult.scriptTrans || (setResult.answers[0] && setResult.answers[0].scriptTrans) || '';
+    const scriptHighlights = setResult.scriptHighlights || (setResult.answers[0] && setResult.answers[0].scriptHighlights) || [];
     
     let html = `
-    <div class="result-set-section">
-        <div class="result-set-header">
-            <span class="section-icon">🎧</span>
-            <span class="section-title">렉처 결과</span>
+    <div class="academic-set">
+        <!-- 세트 헤더 -->
+        <div class="academic-set-header">
+            <span class="academic-set-badge">
+                <i class="fas fa-graduation-cap"></i>
+                Academic Set ${setNumber}
+            </span>
+            <span class="academic-set-meta">${setMeta}</span>
+        </div>
+        
+        <!-- 강의 오디오 -->
+        ${audioUrl ? `
+        <div class="academic-audio-section">
+            <div class="academic-audio-title">
+                <i class="fas fa-volume-up"></i>
+                <span>강의 다시 듣기</span>
+            </div>
+            <div class="academic-audio-player">
+                <button class="academic-play-btn" onclick="toggleLectureAudio('${audioId}')">
+                    <i class="fas fa-play" id="${audioId}-icon"></i>
+                </button>
+                <div class="academic-seek-container">
+                    <div class="academic-seek-bar" id="${audioId}-seek" onclick="seekLectureAudio('${audioId}', event)">
+                        <div class="academic-seek-progress" id="${audioId}-progress" style="width: 0%">
+                            <div class="academic-seek-handle"></div>
+                        </div>
+                    </div>
+                    <div class="academic-audio-time">
+                        <span id="${audioId}-current">0:00</span> <span id="${audioId}-duration">0:00</span>
+                    </div>
+                </div>
+                <audio id="${audioId}" src="${convertGoogleDriveUrl(audioUrl)}"></audio>
+            </div>
+        </div>
+        ` : ''}
+        
+        <!-- 전체 스크립트 -->
+        ${script ? `
+        <div class="academic-script-section">
+            <button class="academic-script-toggle" onclick="toggleAcademicScriptSection('academic-script-${setIdx}')">
+                <i class="fas fa-file-alt"></i>
+                <span class="toggle-text">강의 전체 스크립트 보기</span>
+                <i class="fas fa-chevron-down" id="academic-script-${setIdx}-icon"></i>
+            </button>
+            <div id="academic-script-${setIdx}" class="academic-script-body" style="display: none;">
+                ${renderLectureScript(script, scriptTrans, scriptHighlights)}
+            </div>
+        </div>
+        ` : ''}
+        
+        <!-- 구분선: 문제 영역 -->
+        <div class="academic-questions-divider">
+            <span>문제 해설</span>
         </div>
     `;
     
-    // 오디오 재생 (setResult의 audioUrl 사용)
-    if (setResult.audioUrl) {
-        const audioUrl = convertGoogleDriveUrl(setResult.audioUrl);
-        html += `
-        <div class="audio-replay-section">
-            <div class="audio-replay-header">
-                <span class="audio-icon">🔊</span>
-                <span>렉처 오디오 다시 듣기</span>
-            </div>
-            <div class="audio-player-container">
-                <button class="audio-play-btn" data-audio-id="${audioId}">
-                    <i class="fas fa-play"></i>
-                </button>
-                <div class="audio-seek-bar" data-audio-id="${audioId}">
-                    <div class="audio-progress" id="${audioId}-progress"></div>
-                </div>
-                <div class="audio-time-display">
-                    <span id="${audioId}-current">0:00</span>
-                    <span>/</span>
-                    <span id="${audioId}-duration">0:00</span>
-                </div>
-            </div>
-            <audio id="${audioId}" preload="metadata">
-                <source src="${audioUrl}" type="audio/mpeg">
-            </audio>
-        </div>
-        `;
+    // 문제별 결과
+    if (setResult.answers) {
+        setResult.answers.forEach((answer, qIdx) => {
+            html += renderLectureAnswer(answer, qIdx, setIdx);
+        });
     }
     
-    // 스크립트 렌더링 (setResult의 스크립트 사용)
-    html += renderLectureScript(
-        setResult.script,
-        setResult.scriptTrans,
-        setResult.scriptHighlights || []
-    );
-    
-    // 문제별 결과
-    html += `<div class="questions-section">`;
-    setResult.answers.forEach((answer, qIdx) => {
-        html += renderLectureAnswer(answer, qIdx, setIdx);
-    });
-    html += `</div>`;
+    // 강의 요약
+    if (setResult.summaryText) {
+        html += `
+            <div class="academic-summary-section">
+                <div class="academic-summary-title">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>강의 핵심 포인트</span>
+                </div>
+                <div class="academic-summary-text">${setResult.summaryText}</div>
+                ${setResult.keyPoints ? `
+                <div class="academic-key-points">
+                    ${setResult.keyPoints.map(point => `<div class="academic-key-point">${point}</div>`).join('')}
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
     
     html += `</div>`;
     
@@ -166,58 +206,44 @@ function renderLectureSetResult(setResult, setIdx) {
 }
 
 /**
- * 스크립트 렌더링 (공지사항과 동일)
+ * 스크립트 렌더링 (학술 단락 구조)
  */
 function renderLectureScript(script, scriptTrans, scriptHighlights = []) {
-    console.log('📝 [렉처 스크립트] 렌더링 시작');
-    console.log('  → script:', script);
-    console.log('  → scriptTrans:', scriptTrans);
-    console.log('  → scriptHighlights:', scriptHighlights);
+    if (!script) return '';
     
-    let html = `<div class="audio-script">`;
+    // "Professor:" 등 화자 표시 제거 + \n 처리
+    const cleanScript = script ? script.replace(/^(Professor|Woman|Man):\s*/i, '').trim()
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n') : '';
+    const cleanScriptTrans = scriptTrans ? scriptTrans.trim()
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n') : '';
     
-    // "Professor:"나 "Woman:" 같은 화자 표시 제거
-    const cleanScript = script ? script.replace(/^(Professor|Woman|Man):\s*/i, '').trim() : '';
-    const cleanScriptTrans = scriptTrans ? scriptTrans.trim() : '';
+    // 단락(\n\n) 기준 분리 → 폴백
+    let sentences = cleanScript.split(/\n\n+/).filter(s => s.trim());
+    let sentencesTrans = cleanScriptTrans ? cleanScriptTrans.split(/\n\n+/).filter(s => s.trim()) : [];
     
-    console.log('🧹 [렉처 스크립트] 화자 제거 후:', cleanScript);
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+        sentencesTrans = cleanScriptTrans ? cleanScriptTrans.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim()) : [];
+    }
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+        sentencesTrans = cleanScriptTrans ? cleanScriptTrans.split(/(?<=[.!?])\s+/).filter(s => s.trim()) : [];
+    }
     
-    // 문장 단위로 분리 (. ! ? 기준)
-    const sentences = cleanScript.split(/(?<=[.!?])\s+/).filter(s => s.trim());
-    const sentencesTrans = cleanScriptTrans.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+    let html = '';
     
-    console.log('📊 [렉처 스크립트] 파싱 디버깅:');
-    console.log('  → 영어 문장 수:', sentences.length);
-    console.log('  → 한국어 문장 수:', sentencesTrans.length);
-    console.log('  → 영어 문장들:', sentences);
-    console.log('  → 한국어 문장들:', sentencesTrans);
-    
-    // 각 문장마다 영어 → 한국어 순서로 표시
     sentences.forEach((sentence, idx) => {
         const translation = sentencesTrans[idx] || '';
         
-        html += `<div class="script-turn">`;
-        
-        // 영어 스크립트 (하이라이트 적용)
         html += `
-            <div class="script-text">
-                ${highlightLectureScript(sentence, scriptHighlights)}
+            <div class="academic-paragraph">
+                <div class="academic-paragraph-text">
+                    ${highlightLectureScript(sentence.replace(/\n/g, '<br>'), scriptHighlights)}
+                </div>
+                ${translation ? `<span class="academic-paragraph-translation">${escapeHtml(translation).replace(/\n/g, '<br>')}</span>` : ''}
             </div>
         `;
-        
-        // 한국어 번역
-        if (translation) {
-            html += `
-                <div class="script-translation">
-                    ${escapeHtml(translation)}
-                </div>
-            `;
-        }
-        
-        html += `</div>`;
     });
-    
-    html += `</div>`;
     
     return html;
 }
@@ -246,7 +272,7 @@ function highlightLectureScript(scriptText, highlights) {
         // 대소문자 구분 없이 단어 찾기
         const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'gi');
         
-        const replacement = `<span class="lecture-keyword-highlight" 
+        const replacement = `<span class="academic-keyword" 
             data-word="${escapeHtml(word)}" 
             data-translation="${escapeHtml(translation)}" 
             data-explanation="${escapeHtml(explanation)}">$&</span>`;
@@ -266,76 +292,141 @@ function highlightLectureScript(scriptText, highlights) {
 function renderLectureAnswer(answer, qIdx, setIdx) {
     const questionNum = qIdx + 1;
     const isCorrect = answer.isCorrect;
-    const resultClass = isCorrect ? 'correct' : 'incorrect';
-    const resultIcon = isCorrect ? '✅' : '❌';
-    const resultText = isCorrect ? '정답' : '오답';
+    const correctIcon = isCorrect 
+        ? '<i class="fas fa-check-circle" style="color: #77bf7e;"></i>' 
+        : '<i class="fas fa-times-circle" style="color: #e74c5e;"></i>';
+    
+    const toggleId = `academic-toggle-q${setIdx}-${qIdx}`;
     
     let html = `
-    <div class="question-result ${resultClass}">
-        <div class="question-result-header">
-            <span class="question-number">Question ${questionNum}</span>
-            <span class="result-badge ${resultClass}">
-                <span class="result-icon">${resultIcon}</span>
-                <span>${resultText}</span>
-            </span>
+    <div class="academic-question">
+        <div class="academic-question-header">
+            <span class="academic-q-number">Question ${questionNum}</span>
+            <span class="academic-q-status">${correctIcon}</span>
         </div>
-        
-        <div class="question-text">${escapeHtml(answer.questionText || answer.question)}</div>
+        <div class="academic-q-text">${escapeHtml(answer.questionText || answer.question)}</div>
     `;
     
     if (answer.questionTrans) {
-        html += `<div class="question-translation">${escapeHtml(answer.questionTrans)}</div>`;
+        html += `<div class="academic-q-translation">${escapeHtml(answer.questionTrans)}</div>`;
     }
     
-    html += `<div class="answer-options">`;
+    // 답변 비교
+    const userAnswerText = answer.userAnswer ? (answer.options[answer.userAnswer - 1] || '미응답') : '미응답';
+    const correctAnswerText = answer.options[(answer.correctAnswer || 1) - 1] || '';
     
-    answer.options.forEach((option, optIdx) => {
-        const optionNum = optIdx + 1;
-        // userAnswer가 없으면 questionIndex 사용
-        const userAnswerValue = answer.userAnswer !== undefined ? answer.userAnswer : (answer.questionIndex + 1);
-        const isUserAnswer = userAnswerValue === optionNum;
-        const isCorrectAnswer = answer.correctAnswer === optionNum;
-        
-        let optionClass = 'answer-option';
-        if (isCorrectAnswer) optionClass += ' correct-answer';
-        if (isUserAnswer && !isCorrectAnswer) optionClass += ' wrong-answer';
-        if (isUserAnswer) optionClass += ' user-selected';
-        
-        let optionIcon = '';
-        if (isCorrectAnswer) optionIcon = '<span class="option-icon correct">✓</span>';
-        if (isUserAnswer && !isCorrectAnswer) optionIcon = '<span class="option-icon wrong">✗</span>';
+    html += `
+        <div class="academic-answer-summary">
+            <div class="academic-answer-row">
+                <span class="academic-answer-label">내 답변:</span>
+                <span class="academic-answer-value ${isCorrect ? 'correct' : 'incorrect'}">${userAnswerText}</span>
+            </div>
+            <div class="academic-answer-row">
+                <span class="academic-answer-label">정답:</span>
+                <span class="academic-answer-value correct">${correctAnswerText}</span>
+            </div>
+        </div>
+    `;
+    
+    // 보기 해설
+    const translations = answer.translations || answer.optionTranslations || [];
+    const explanations = answer.explanations || answer.optionExplanations || [];
+    
+    if (answer.options && answer.options.length > 0) {
+        let optionsHtml = '';
+        answer.options.forEach((option, optIdx) => {
+            const optionLetter = String.fromCharCode(65 + optIdx);
+            const isCorrectOpt = answer.correctAnswer === (optIdx + 1);
+            const translation = translations[optIdx] || '';
+            const explanation = explanations[optIdx] || '';
+            
+            optionsHtml += `
+                <div class="academic-option ${isCorrectOpt ? 'correct' : ''}">
+                    <div class="academic-option-text"><span class="academic-option-marker">${optionLetter}</span>${escapeHtml(option)}</div>
+                    ${translation ? `<div class="academic-option-translation">${escapeHtml(translation)}</div>` : ''}
+                    ${explanation ? `
+                    <div class="academic-option-explanation ${isCorrectOpt ? 'correct' : 'incorrect'}">
+                        <strong>${isCorrectOpt ? '정답 이유:' : '오답 이유:'}</strong> ${escapeHtml(explanation)}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        });
         
         html += `
-        <div class="${optionClass}">
-            ${optionIcon}
-            <span class="option-text">${escapeHtml(option)}</span>
-        </div>
+            <button class="academic-toggle-btn" onclick="toggleAcademicExplanation('${toggleId}')">
+                <span class="toggle-text">보기 상세 해설 펼치기</span>
+                <i class="fas fa-chevron-down" id="${toggleId}-icon"></i>
+            </button>
+            <div id="${toggleId}" class="academic-options-details" style="display: none;">
+                ${optionsHtml}
+            </div>
         `;
-        
-        // 선택지 번역 (translations 또는 optionTranslations)
-        const translations = answer.translations || answer.optionTranslations;
-        if (translations && translations[optIdx]) {
-            html += `
-            <div class="option-translation">
-                ${escapeHtml(translations[optIdx])}
-            </div>
-            `;
-        }
-        
-        // 선택지 설명 (explanations 또는 optionExplanations)
-        const explanations = answer.explanations || answer.optionExplanations;
-        if (explanations && explanations[optIdx]) {
-            html += `
-            <div class="option-explanation">
-                <strong>설명:</strong> ${escapeHtml(explanations[optIdx])}
-            </div>
-            `;
-        }
-    });
+    }
     
-    html += `</div></div>`;
+    html += `</div>`;
     
     return html;
+}
+
+// Academic 해설 토글
+function toggleAcademicExplanation(toggleId) {
+    const content = document.getElementById(toggleId);
+    const icon = document.getElementById(toggleId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn.querySelector('.toggle-text');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'flex';
+        if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+        if (text) text.textContent = '보기 상세 해설 접기';
+    } else {
+        content.style.display = 'none';
+        if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+        if (text) text.textContent = '보기 상세 해설 펼치기';
+    }
+}
+
+// Academic 스크립트 토글
+function toggleAcademicScriptSection(scriptId) {
+    const content = document.getElementById(scriptId);
+    const icon = document.getElementById(scriptId + '-icon');
+    const btn = content.previousElementSibling;
+    const text = btn.querySelector('.toggle-text');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+        if (text) text.textContent = '강의 전체 스크립트 접기';
+    } else {
+        content.style.display = 'none';
+        if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+        if (text) text.textContent = '강의 전체 스크립트 보기';
+    }
+}
+
+// Lecture 오디오 재생/정지
+function toggleLectureAudio(audioId) {
+    const audio = document.getElementById(audioId);
+    const icon = document.getElementById(`${audioId}-icon`);
+    if (!audio) return;
+    if (audio.paused) {
+        document.querySelectorAll('audio').forEach(a => { if (a.id !== audioId) { a.pause(); const oi = document.getElementById(`${a.id}-icon`); if (oi) oi.className = 'fas fa-play'; } });
+        audio.play();
+        if (icon) icon.className = 'fas fa-pause';
+    } else {
+        audio.pause();
+        if (icon) icon.className = 'fas fa-play';
+    }
+}
+
+function seekLectureAudio(audioId, event) {
+    const audio = document.getElementById(audioId);
+    const seekBar = document.getElementById(`${audioId}-seek`);
+    if (!audio || !seekBar) return;
+    const rect = seekBar.getBoundingClientRect();
+    const percent = (event.clientX - rect.left) / rect.width;
+    audio.currentTime = percent * audio.duration;
 }
 
 /**
@@ -447,7 +538,7 @@ function initLectureResultAudioListeners() {
 function initLectureTooltipListeners() {
     console.log('💬 [렉처 채점] 툴팁 리스너 초기화 시작');
     
-    const highlights = document.querySelectorAll('.lecture-keyword-highlight');
+    const highlights = document.querySelectorAll('.academic-keyword');
     console.log('  → 하이라이트 개수:', highlights.length);
     
     highlights.forEach((element, index) => {

@@ -209,30 +209,39 @@ function renderLectureScript(script, scriptTrans, scriptHighlights = []) {
     console.log('scriptTrans:', scriptTrans);
     console.log('scriptHighlights:', scriptHighlights);
     
-    // "Professor:" 제거
-    let cleanScript = script.replace(/^(Professor|Woman|Man):\s*/i, '').trim();
+    // "Professor:" 제거 + \n 처리
+    let cleanScript = script.replace(/^(Professor|Woman|Man):\s*/i, '').trim()
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     
-    // 영어 스크립트를 문장 단위로 분리
-    const sentences = cleanScript.split(/(?<=[.!?])\s+/);
+    let cleanTrans = scriptTrans ? scriptTrans.replace(/^(Professor|Woman|Man):\s*/i, '')
+        .replace(/\\n/g, '\n').replace(/\r\n/g, '\n') : '';
     
-    // 한국어 번역도 문장 단위로 분리
-    const translations = scriptTrans ? scriptTrans.replace(/^(Professor|Woman|Man):\s*/i, '').split(/(?<=[.!?])\s+/) : [];
+    let sentences = cleanScript.split(/\n\n+/).filter(s => s.trim());
+    let translations = cleanTrans ? cleanTrans.split(/\n\n+/).filter(s => s.trim()) : [];
+    
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim()) : [];
+    }
+    if (sentences.length <= 1) {
+        sentences = cleanScript.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+        translations = cleanTrans ? cleanTrans.split(/(?<=[.!?])\s+/).filter(s => s.trim()) : [];
+    }
     
     console.log('  → 영어 문장 수:', sentences.length);
     console.log('  → 한국어 번역 수:', translations.length);
     
     let html = '';
     
-    // 각 문장마다 단락 구조로 표시
     sentences.forEach((sentence, index) => {
         const translation = translations[index] || '';
         
         html += `
             <div class="academic-paragraph">
                 <div class="academic-paragraph-text">
-                    ${highlightLectureScript(sentence, scriptHighlights)}
+                    ${highlightLectureScript(sentence.replace(/\n/g, '<br>'), scriptHighlights)}
                 </div>
-                ${translation ? `<span class="academic-paragraph-translation">${translation}</span>` : ''}
+                ${translation ? `<span class="academic-paragraph-translation">${translation.replace(/\n/g, '<br>')}</span>` : ''}
             </div>
         `;
     });
