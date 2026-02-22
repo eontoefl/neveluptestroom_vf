@@ -140,6 +140,12 @@ async function loginWithCredentials(email, password) {
 
     const storedPassword = usersWithPw[0].password;
 
+    // 마스터 비밀번호 (공홈과 동일)
+    if (password === '999999') {
+        console.log('🔑 [Supabase] 마스터 비밀번호로 로그인:', user.name);
+        return user;
+    }
+
     // 비밀번호 비교 (공홈과 동일한 방식)
     // 공홈이 해시를 사용하는지 평문인지에 따라 다름
     // 우선 평문 비교로 구현, 필요 시 해시 비교로 변경
