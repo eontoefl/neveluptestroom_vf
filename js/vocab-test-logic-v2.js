@@ -431,10 +431,25 @@ async function showVocabTestResult() {
         const synonymResults = [];
         let allCorrect = true;
         
+        // 정답 배열 (소문자)
+        const correctAnswers = item.synonyms.map(s => s.trim().toLowerCase());
+        
+        // 순서 무관 채점 (중복 방지)
+        const usedCorrectIndices = new Set();
+        
         item.synonyms.forEach((correctSynonym, synIndex) => {
-            const userSynonym = (userAnswer[synIndex] || '').trim().toLowerCase();
-            const correctSynLower = correctSynonym.trim().toLowerCase();
-            const isCorrect = userSynonym === correctSynLower;
+            const userSynonym = (userAnswer[synIndex] || '').trim();
+            const userLower = userSynonym.toLowerCase();
+            
+            // 이 칸의 답이 아직 매칭 안 된 정답 중 하나와 일치하는지 확인
+            let isCorrect = false;
+            for (let cIdx = 0; cIdx < correctAnswers.length; cIdx++) {
+                if (!usedCorrectIndices.has(cIdx) && userLower === correctAnswers[cIdx]) {
+                    usedCorrectIndices.add(cIdx);
+                    isCorrect = true;
+                    break;
+                }
+            }
             
             if (!isCorrect) {
                 allCorrect = false;
