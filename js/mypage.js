@@ -615,6 +615,9 @@ function retryTask(taskType, moduleNumber, week, day) {
         return;
     }
     
+    // 로딩 오버레이 표시
+    showLoadingOverlay('과제를 준비하고 있습니다...');
+    
     // sessionStorage에 retry 정보 저장
     const retryData = {
         taskType: taskType,
@@ -717,6 +720,15 @@ function handleLogout() {
 // ================================================
 // 유틸리티
 // ================================================
+function showLoadingOverlay(message) {
+    const overlay = document.getElementById('loadingOverlay');
+    const msg = document.getElementById('loadingMessage');
+    if (overlay) {
+        if (msg) msg.textContent = message || '이동 중...';
+        overlay.style.display = 'flex';
+    }
+}
+
 function showNotLoggedIn() {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('notLoggedScreen').style.display = 'flex';

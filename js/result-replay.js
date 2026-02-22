@@ -91,6 +91,7 @@ async function replayExplanation(studyRecordId) {
                     moduleNumber: record.module_number,
                     fallback: true
                 }));
+                if (typeof showLoadingOverlay === 'function') showLoadingOverlay('해설을 불러오고 있습니다...');
                 window.location.href = 'index.html?replay=true';
                 return;
             }
@@ -113,6 +114,7 @@ async function replayExplanation(studyRecordId) {
                 day: record.day,
                 moduleNumber: record.module_number
             }));
+            if (typeof showLoadingOverlay === 'function') showLoadingOverlay('해설을 불러오고 있습니다...');
             window.location.href = 'index.html?replay=true';
             return;
         }
