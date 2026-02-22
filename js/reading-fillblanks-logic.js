@@ -194,6 +194,9 @@ function showResultScreen() {
     // 결과 화면 표시
     showScreen('resultScreen');
     
+    // ★ 해설 다시보기용 result_json 저장
+    saveResultJsonToSupabase('reading', fillBlanksResults);
+    
     // 세션 스토리지 정리
     sessionStorage.removeItem('fillBlanksResults');
 }

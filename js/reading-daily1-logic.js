@@ -197,6 +197,9 @@ function showDaily1Results() {
     // 결과 화면 표시
     showScreen('readingDaily1ResultScreen');
     
+    // ★ 해설 다시보기용 result_json 저장
+    saveResultJsonToSupabase('reading', results);
+    
     // 세션 스토리지 정리
     sessionStorage.removeItem('daily1Results');
 }

@@ -203,6 +203,9 @@ function showAcademicResults() {
     // 이벤트 바인딩
     bindAcademicToggleEvents();
     
+    // ★ 해설 다시보기용 result_json 저장
+    saveResultJsonToSupabase('reading', academicResults);
+    
     // 결과 데이터 정리
     sessionStorage.removeItem('academicResults');
 }

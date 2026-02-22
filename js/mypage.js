@@ -79,10 +79,10 @@ async function loadAllData() {
     const userId = mpUser.id;
     console.log('📊 [MyPage] 데이터 로드 시작 - userId:', userId);
 
-    // 학습 기록 전체 로드
+    // 학습 기록 전체 로드 (result_json은 대용량이므로 제외 - 다시보기 클릭 시 별도 로드)
     mpStudyRecords = await supabaseSelect(
         'tr_study_records',
-        `user_id=eq.${userId}&order=completed_at.desc&select=*`
+        `user_id=eq.${userId}&order=completed_at.desc&select=id,user_id,week,day,task_type,module_number,attempt,score,total,time_spent,detail,error_note_text,memo_text,completed_at`
     ) || [];
 
     // 인증 기록 전체 로드
@@ -427,7 +427,7 @@ function renderRecentRecords() {
                <p>아직 학습 기록이 없어요.<br>테스트룸에서 과제를 시작해보세요! 💪</p>`;
         tbody.innerHTML = `
             <tr>
-                <td colspan="4">
+                <td colspan="5">
                     <div class="empty-state">${msg}</div>
                 </td>
             </tr>
@@ -444,6 +444,7 @@ function renderRecentRecords() {
         const moduleText = getModuleText(record);
         const scoreHtml = renderScore(record);
         const noteHtml = renderNoteButton(record);
+        const replayHtml = renderReplayButton(record);
 
         return `
             <tr>
@@ -456,6 +457,7 @@ function renderRecentRecords() {
                 </td>
                 <td>${scoreHtml}</td>
                 <td>${noteHtml}</td>
+                <td>${replayHtml}</td>
             </tr>
         `;
     }).join('');
@@ -530,6 +532,24 @@ function renderScore(record) {
         <div class="score-bar">
             <div class="score-fill" style="width:${pct}%;"></div>
         </div>
+    `;
+}
+
+/**
+ * 해설 다시보기 버튼 렌더링
+ */
+function renderReplayButton(record) {
+    // reading만 지원 (listening은 추후 추가)
+    const supported = ['reading'];
+    if (!supported.includes(record.task_type)) {
+        return `<button class="btn-replay" disabled><i class="fa-solid fa-book-open"></i> -</button>`;
+    }
+    
+    // 지원 타입이면 버튼 표시 (클릭 시 서버에서 result_json 확인)
+    return `
+        <button class="btn-replay" onclick="replayExplanation('${record.id}')">
+            <i class="fa-solid fa-book-open"></i> 해설보기
+        </button>
     `;
 }
 
