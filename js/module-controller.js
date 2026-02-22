@@ -259,9 +259,10 @@ class ModuleController {
             const hasNext = componentInstance.nextQuestion();
             console.log(`🔄 [자동진행] nextQuestion() 결과: ${hasNext ? '다음 문제 있음' : '마지막 문제 - submit 호출'}`);
             if (hasNext) {
-                // 다음 문제가 있으면 새 타이머 시작
-                console.log(`⏰ [자동진행] 다음 문제 타이머 시작: ${timeLimit}초`);
-                this.startQuestionTimer(timeLimit);
+                // ⚠️ 다음 문제 타이머는 여기서 시작하지 않음!
+                // loadQuestion() 내부에서 오디오 재생 완료 후 onTimerStart() 콜백으로 시작됨
+                // 여기서 중복 시작하면 오디오 재생 중에 타이머가 만료되어 오디오 겹침 발생
+                console.log(`⏰ [자동진행] 다음 문제 타이머는 오디오 완료 후 onTimerStart()에서 시작`);
             } else {
                 // 마지막 문제면 submit
                 if (componentInstance.submit) {
@@ -344,11 +345,11 @@ class ModuleController {
      * ================================================
      */
     updateHeaderTitle(componentType) {
-        // Week/요일 정보 가져오기
+        // Week/요일 정보 가져오기 (window.currentTest 우선, sessionStorage 폴백)
         const ct = window.currentTest || {};
-const week = ct.currentWeek || 1;
-const day = ct.currentDay || '일';
-const weekDay = `Week ${week} - ${day}요일`;
+        const week = ct.currentWeek || 'Week 1';
+        const day = ct.currentDay || '일';
+        const weekDay = `${week} - ${day}요일`;
         
         // 유형별 Font Awesome 아이콘 + 한글명 매핑
         const typeMap = {
@@ -704,8 +705,94 @@ const weekDay = `Week ${week} - ${day}요일`;
         // 진행률 업데이트
         this.updateProgress();
         
-        // 컴포넌트 초기화 및 시작
-        this.initComponent(component);
+        // 🛡️ 재시도 로직 포함 컴포넌트 초기화
+        this._initComponentWithRetry(component, 0);
+    }
+    
+    /**
+     * 🛡️ 컴포넌트 초기화 + 자동 재시도 (1차 풀이용)
+     */
+    async _initComponentWithRetry(component, attempt) {
+        const MAX_RETRIES = 2;
+        
+        try {
+            if (attempt > 0) {
+                console.log(`🔄 [ModuleController] 재시도 ${attempt}/${MAX_RETRIES}: ${component.type}`);
+                this._showLoadingSpinner(component.type, attempt);
+                await new Promise(r => setTimeout(r, 800));
+            }
+            
+            this.initComponent(component);
+            this._removeLoadingOverlay();
+            
+        } catch (error) {
+            console.error(`❌ [ModuleController] 컴포넌트 초기화 실패 (시도 ${attempt + 1}):`, error);
+            
+            if (attempt < MAX_RETRIES) {
+                await this._initComponentWithRetry(component, attempt + 1);
+            } else {
+                console.error('❌ [ModuleController] 최종 로드 실패:', error);
+                this._showRetryUI(component);
+            }
+        }
+    }
+    
+    /**
+     * 🔄 로딩 스피너 (1차 풀이용)
+     */
+    _showLoadingSpinner(componentType, attempt) {
+        this._removeLoadingOverlay();
+        const overlay = document.createElement('div');
+        overlay.id = 'moduleLoadingOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="text-align:center;">
+                <div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top:4px solid #4A90D9;border-radius:50%;animation:moduleSpinAnim 0.8s linear infinite;margin:0 auto 16px;"></div>
+                <p style="font-size:15px;color:#555;font-weight:600;">문제를 불러오는 중...</p>
+                <p style="font-size:13px;color:#999;margin-top:4px;">재시도 ${attempt}/2</p>
+            </div>
+            <style>@keyframes moduleSpinAnim{to{transform:rotate(360deg)}}</style>
+        `;
+        document.body.appendChild(overlay);
+    }
+    
+    /**
+     * 오버레이 제거
+     */
+    _removeLoadingOverlay() {
+        const el = document.getElementById('moduleLoadingOverlay');
+        if (el) el.remove();
+        const el2 = document.getElementById('moduleRetryOverlay');
+        if (el2) el2.remove();
+    }
+    
+    /**
+     * ❌ 재시도 UI (1차 풀이용)
+     */
+    _showRetryUI(component) {
+        this._removeLoadingOverlay();
+        const overlay = document.createElement('div');
+        overlay.id = 'moduleRetryOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="text-align:center;max-width:360px;padding:32px;">
+                <div style="width:56px;height:56px;background:#FEF2F2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <span style="font-size:24px;">⚠️</span>
+                </div>
+                <h3 style="font-size:18px;font-weight:700;color:#333;margin:0 0 8px;">문제 로딩 실패</h3>
+                <p style="font-size:14px;color:#666;line-height:1.5;margin:0 0 24px;">네트워크 문제로 문제를 불러오지 못했습니다.<br>다시 시도해주세요.</p>
+                <button id="moduleRetryBtn" style="padding:12px 32px;background:linear-gradient(135deg,#4A90D9,#5B6ABF);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                    🔄 다시 시도
+                </button>
+                <p style="font-size:12px;color:#aaa;margin-top:12px;">${component.type} 컴포넌트</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        document.getElementById('moduleRetryBtn').addEventListener('click', () => {
+            overlay.remove();
+            this._initComponentWithRetry(component, 0);
+        });
     }
     
     /**
@@ -731,113 +818,81 @@ const weekDay = `Week ${week} - ${day}요일`;
         switch (type) {
             case 'fillblanks':
                 this.currentComponentInstance = window.FillBlanksComponent;
-                if (window.initFillBlanksComponent) {
-                    window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions).then(() => {
-                        // fillblanks 초기화 완료 후 버튼 상태 강제 설정
-                        this.updateNavigationButtons(type, 0, questionsPerSet);
-                    });
-                }
+                if (!window.initFillBlanksComponent) throw new Error('initFillBlanksComponent가 로드되지 않았습니다');
+                window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions).then(() => {
+                    this.updateNavigationButtons(type, 0, questionsPerSet);
+                });
                 break;
                 
             case 'daily1':
                 this.currentComponentInstance = window.Daily1Component;
-                if (window.initDaily1Component) {
-                    window.initDaily1Component(setId, this.onComponentComplete.bind(this), initOptions);
-                }
+                if (!window.initDaily1Component) throw new Error('initDaily1Component가 로드되지 않았습니다');
+                window.initDaily1Component(setId, this.onComponentComplete.bind(this), initOptions);
                 break;
                 
             case 'daily2':
                 this.currentComponentInstance = window.Daily2Component;
-                if (window.initDaily2Component) {
-                    window.initDaily2Component(setId, this.onComponentComplete.bind(this), initOptions);
-                }
+                if (!window.initDaily2Component) throw new Error('initDaily2Component가 로드되지 않았습니다');
+                window.initDaily2Component(setId, this.onComponentComplete.bind(this), initOptions);
                 break;
                 
             case 'academic':
                 this.currentComponentInstance = window.AcademicComponent;
-                if (window.initAcademicComponent) {
-                    window.initAcademicComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
+                if (!window.initAcademicComponent) throw new Error('initAcademicComponent가 로드되지 않았습니다');
+                window.initAcademicComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 break;
                 
             case 'response':
-                // initResponseComponent가 window.currentResponseComponent를 설정함
-                if (window.initResponseComponent) {
-                    window.initResponseComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initResponseComponent) throw new Error('initResponseComponent가 로드되지 않았습니다');
+                window.initResponseComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentResponseComponent;
                 break;
                 
             case 'conver':
-                // initConverComponent가 window.currentConverComponent를 설정함
-                if (window.initConverComponent) {
-                    window.initConverComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initConverComponent) throw new Error('initConverComponent가 로드되지 않았습니다');
+                window.initConverComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentConverComponent;
                 break;
                 
             case 'announcement':
-                // initAnnouncementComponent가 window.currentAnnouncementComponent를 설정함
-                if (window.initAnnouncementComponent) {
-                    window.initAnnouncementComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initAnnouncementComponent) throw new Error('initAnnouncementComponent가 로드되지 않았습니다');
+                window.initAnnouncementComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentAnnouncementComponent;
                 break;
                 
             case 'lecture':
-                // initLectureComponent가 window.currentLectureComponent를 설정함
-                if (window.initLectureComponent) {
-                    window.initLectureComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initLectureComponent) throw new Error('initLectureComponent가 로드되지 않았습니다');
+                window.initLectureComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentLectureComponent;
                 break;
                 
             case 'arrange':
-                // initArrangeComponent가 window.currentArrangeComponent를 설정함
-                if (window.initArrangeComponent) {
-                    window.initArrangeComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initArrangeComponent) throw new Error('initArrangeComponent가 로드되지 않았습니다');
+                window.initArrangeComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentArrangeComponent;
                 break;
                 
             case 'email':
-                // initEmailComponent가 window.currentEmailComponent를 설정함
-                if (window.initEmailComponent) {
-                    window.initEmailComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스휴스 참조
+                if (!window.initEmailComponent) throw new Error('initEmailComponent가 로드되지 않았습니다');
+                window.initEmailComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentEmailComponent;
                 break;
                 
             case 'discussion':
-                // initDiscussionComponent가 window.currentDiscussionComponent를 설정함
-                if (window.initDiscussionComponent) {
-                    window.initDiscussionComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initDiscussionComponent) throw new Error('initDiscussionComponent가 로드되지 않았습니다');
+                window.initDiscussionComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentDiscussionComponent;
                 break;
                 
             case 'repeat':
-                // initRepeatComponent가 window.currentRepeatComponent를 설정함
-                if (window.initRepeatComponent) {
-                    window.initRepeatComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initRepeatComponent) throw new Error('initRepeatComponent가 로드되지 않았습니다');
+                window.initRepeatComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentRepeatComponent;
                 break;
                 
             case 'interview':
-                // initInterviewComponent가 window.currentInterviewComponent를 설정함
-                if (window.initInterviewComponent) {
-                    window.initInterviewComponent(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                // 전역 인스턴스 참조
+                if (!window.initInterviewComponent) throw new Error('initInterviewComponent가 로드되지 않았습니다');
+                window.initInterviewComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 this.currentComponentInstance = window.currentInterviewComponent;
                 break;
                 

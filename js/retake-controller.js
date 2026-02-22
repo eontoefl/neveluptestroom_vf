@@ -327,7 +327,40 @@ class RetakeController {
         // 진행률 업데이트 (FillBlanks는 범위 표시)
         this.updateProgress(questionInfo);
         
-        // 컴포넌트별 로드
+        // 🛡️ 재시도 로직 포함 컴포넌트 로드
+        const MAX_RETRIES = 2;
+        let lastError = null;
+        
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                if (attempt > 0) {
+                    console.log(`🔄 [RetakeController] 재시도 ${attempt}/${MAX_RETRIES}: ${questionInfo.componentType}`);
+                    this._showLoadingSpinner(questionInfo.componentType, attempt);
+                    await new Promise(r => setTimeout(r, 800)); // 재시도 전 잠시 대기
+                }
+                
+                // 컴포넌트별 로드
+                await this._loadComponentByType(questionInfo, wasCorrect);
+                
+                // 성공 → 로딩 스피너 제거 후 리턴
+                this._removeLoadingSpinner();
+                return;
+                
+            } catch (error) {
+                lastError = error;
+                console.error(`❌ [RetakeController] 컴포넌트 로드 실패 (시도 ${attempt + 1}):`, error);
+            }
+        }
+        
+        // 모든 재시도 실패 → 에러 UI 표시
+        console.error('❌ [RetakeController] 최종 로드 실패:', lastError);
+        this._showRetryUI(questionInfo, wasCorrect, lastError);
+    }
+    
+    /**
+     * 컴포넌트 타입별 실제 로드 (내부 헬퍼)
+     */
+    async _loadComponentByType(questionInfo, wasCorrect) {
         switch (questionInfo.componentType) {
             case 'fillblanks':
                 await this.loadFillBlanksRetake(questionInfo, wasCorrect);
@@ -341,7 +374,6 @@ class RetakeController {
             case 'academic':
                 await this.loadAcademicRetake(questionInfo, wasCorrect);
                 break;
-            // 🎧 리스닝 컴포넌트
             case 'response':
                 await this.loadResponseRetake(questionInfo, wasCorrect);
                 break;
@@ -355,8 +387,66 @@ class RetakeController {
                 await this.loadLectureRetake(questionInfo, wasCorrect);
                 break;
             default:
-                console.error('❌ 지원하지 않는 컴포넌트:', questionInfo.componentType);
+                throw new Error(`지원하지 않는 컴포넌트: ${questionInfo.componentType}`);
         }
+    }
+    
+    /**
+     * 🔄 로딩 스피너 표시
+     */
+    _showLoadingSpinner(componentType, attempt) {
+        this._removeLoadingSpinner();
+        const overlay = document.createElement('div');
+        overlay.id = 'retakeLoadingOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="text-align:center;">
+                <div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top:4px solid #4A90D9;border-radius:50%;animation:retakeSpinAnim 0.8s linear infinite;margin:0 auto 16px;"></div>
+                <p style="font-size:15px;color:#555;font-weight:600;">문제를 불러오는 중...</p>
+                <p style="font-size:13px;color:#999;margin-top:4px;">재시도 ${attempt}/2</p>
+            </div>
+            <style>@keyframes retakeSpinAnim{to{transform:rotate(360deg)}}</style>
+        `;
+        document.body.appendChild(overlay);
+    }
+    
+    /**
+     * 로딩 스피너 제거
+     */
+    _removeLoadingSpinner() {
+        const el = document.getElementById('retakeLoadingOverlay');
+        if (el) el.remove();
+        const el2 = document.getElementById('retakeRetryOverlay');
+        if (el2) el2.remove();
+    }
+    
+    /**
+     * ❌ 재시도 UI 표시 (모든 자동 재시도 실패 후)
+     */
+    _showRetryUI(questionInfo, wasCorrect, error) {
+        this._removeLoadingSpinner();
+        const overlay = document.createElement('div');
+        overlay.id = 'retakeRetryOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="text-align:center;max-width:360px;padding:32px;">
+                <div style="width:56px;height:56px;background:#FEF2F2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <span style="font-size:24px;">⚠️</span>
+                </div>
+                <h3 style="font-size:18px;font-weight:700;color:#333;margin:0 0 8px;">문제 로딩 실패</h3>
+                <p style="font-size:14px;color:#666;line-height:1.5;margin:0 0 24px;">네트워크 문제로 문제를 불러오지 못했습니다.<br>이전에 푼 답은 모두 저장되어 있습니다.</p>
+                <button id="retakeRetryBtn" style="padding:12px 32px;background:linear-gradient(135deg,#4A90D9,#5B6ABF);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+                    🔄 다시 시도
+                </button>
+                <p style="font-size:12px;color:#aaa;margin-top:12px;">${questionInfo.componentType} 컴포넌트</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        document.getElementById('retakeRetryBtn').addEventListener('click', () => {
+            overlay.remove();
+            this.loadComponent(questionInfo, wasCorrect);
+        });
     }
     
     /**
@@ -413,8 +503,7 @@ class RetakeController {
         
         // FillBlanks는 10문제씩 묶여 있음 - 한 세트 전체를 표시
         if (!window.FillBlanksComponent) {
-            console.error('❌ FillBlanksComponent가 로드되지 않았습니다');
-            return;
+            throw new Error('FillBlanksComponent가 로드되지 않았습니다');
         }
         
         // 1차 결과에서 해당 빈칸들의 답안 가져오기
@@ -481,8 +570,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Daily1)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -493,8 +581,7 @@ class RetakeController {
         console.log('  ✅ setId:', setIdString, ', localIndex:', localIndex);
         
         if (!window.Daily1Component) {
-            console.error('❌ Daily1Component가 로드되지 않았습니다');
-            return;
+            throw new Error('Daily1Component가 로드되지 않았습니다');
         }
         
         // 캐시 키 생성
@@ -546,8 +633,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Daily2)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -556,8 +642,7 @@ class RetakeController {
         const firstAttemptAnswer = this.getFirstAttemptAnswer(this.currentQuestionIndex);
         
         if (!window.Daily2Component) {
-            console.error('❌ Daily2Component가 로드되지 않았습니다');
-            return;
+            throw new Error('Daily2Component가 로드되지 않았습니다');
         }
         
         const cacheKey = `${questionInfo.componentType}_${setIdString}`;
@@ -592,8 +677,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Academic)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -602,8 +686,7 @@ class RetakeController {
         const firstAttemptAnswer = this.getFirstAttemptAnswer(this.currentQuestionIndex);
         
         if (!window.AcademicComponent) {
-            console.error('❌ AcademicComponent가 로드되지 않았습니다');
-            return;
+            throw new Error('AcademicComponent가 로드되지 않았습니다');
         }
         
         const cacheKey = `${questionInfo.componentType}_${setIdString}`;
@@ -645,8 +728,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Response)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -663,8 +745,7 @@ class RetakeController {
         
         // ResponseComponent 인스턴스 생성
         if (!window.ResponseComponent) {
-            console.error('❌ ResponseComponent가 로드되지 않았습니다');
-            return;
+            throw new Error('ResponseComponent가 로드되지 않았습니다');
         }
         
         const setIdString = firstAttemptComponent.setId;
@@ -718,8 +799,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Conver)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -734,8 +814,7 @@ class RetakeController {
         console.log('  📥 firstAttemptAnswer:', firstAttemptAnswer);
         
         if (!window.ConverComponent) {
-            console.error('❌ ConverComponent가 로드되지 않았습니다');
-            return;
+            throw new Error('ConverComponent가 로드되지 않았습니다');
         }
         
         const setIdString = firstAttemptComponent.setId;
@@ -789,8 +868,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Announcement)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -805,8 +883,7 @@ class RetakeController {
         console.log('  📥 firstAttemptAnswer:', firstAttemptAnswer);
         
         if (!window.AnnouncementComponent) {
-            console.error('❌ AnnouncementComponent가 로드되지 않았습니다');
-            return;
+            throw new Error('AnnouncementComponent가 로드되지 않았습니다');
         }
         
         const setIdString = firstAttemptComponent.setId;
@@ -863,8 +940,7 @@ class RetakeController {
         const componentData = this.getFirstAttemptComponent(this.currentQuestionIndex);
         
         if (!componentData) {
-            console.error('❌ 1차 결과 컴포넌트를 찾을 수 없습니다');
-            return;
+            throw new Error('1차 결과 컴포넌트를 찾을 수 없습니다 (Lecture)');
         }
         
         const firstAttemptComponent = componentData.component;
@@ -879,8 +955,7 @@ class RetakeController {
         console.log('  📥 firstAttemptAnswer:', firstAttemptAnswer);
         
         if (!window.LectureComponent) {
-            console.error('❌ LectureComponent가 로드되지 않았습니다');
-            return;
+            throw new Error('LectureComponent가 로드되지 않았습니다');
         }
         
         const setIdString = firstAttemptComponent.setId;
