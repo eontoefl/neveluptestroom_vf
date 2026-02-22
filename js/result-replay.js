@@ -222,10 +222,23 @@ function executeModuleReplay(taskType, componentResults, record, retakeData) {
     }
     
     const typeLabels = {
+        // Reading
         'fillblanks': '빈칸 채우기 (Fill in the Blanks)',
         'daily1': 'Daily Reading 1',
         'daily2': 'Daily Reading 2',
-        'academic': 'Academic Reading'
+        'academic': 'Academic Reading',
+        // Listening
+        'response': '응답 고르기 (Response)',
+        'conver': '대화 (Conversation)',
+        'announcement': '공지사항 (Announcement)',
+        'lecture': '강의 (Lecture)',
+        // Writing
+        'arrange': '단어 배열 (Word Arrange)',
+        'email': '이메일 작성 (Email Writing)',
+        'discussion': '토론 작성 (Discussion)',
+        // Speaking
+        'repeat': '따라 말하기 (Repeat)',
+        'interview': '인터뷰 (Interview)'
     };
     
     const hasRetake = Object.keys(retakeTypeMap).length > 0;
@@ -335,6 +348,43 @@ function loadModuleReplayType(type) {
     
     console.log(`📖 [ModuleReplay] ${type} 선택 — ${resultList.length}개 세트`);
     
+    // ★ 리스닝 유형인 경우 통합 해설 화면으로 이동
+    const listeningTypes = ['response', 'conver', 'announcement', 'lecture'];
+    const listeningPageMap = { 'response': 1, 'conver': 2, 'announcement': 3, 'lecture': 4 };
+    
+    if (listeningTypes.includes(type)) {
+        // 리스닝 해설: 기존 showListeningRetakeDetailPage 사용
+        setupListeningReplayState(window._moduleReplayData);
+        
+        // ★ 리플레이 모드에서 backToListeningRetakeResult를 타입 선택으로 이동하도록 오버라이드
+        window.backToListeningRetakeResult = function() {
+            document.querySelectorAll('.screen, .result-screen, .test-screen').forEach(s => s.style.display = 'none');
+            // 타입 선택 화면 다시 표시
+            const taskType = window._moduleReplayData?.record?.task_type || 'listening';
+            executeModuleReplay(taskType, Object.values(window._moduleReplayData.typeMap).flat(), window._moduleReplayData.record, window._moduleReplayData?.retakeData);
+        };
+        
+        // ★ 마지막 페이지에서 backToSchedule 호출 시 마이페이지로 이동
+        const origBackToSchedule = window.backToSchedule;
+        window.backToSchedule = function() {
+            if (window._isReplayMode) {
+                window.location.href = 'mypage.html';
+            } else if (origBackToSchedule) {
+                origBackToSchedule();
+            }
+        };
+        
+        const pageIndex = listeningPageMap[type];
+        if (typeof window.showListeningRetakeDetailPage === 'function') {
+            showListeningRetakeDetailPage(pageIndex);
+        } else {
+            alert('리스닝 해설 화면을 찾을 수 없습니다.');
+        }
+        
+        // 마이페이지 돌아가기 버튼 추가
+        addModuleReplayBackButton();
+        return; // 리스닝은 여기서 끝
+    } else {
     switch (type) {
         case 'fillblanks':
             sessionStorage.setItem('fillBlanksResults', JSON.stringify(resultList));
@@ -352,8 +402,18 @@ function loadModuleReplayType(type) {
             sessionStorage.setItem('academicResults', JSON.stringify(resultList));
             showAcademicResults();
             break;
+        case 'arrange':
+        case 'email':
+        case 'discussion':
+            showWritingReplaySummary(type, resultList, window._moduleReplayData);
+            break;
+        case 'repeat':
+        case 'interview':
+            showSpeakingReplaySummary(type, resultList, window._moduleReplayData);
+            break;
         default:
             alert('지원하지 않는 유형입니다: ' + type);
+    }
     }
     
     // 리플레이 모드에서 기존 "학습일정으로 돌아가기" 버튼 숨기기
@@ -461,10 +521,37 @@ function executeReplay(taskType, resultData, record) {
             break;
         }
         
-        // 리스닝은 추후 구현
-        case 'listening':
-            alert('리스닝 해설 다시보기는 곧 추가됩니다!');
+        case 'listening': {
+            // 리스닝: currentListeningResultData + listening_firstAttempt 복원 후 해설 진입
+            setupListeningReplayFromResultData(resultData, record);
+            
+            // ★ 마지막 페이지에서 backToSchedule → 마이페이지로
+            const origBackToSched = window.backToSchedule;
+            window.backToSchedule = function() {
+                if (window._isReplayMode) {
+                    window.location.href = 'mypage.html';
+                } else if (origBackToSched) {
+                    origBackToSched();
+                }
+            };
+            
+            if (typeof window.showListeningRetakeDetailPage === 'function') {
+                showListeningRetakeDetailPage(1);
+            } else {
+                alert('리스닝 해설 화면을 찾을 수 없습니다.');
+            }
             break;
+        }
+        
+        case 'writing': {
+            showWritingReplaySummary('all', resultData, { record });
+            break;
+        }
+        
+        case 'speaking': {
+            showSpeakingReplaySummary('all', resultData, { record });
+            break;
+        }
             
         default:
             alert(`${taskType} 해설 다시보기는 아직 지원하지 않습니다.`);
@@ -723,8 +810,15 @@ async function executeFallbackReplay(taskType, record) {
     }
     sessionStorage.setItem('currentTest', JSON.stringify(window.currentTest));
     
-    if (taskType !== 'reading') {
+    if (taskType !== 'reading' && taskType !== 'listening') {
         alert(`${taskType} 해설은 아직 원본 재구성을 지원하지 않습니다.`);
+        return;
+    }
+    
+    // 리스닝 fallback: 원본 재구성 없이 안내
+    if (taskType === 'listening') {
+        alert('이 리스닝 기록에는 상세 결과 데이터가 없습니다.\n다시 풀기를 통해 새로운 기록을 생성해주세요.');
+        window.location.href = 'mypage.html';
         return;
     }
     
@@ -1204,6 +1298,236 @@ function parseInteractiveWords(str) {
         }
         return null;
     }).filter(Boolean);
+}
+
+// ================================================
+// ★ 리스닝 해설 리플레이 헬퍼
+// ================================================
+
+/**
+ * 모듈 리플레이 데이터에서 리스닝 해설에 필요한 전역 상태를 복원
+ * @param {Object} moduleReplayData - window._moduleReplayData
+ */
+function setupListeningReplayState(moduleReplayData) {
+    if (!moduleReplayData) return;
+    
+    const { typeMap, retakeTypeMap, record, retakeData } = moduleReplayData;
+    
+    // 1. listening_firstAttempt 복원 (sessionStorage)
+    const allComponents = Object.values(typeMap).flat();
+    const firstAttemptData = {
+        sectionType: 'listening',
+        componentResults: allComponents,
+        totalCorrect: allComponents.reduce((sum, comp) => {
+            const answers = comp.answers || comp.results || [];
+            return sum + answers.filter(a => a.isCorrect).length;
+        }, 0),
+        totalQuestions: allComponents.reduce((sum, comp) => {
+            const answers = comp.answers || comp.results || [];
+            return sum + answers.length;
+        }, 0),
+        weekInfo: {
+            weekName: 'Week ' + (record.week || 1),
+            dayName: (record.day || '일') + '요일'
+        }
+    };
+    sessionStorage.setItem('listening_firstAttempt', JSON.stringify(firstAttemptData));
+    console.log('📖 [ListeningReplay] listening_firstAttempt 복원:', firstAttemptData.componentResults.length + '개 컴포넌트');
+    
+    // 2. currentListeningResultData 복원 (window)
+    if (retakeData) {
+        window.currentListeningResultData = retakeData;
+    } else {
+        // retakeData 없으면 1차 결과를 양쪽에 세팅
+        const results = allComponents.reduce((arr, comp) => {
+            const answers = comp.answers || comp.results || [];
+            return arr.concat(answers.map(a => a.isCorrect));
+        }, []);
+        window.currentListeningResultData = {
+            firstAttempt: { results: results, correct: results.filter(r => r).length, total: results.length },
+            secondAttempt: { results: results, correct: results.filter(r => r).length, total: results.length },
+            improvement: { scoreDiff: 0, percentDiff: 0, levelDiff: 0 },
+            secondAttemptAnswers: {}
+        };
+    }
+    console.log('📖 [ListeningReplay] currentListeningResultData 복원 완료');
+}
+
+/**
+ * executeReplay에서 호출 — resultData(componentResults 배열)로 리스닝 상태 복원
+ */
+function setupListeningReplayFromResultData(resultData, record) {
+    // resultData = firstAttemptResult.componentResults 또는 단일 결과
+    const components = Array.isArray(resultData) ? resultData : [resultData];
+    
+    const firstAttemptData = {
+        sectionType: 'listening',
+        componentResults: components,
+        totalCorrect: components.reduce((sum, comp) => {
+            const answers = comp.answers || comp.results || [];
+            return sum + answers.filter(a => a.isCorrect).length;
+        }, 0),
+        totalQuestions: components.reduce((sum, comp) => {
+            const answers = comp.answers || comp.results || [];
+            return sum + answers.length;
+        }, 0),
+        weekInfo: {
+            weekName: 'Week ' + (record.week || 1),
+            dayName: (record.day || '일') + '요일'
+        }
+    };
+    sessionStorage.setItem('listening_firstAttempt', JSON.stringify(firstAttemptData));
+    
+    // retakeData 는 replayExplanation()에서 이미 분리됨
+    const results = components.reduce((arr, comp) => {
+        const answers = comp.answers || comp.results || [];
+        return arr.concat(answers.map(a => a.isCorrect));
+    }, []);
+    
+    window.currentListeningResultData = {
+        firstAttempt: { results: results, correct: results.filter(r => r).length, total: results.length },
+        secondAttempt: { results: results, correct: results.filter(r => r).length, total: results.length },
+        improvement: { scoreDiff: 0, percentDiff: 0, levelDiff: 0 },
+        secondAttemptAnswers: {}
+    };
+    console.log('📖 [ListeningReplay] 단일 리플레이 상태 복원 완료');
+}
+
+// ================================================
+// ★ 라이팅 해설 리플레이 요약 화면
+// ================================================
+function showWritingReplaySummary(type, resultList, replayData) {
+    console.log('✏️ [WritingReplay] 요약 화면 표시:', type);
+    
+    const record = replayData?.record;
+    const components = type === 'all' ? resultList : [].concat(resultList);
+    
+    // 기존 선택 UI 제거
+    const selector = document.getElementById('moduleReplaySelector');
+    if (selector) selector.remove();
+    
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+    
+    const container = document.createElement('div');
+    container.id = 'writingReplaySummary';
+    container.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#f7f6fb;overflow-y:auto;font-family:"Pretendard Variable",-apple-system,sans-serif;';
+    
+    let html = `<div style="max-width:600px;margin:0 auto;padding:32px 20px 120px;">`;
+    html += `<div style="text-align:center;margin-bottom:24px;">
+        <div style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(135deg,#e8e0ff,#d4c8f5);border-radius:16px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-pen" style="font-size:24px;color:#6c5ce7;"></i></div>
+        <h2 style="font-size:20px;font-weight:800;color:#2d2252;margin:0 0 4px;">Writing 결과 요약</h2>
+        <p style="font-size:13px;color:#9a8fc0;margin:0;">Week ${record?.week||'?'} ${record?.day||''} · Module ${record?.module_number||'?'}</p>
+    </div>`;
+    
+    const comps = Array.isArray(components) ? components : [];
+    const typeLabelsLocal = { 'arrange': '단어 배열', 'email': '이메일 작성', 'discussion': '토론 작성' };
+    
+    comps.forEach((comp, idx) => {
+        const cType = comp.componentType || comp.type || 'unknown';
+        const label = typeLabelsLocal[cType] || cType;
+        const answers = comp.answers || comp.results || [];
+        const correct = answers.filter(a => a.isCorrect).length;
+        const total = answers.length;
+        const pct = total > 0 ? Math.round((correct/total)*100) : 0;
+        const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
+        
+        html += `<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid #ece7f6;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span style="font-size:15px;font-weight:700;color:#2d2252;">${label}</span>
+                <span style="font-size:15px;font-weight:700;color:${color};">${correct}/${total} (${pct}%)</span>
+            </div>`;
+        
+        // 개별 답안 표시
+        answers.forEach((a, qi) => {
+            const icon = a.isCorrect ? '✅' : '❌';
+            html += `<div style="padding:8px 12px;margin:4px 0;background:${a.isCorrect?'#f0fdf4':'#fef2f2'};border-radius:8px;font-size:13px;color:#333;">
+                ${icon} Q${qi+1}: ${a.userAnswer ? '"'+a.userAnswer+'"' : '-'} ${!a.isCorrect && a.correctAnswer ? '→ 정답: "'+a.correctAnswer+'"' : ''}
+            </div>`;
+        });
+        html += `</div>`;
+    });
+    
+    if (comps.length === 0) {
+        html += '<div style="text-align:center;padding:40px;color:#999;">결과 데이터가 없습니다.</div>';
+    }
+    
+    html += `</div>`;
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    addModuleReplayBackButton();
+}
+
+// ================================================
+// ★ 스피킹 해설 리플레이 요약 화면
+// ================================================
+function showSpeakingReplaySummary(type, resultList, replayData) {
+    console.log('🎤 [SpeakingReplay] 요약 화면 표시:', type);
+    
+    const record = replayData?.record;
+    const components = type === 'all' ? resultList : [].concat(resultList);
+    
+    // 기존 선택 UI 제거
+    const selector = document.getElementById('moduleReplaySelector');
+    if (selector) selector.remove();
+    
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+    
+    const container = document.createElement('div');
+    container.id = 'speakingReplaySummary';
+    container.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#f7f6fb;overflow-y:auto;font-family:"Pretendard Variable",-apple-system,sans-serif;';
+    
+    let html = `<div style="max-width:600px;margin:0 auto;padding:32px 20px 120px;">`;
+    html += `<div style="text-align:center;margin-bottom:24px;">
+        <div style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(135deg,#ffe8e0,#f5c8d4);border-radius:16px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-microphone" style="font-size:24px;color:#e74c6c;"></i></div>
+        <h2 style="font-size:20px;font-weight:800;color:#2d2252;margin:0 0 4px;">Speaking 결과 요약</h2>
+        <p style="font-size:13px;color:#9a8fc0;margin:0;">Week ${record?.week||'?'} ${record?.day||''} · Module ${record?.module_number||'?'}</p>
+    </div>`;
+    
+    const comps = Array.isArray(components) ? components : [];
+    const typeLabelsLocal = { 'repeat': '따라 말하기', 'interview': '인터뷰' };
+    
+    comps.forEach((comp, idx) => {
+        const cType = comp.componentType || comp.type || 'unknown';
+        const label = typeLabelsLocal[cType] || cType;
+        const answers = comp.answers || comp.results || [];
+        const correct = answers.filter(a => a.isCorrect).length;
+        const total = answers.length;
+        const pct = total > 0 ? Math.round((correct/total)*100) : 0;
+        const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
+        
+        html += `<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid #ece7f6;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:15px;font-weight:700;color:#2d2252;">${label}</span>
+                ${total > 0 ? '<span style="font-size:15px;font-weight:700;color:'+color+';">'+correct+'/'+total+' ('+pct+'%)</span>' : '<span style="font-size:13px;color:#999;">채점 없음</span>'}
+            </div>`;
+        
+        if (answers.length > 0) {
+            answers.forEach((a, qi) => {
+                const icon = a.isCorrect ? '✅' : '❌';
+                html += `<div style="padding:8px 12px;margin:4px 0;background:${a.isCorrect?'#f0fdf4':'#fef2f2'};border-radius:8px;font-size:13px;color:#333;">
+                    ${icon} Q${qi+1}
+                </div>`;
+            });
+        } else {
+            html += `<div style="padding:12px;color:#999;font-size:13px;text-align:center;">스피킹 컴포넌트의 상세 답안은 음성 기반이라 텍스트로 표시할 수 없습니다.</div>`;
+        }
+        html += `</div>`;
+    });
+    
+    if (comps.length === 0) {
+        html += '<div style="text-align:center;padding:40px;color:#999;">결과 데이터가 없습니다.</div>';
+    }
+    
+    html += `</div>`;
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    addModuleReplayBackButton();
 }
 
 // 전역 노출
