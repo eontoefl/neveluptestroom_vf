@@ -486,6 +486,10 @@ class RepeatComponent {
     startRepeatRecording(set, audioIndex, responseTime) {
         console.log(`🔴 녹음 시작: ${responseTime}초`);
         
+        // ★ 현재 녹음 상태 저장 (admin-skip용)
+        this._currentRecordingSet = set;
+        this._currentRecordingAudioIndex = audioIndex;
+        
         // beep 소리 재생 먼저 (Web Audio API 사용 - 매우 강하고 쨍한 beep)
         console.log('🔔 beep 소리 재생 시도...');
         

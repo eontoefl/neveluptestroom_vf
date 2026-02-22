@@ -568,6 +568,10 @@ class InterviewComponent {
     startInterviewRecording(set, questionIndex) {
         console.log(`🔴 녹음 시작: ${this.INTERVIEW_RESPONSE_TIME}초`);
         
+        // ★ 현재 녹음 상태 저장 (admin-skip용)
+        this._currentRecordingSet = set;
+        this._currentRecordingQuestionIndex = questionIndex;
+        
         // Nodding video 재생 (45초 동안 반복)
         const noddingVideoElement = document.getElementById('interviewVideo');
         if (noddingVideoElement && set.noddingVideo && set.noddingVideo !== 'PLACEHOLDER') {
