@@ -897,95 +897,7 @@ body {
     border-color: var(--primary-color);
 }
 
-/* Result Screen */
-.result-header {
-    text-align: center;
-    margin-bottom: 50px;
-}
-
-.result-header i {
-    font-size: 80px;
-    color: var(--warning-color);
-    margin-bottom: 20px;
-}
-
-.result-header h1 {
-    font-size: 42px;
-    margin-bottom: 10px;
-}
-
-.result-header p {
-    font-size: 18px;
-    color: var(--text-secondary);
-}
-
-.score-summary {
-    background: var(--surface-color);
-    padding: 50px;
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 40px;
-}
-
-.total-score {
-    text-align: center;
-    margin-bottom: 50px;
-}
-
-.total-score h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: var(--text-secondary);
-}
-
-.score-circle {
-    display: inline-block;
-    font-size: 64px;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.max-score {
-    font-size: 36px;
-    color: var(--text-secondary);
-}
-
-.section-scores {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-}
-
-.section-score {
-    text-align: center;
-    padding: 30px;
-    background: var(--bg-color);
-    border-radius: 12px;
-}
-
-.section-score i {
-    font-size: 48px;
-    color: var(--primary-color);
-    margin-bottom: 15px;
-}
-
-.section-score h3 {
-    font-size: 20px;
-    margin-bottom: 10px;
-}
-
-.section-score .score {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.result-actions {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
+/* Result Screen - 범용 스타일 제거됨 (개별 화면 CSS로 이관) */
 
 /* Responsive Design */
 @media (max-width: 1024px) {
@@ -1664,6 +1576,7 @@ body {
     position: absolute;
     top: 10px;
     right: 10px;
+    display: none; /* ::after '제출됨' 텍스트와 겹침 방지 - ::after만 표시 */
 }
 
 .section-card {
@@ -1677,7 +1590,7 @@ body {
 }
 
 .section-card.task-completed::after {
-    content: '제출됨';
+    content: '✓ 제출됨';
     position: absolute;
     top: 8px;
     right: 8px;
@@ -1787,125 +1700,7 @@ body {
     font-size: 16px;
 }
 
-/* 정답채점 화면 스타일 */
-.result-container {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 40px;
-}
-
-.result-header {
-    text-align: center;
-    margin-bottom: 50px;
-}
-
-.result-header h2 {
-    font-size: 32px;
-    color: var(--text-primary);
-    font-weight: 700;
-    margin-bottom: 30px;
-}
-
-.result-summary {
-    display: flex;
-    gap: 50px;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.result-score-card {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    border-radius: 24px;
-    padding: 36px 56px;
-    color: white;
-    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.score-label {
-    font-size: 15px;
-    opacity: 0.85;
-    margin-bottom: 12px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-}
-
-.score-value {
-    font-size: 52px;
-    font-weight: 800;
-    letter-spacing: -1px;
-}
-
-.result-stats {
-    display: flex;
-    gap: 40px;
-    background: #fafafa;
-    padding: 24px 36px;
-    border-radius: 20px;
-    border: 1px solid #e5e7eb;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.stat-label {
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.stat-value {
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.stat-value.correct {
-    color: #10b981;
-}
-
-.stat-value.incorrect {
-    color: #ef4444;
-}
-
-.result-details {
-    background: var(--surface-color);
-    border-radius: 16px;
-    padding: 30px;
-    margin-bottom: 40px;
-}
-
-.result-section {
-    margin-bottom: 40px;
-}
-
-.result-section:last-child {
-    margin-bottom: 0;
-}
-
-.result-section-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 28px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.result-section-title i {
-    color: #8b5cf6;
-    font-size: 20px;
-}
+/* 정답채점 화면 범용 스타일 제거됨 (개별 화면 CSS로 이관) */
 
 .result-passage {
     background: #fafafa;
