@@ -225,10 +225,7 @@
             ">
                 현재 사이트 <b>긴급 점검</b>이 진행 중입니다.<br>
                 <b style="color:#6c5ce7;">약 1시간 정도</b> 소요될 예정이며,
-                점검이 완료되면 <b>완료 안내 팝업으로</b> 바껴있을거예요!<br><br>
-                📅 <b>오늘(2/22 일요일) 과제 데드라인</b>은<br>
-                <b style="color:#6c5ce7;">2/23(월) 새벽 4시까지</b>로 자동 연장되니<br>
-                걱정하지 않으셔도 됩니다!<br><br>
+                점검이 완료되면 <b>완료 안내 메시지</b>를 보내드리겠습니다.<br><br>
                 그동안 <b>입문서 정독</b>이나 <b>단어 외우기</b>를 해주시면 좋습니다! 📖<br><br>
                 조금만 기다려주세요 🙏
             </div>
@@ -250,12 +247,27 @@
         }
     </style>
     <script>
-        // 마이페이지에서 넘어온 경우 (해설보기/다시풀기) 공지 팝업 자동 닫기
+        // 마이페이지에서 넘어온 경우 (해설보기/다시풀기) → 화면 숨기고 로딩 표시
         (function() {
             var params = new URLSearchParams(window.location.search);
             if (params.get('replay') === 'true' || params.get('retry') === 'true') {
+                // 공지 팝업 숨기기
                 var overlay = document.getElementById('noticeOverlay');
                 if (overlay) overlay.style.display = 'none';
+                
+                // 로딩 오버레이 생성 (화면 깜빡임 방지)
+                var loadingDiv = document.createElement('div');
+                loadingDiv.id = 'replayLoadingOverlay';
+                loadingDiv.style.cssText = 'position:fixed; inset:0; z-index:99999; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center;';
+                var msg = params.get('replay') === 'true' ? '해설을 불러오고 있습니다...' : '과제를 준비하고 있습니다...';
+                loadingDiv.innerHTML = '<div style="width:40px;height:40px;border:3px solid #e8e0ff;border-top-color:#6c5ce7;border-radius:50%;animation:replaySpin 0.8s linear infinite;"></div><p style="margin-top:16px;color:#6c5ce7;font-size:14px;font-weight:600;">' + msg + '</p><style>@keyframes replaySpin{to{transform:rotate(360deg)}}</style>';
+                document.body.appendChild(loadingDiv);
+                
+                // 준비 완료 후 로딩 제거 (result-replay.js가 처리)
+                window._removeReplayLoading = function() {
+                    var el = document.getElementById('replayLoadingOverlay');
+                    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function(){ el.remove(); }, 300); }
+                };
             }
         })();
     </script>
