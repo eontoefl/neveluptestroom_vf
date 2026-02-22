@@ -119,7 +119,51 @@
             }
         });
         
+        // 3. ★ 스피킹 타이머 강제 스킵 (Repeat + Interview만)
+        skipSpeakingTimers();
+        
         hideSkip();
+    }
+    
+    // ========================================
+    // 스피킹 타이머 강제 스킵
+    // ========================================
+    function skipSpeakingTimers() {
+        // Repeat 컴포넌트 타이머
+        var repeatComp = window.currentRepeatComponent;
+        if (repeatComp && repeatComp.repeatTimer) {
+            console.log('⏭ [Admin] Repeat 타이머 스킵');
+            clearInterval(repeatComp.repeatTimer);
+            repeatComp.repeatTimer = null;
+            // 현재 녹음 세트/인덱스를 찾아서 stopRepeatRecording 호출
+            if (typeof repeatComp.stopRepeatRecording === 'function') {
+                try {
+                    var set = repeatComp.currentSet;
+                    var audioIdx = repeatComp.currentNarration || 0;
+                    repeatComp.stopRepeatRecording(set, audioIdx);
+                } catch(e) {
+                    console.log('  → Repeat 녹음 중지 실패:', e.message);
+                }
+            }
+        }
+        
+        // Interview 컴포넌트 타이머
+        var interviewComp = window.currentInterviewComponent;
+        if (interviewComp && interviewComp.interviewTimer) {
+            console.log('⏭ [Admin] Interview 타이머 스킵');
+            clearInterval(interviewComp.interviewTimer);
+            interviewComp.interviewTimer = null;
+            // stopInterviewRecording 호출
+            if (typeof interviewComp.stopInterviewRecording === 'function') {
+                try {
+                    var iSet = interviewComp.currentSet;
+                    var qIdx = interviewComp.currentQuestion || 0;
+                    interviewComp.stopInterviewRecording(iSet, qIdx);
+                } catch(e) {
+                    console.log('  → Interview 녹음 중지 실패:', e.message);
+                }
+            }
+        }
     }
     
     // ========================================
@@ -178,6 +222,24 @@
                 showSkip('SKIP Video');
             }
             return originalVideoPlay.apply(this, arguments);
+        };
+        
+        // ★ 스피킹 녹음 타이머 감지 (녹음 UI가 보이면 Skip 표시)
+        const origSetInterval = window.setInterval;
+        window.setInterval = function(fn, delay) {
+            var id = origSetInterval.apply(window, arguments);
+            if (isAdmin() && delay === 1000) {
+                // 스피킹 타이머 (1초 간격)인지 체크
+                setTimeout(function() {
+                    var repeatUI = document.getElementById('repeatRecordingUI');
+                    var interviewUI = document.getElementById('interviewRecordingUI');
+                    if ((repeatUI && repeatUI.style.display === 'flex') || 
+                        (interviewUI && interviewUI.style.display === 'flex')) {
+                        showSkip('SKIP Timer');
+                    }
+                }, 100);
+            }
+            return id;
         };
         
         console.log('🔧 [Admin] Skip 버튼 초기화 완료');
