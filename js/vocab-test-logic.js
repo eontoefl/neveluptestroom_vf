@@ -329,9 +329,31 @@ async function showVocabTestResult() {
         const synonymResults = [];
         let allCorrect = true;
         
+        // 학생 답안을 배열로 수집
+        const userAnswers = [];
+        for (let i = 0; i < item.synonyms.length; i++) {
+            userAnswers.push((userAnswer[i] || '').trim().toLowerCase());
+        }
+        
+        // 정답 배열 (소문자)
+        const correctAnswers = item.synonyms.map(s => s.toLowerCase());
+        
+        // 결과 생성: 순서 무관 채점 (중복 방지)
+        const usedCorrectIndices = new Set();
+        
         item.synonyms.forEach((correctSynonym, synIndex) => {
-            const userSynonym = (userAnswer[synIndex] || '').trim().toLowerCase();
-            const isCorrect = userSynonym === correctSynonym.toLowerCase();
+            const userSynonym = (userAnswer[synIndex] || '').trim();
+            const userLower = userSynonym.toLowerCase();
+            
+            // 이 칸의 답이 아직 매칭 안 된 정답 중 하나와 일치하는지 확인
+            let isCorrect = false;
+            for (let cIdx = 0; cIdx < correctAnswers.length; cIdx++) {
+                if (!usedCorrectIndices.has(cIdx) && userLower === correctAnswers[cIdx]) {
+                    usedCorrectIndices.add(cIdx);
+                    isCorrect = true;
+                    break;
+                }
+            }
             
             if (!isCorrect) {
                 allCorrect = false;
@@ -359,10 +381,10 @@ async function showVocabTestResult() {
     
     // ── Supabase에 보카 학습 기록 저장 ──
     try {
-    await saveVocabRecord(correctCount, totalCount, percentage);
-} catch(e) {
-    console.error('📝 [Vocab] 저장 에러:', e);
-}
+        await saveVocabRecord(correctCount, totalCount, percentage);
+    } catch(e) {
+        console.error('📝 [Vocab] 저장 에러:', e);
+    }
     
     // 결과 렌더링
     renderVocabResult(results, correctCount, totalCount, percentage);
@@ -482,8 +504,19 @@ function cleanupVocabTest() {
 // Supabase 보카 기록 저장
 // ========================================
 async function saveVocabRecord(correctCount, totalCount, percentage) {
+    if (window._deadlinePassedMode) {
+        console.log('📝 [Vocab] 마감 지난 과제 — 저장 생략');
+        return;
+    }
+    console.log('📝 [Vocab] saveVocabRecord 시작:', correctCount, '/', totalCount, '=', percentage + '%');
+    
     var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
-    if (!user || !user.id || user.id === 'dev-user-001') {
+    if (!user || !user.id) {
+        console.log('📝 [Vocab] 사용자 없음 — 저장 생략');
+        return;
+    }
+    
+    if (user.id === 'dev-user-001') {
         console.log('📝 [Vocab] 개발 모드 — 저장 생략');
         return;
     }
