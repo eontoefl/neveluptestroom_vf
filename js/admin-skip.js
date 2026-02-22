@@ -91,6 +91,10 @@
     function doSkip() {
         console.log('⏭ [Admin] Skip 실행');
         
+        // ★ skipMode 켜기 - 이후 setTimeout 딜레이를 0으로
+        window.__skipMode = true;
+        setTimeout(function() { window.__skipMode = false; }, 3000);
+        
         // 1. 현재 재생 중인 미디어 정지 + ended 이벤트 발생
         if (currentMediaElement) {
             try {
@@ -123,6 +127,17 @@
     // ========================================
     function initAdminSkip() {
         createSkipButton();
+        
+        // ★ setTimeout 래핑 - admin Skip 후 딜레이를 즉시 실행
+        const originalSetTimeout = window.setTimeout;
+        window.__skipMode = false;
+        window.setTimeout = function(fn, delay) {
+            if (isAdmin() && window.__skipMode && typeof fn === 'function' && delay > 200) {
+                console.log('⏭ [Admin] setTimeout ' + delay + 'ms → 즉시 실행');
+                return originalSetTimeout.call(window, fn, 0);
+            }
+            return originalSetTimeout.apply(window, arguments);
+        };
         
         // Audio.prototype.play 래핑
         const originalAudioPlay = Audio.prototype.play;
