@@ -622,40 +622,43 @@ var ErrorNote = {
                 return;
             }
 
-            // 현재 진행 중인 과제의 study_record를 찾아서 업데이트
-            if (typeof supabaseSelect === 'function') {
+            // ★ 1순위: AuthMonitor._studyRecordId 직접 사용 (가장 정확)
+            var recordId = (window.AuthMonitor && AuthMonitor._studyRecordId) ? AuthMonitor._studyRecordId : null;
+            
+            // ★ 2순위: SELECT 폴백 (AuthMonitor가 없거나 ID가 없을 때)
+            if (!recordId && typeof supabaseSelect === 'function') {
+                console.log('📝 [ErrorNote] AuthMonitor ID 없음, SELECT 폴백');
                 var query = 'select=id' +
                     '&user_id=eq.' + user.id + 
                     '&task_type=eq.' + this._sectionType + 
-                    '&module_number=eq.' + this._moduleNumber +
                     '&order=completed_at.desc&limit=1';
                 console.log('📝 [ErrorNote] SELECT 쿼리:', query);
                 
                 var records = await supabaseSelect('tr_study_records', query);
-                console.log('📝 [ErrorNote] SELECT 결과:', records ? records.length + '건' : 'null', records);
-
+                console.log('📝 [ErrorNote] SELECT 결과:', records ? records.length + '건' : 'null');
                 if (records && records.length > 0) {
-                    var recordId = records[0].id;
-                    var updateData = {
-                        error_note_text: text,
-                        error_note_word_count: wordCount
-                    };
-                    // Speaking 파일 경로 저장
-                    if (file1Path || file2Path) {
-                        updateData.speaking_file_1 = file1Path || null;
-                        updateData.speaking_file_2 = file2Path || null;
-                    }
-                    console.log('📝 [ErrorNote] UPDATE 실행 - recordId:', recordId, 'data:', updateData);
-                    var updateResult = await supabaseUpdate('tr_study_records', 'id=eq.' + recordId, updateData);
-                    console.log('📝 [ErrorNote] UPDATE 결과:', updateResult);
-                    console.log('📝 [ErrorNote] Supabase 저장 완료, record:', recordId);
-                    if (file1Path) console.log('📎 1차 파일:', file1Path);
-                    if (file2Path) console.log('📎 2차 파일:', file2Path);
-                } else {
-                    console.warn('📝 [ErrorNote] study_record를 찾을 수 없음 - query:', query);
+                    recordId = records[0].id;
                 }
+            }
+
+            if (recordId) {
+                var updateData = {
+                    error_note_text: text,
+                    error_note_word_count: wordCount
+                };
+                // Speaking 파일 경로 저장
+                if (file1Path || file2Path) {
+                    updateData.speaking_file_1 = file1Path || null;
+                    updateData.speaking_file_2 = file2Path || null;
+                }
+                console.log('📝 [ErrorNote] UPDATE 실행 - recordId:', recordId, 'data:', updateData);
+                var updateResult = await supabaseUpdate('tr_study_records', 'id=eq.' + recordId, updateData);
+                console.log('📝 [ErrorNote] UPDATE 결과:', updateResult);
+                console.log('📝 [ErrorNote] Supabase 저장 완료, record:', recordId);
+                if (file1Path) console.log('📎 1차 파일:', file1Path);
+                if (file2Path) console.log('📎 2차 파일:', file2Path);
             } else {
-                console.warn('📝 [ErrorNote] supabaseSelect 함수 없음');
+                console.warn('📝 [ErrorNote] study_record를 찾을 수 없음');
             }
         } catch (e) {
             console.error('📝 [ErrorNote] 저장 실패:', e);
