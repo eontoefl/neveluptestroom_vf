@@ -356,27 +356,7 @@ body {
 .grass-wrap { margin-top: 4px; }
 
 .plan-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.plan-tab {
-  padding: 6px 16px;
-  border: 1.5px solid var(--border);
-  border-radius: 20px;
-  background: #fff;
-  font-size: .8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: default;
-  transition: all .2s;
-  opacity: 0.5;
-}
-.plan-tab.active {
-  background: var(--signature);
-  border-color: var(--signature);
-  color: #fff;
-  opacity: 1;
+  display: none;
 }
 
 .grass-grid {
