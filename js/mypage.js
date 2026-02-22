@@ -590,13 +590,7 @@ function setupPlanTabs() {
     const programType = mpUser.programType || 'standard';
 
     // 유저 프로그램에 맞는 탭을 활성화 (클릭 전환 없음 – disabled 처리)
-    const tabs = document.querySelectorAll('.plan-tab');
-    tabs.forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.dataset.plan === programType) {
-            tab.classList.add('active');
-        }
-    });
+    
 
     // 해당 잔디 그리드만 표시
     document.getElementById('grass-fast').style.display = programType === 'fast' ? '' : 'none';
