@@ -229,7 +229,25 @@ function highlightAnnouncementScript(scriptText, highlights) {
     console.log('  → highlights 타입:', typeof highlights);
     console.log('  → highlights 길이:', highlights ? highlights.length : 'null/undefined');
     
-    if (!highlights || highlights.length === 0) {
+    // ★ highlights가 문자열이면 파싱
+    if (typeof highlights === 'string' && highlights.length > 0) {
+        try {
+            highlights = highlights.split('##').map(function(item) {
+                var parts = item.split('::');
+                return {
+                    word: (parts[0] || '').trim(),
+                    translation: (parts[1] || '').trim(),
+                    explanation: (parts[2] || '').trim()
+                };
+            });
+            console.log('  ✅ highlights 문자열 파싱 완료:', highlights.length, '개');
+        } catch(e) {
+            console.log('  ❌ highlights 파싱 실패:', e.message);
+            highlights = [];
+        }
+    }
+    
+    if (!highlights || !Array.isArray(highlights) || highlights.length === 0) {
         console.log('  ⚠️ highlights 없음 - 원본 텍스트 반환');
         return escapeHtml(scriptText);
     }
