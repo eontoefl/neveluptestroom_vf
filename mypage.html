@@ -276,12 +276,13 @@
               <th>과제</th>
               <th>점수</th>
               <th>노트</th>
+              <th>해설</th>
             </tr>
           </thead>
           <tbody id="recordTableBody">
             <!-- JS로 동적 렌더링 -->
             <tr>
-              <td colspan="4" style="text-align:center; padding:32px; color:var(--text-muted);">
+              <td colspan="5" style="text-align:center; padding:32px; color:var(--text-muted);">
                 <i class="fa-solid fa-spinner fa-spin"></i> 데이터를 불러오는 중...
               </td>
             </tr>
@@ -307,6 +308,8 @@
 
   <!-- Supabase 클라이언트 (공유) -->
   <script src="js/supabase-client.js"></script>
+  <!-- 해설 다시보기 -->
+  <script src="js/result-replay.js?v=20260222_002"></script>
   <!-- 마이페이지 전용 로직 -->
   <script src="js/mypage.js"></script>
 </body>
