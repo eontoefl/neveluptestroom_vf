@@ -96,7 +96,8 @@ var ErrorNote = {
                 '</div>' +
                 '<div class="error-note-footer">' +
                     '<div class="error-note-notice">' +
-                        '<i class="fas fa-info-circle"></i> 20단어 이상 작성 시 인정됩니다' +
+                        '<i class="fas fa-info-circle"></i> ' +
+                    '<span class="word-count-display" id="errorNoteWordCount">0</span> / 20단어 이상 작성 시 인정' +
                     '</div>' +
                     '<button id="errorNoteSubmitBtn" class="error-note-submit-btn" onclick="ErrorNote.handleSubmit()">' +
                         '<i class="fas fa-paper-plane"></i> 제출' +
@@ -112,6 +113,13 @@ var ErrorNote = {
 
         // 이벤트 연결
         var textarea = document.getElementById('errorNoteTextarea');
+
+        // 실시간 단어 수 카운트
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                ErrorNote.updateWordCount();
+            });
+        }
 
         // 드래그로 패널 크기 조절
         var resizeHandle = document.getElementById('errorNoteResizeHandle');
@@ -235,15 +243,12 @@ var ErrorNote = {
         countEl.textContent = count;
 
         // 20 이상이면 초록색, 미만이면 빨간색
-        var countWrapper = countEl.parentElement;
-        if (countWrapper) {
-            if (count >= 20) {
-                countWrapper.classList.add('word-count-ok');
-                countWrapper.classList.remove('word-count-low');
-            } else {
-                countWrapper.classList.add('word-count-low');
-                countWrapper.classList.remove('word-count-ok');
-            }
+        if (count >= 20) {
+            countEl.style.color = '#22c55e';
+            countEl.style.fontWeight = '700';
+        } else {
+            countEl.style.color = '#ef4444';
+            countEl.style.fontWeight = '700';
         }
     },
 
@@ -549,8 +554,8 @@ var ErrorNote = {
             if (typeof supabaseSelect === 'function') {
                 var records = await supabaseSelect(
                     'tr_study_records',
-                    'id',
-                    'user_id=eq.' + user.id + 
+                    'select=id' +
+                    '&user_id=eq.' + user.id + 
                     '&task_type=eq.' + this._sectionType + 
                     '&module_number=eq.' + this._moduleNumber +
                     '&order=completed_at.desc&limit=1'
