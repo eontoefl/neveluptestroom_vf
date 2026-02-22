@@ -116,9 +116,9 @@ var AuthMonitor = {
     // ========================================
     saveRecords: async function() {
         if (window._deadlinePassedMode) {
-    console.log('🔒 [Auth] 마감 지난 과제 — 저장 생략');
-    return;
-}
+            console.log('🔒 [Auth] 마감 지난 과제 — 저장 생략');
+            return;
+        }
         var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
         if (!user || !user.id || user.id === 'dev-user-001') {
             console.log('🔒 [Auth] 개발 모드 — 저장 생략');
@@ -150,14 +150,30 @@ var AuthMonitor = {
 
         var score = 0, total = 0, timeSpent = 0, detail = {};
         if (firstResult) {
-            score = firstResult.correctCount || 0;
             total = firstResult.totalQuestions || 0;
-            timeSpent = firstResult.totalTimeSpent || 0;
+            timeSpent = firstResult.totalTimeSpent || firstResult.timeSpent || 0;
+
+            // componentResults에서 answers 배열 기반으로 정확히 계산
             if (firstResult.componentResults) {
+                var totalCorrect = 0;
                 firstResult.componentResults.forEach(function(comp) {
                     var key = comp.componentType + '_' + (comp.setId || '1');
-                    detail[key] = (comp.correctCount || 0) + '/' + (comp.totalQuestions || comp.questionsPerSet || 0);
+                    var answerArray = comp.answers || comp.results || [];
+                    var compTotal = answerArray.length || comp.totalQuestions || comp.questionsPerSet || 0;
+                    var compCorrect = 0;
+                    if (Array.isArray(answerArray)) {
+                        compCorrect = answerArray.filter(function(a) { return a.isCorrect; }).length;
+                    }
+                    // fallback: 컴포넌트에 correctCount가 직접 있으면 사용
+                    if (compCorrect === 0 && comp.correctCount) {
+                        compCorrect = comp.correctCount;
+                    }
+                    detail[key] = compCorrect + '/' + compTotal;
+                    totalCorrect += compCorrect;
                 });
+                score = totalCorrect;
+            } else {
+                score = firstResult.correctCount || 0;
             }
         }
 
