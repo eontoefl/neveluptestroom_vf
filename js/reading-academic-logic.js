@@ -231,25 +231,10 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리
+    // \n 처리 + 번역 기반 문장 분리 - 단락(\n\n) 기준 통일
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    
-    let sentences;
-    if (translations.length > 0) {
-        const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
-        if (paragraphs.length === translations.length) {
-            sentences = paragraphs;
-        } else {
-            sentences = cleanContent.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
-            if (sentences.length !== translations.length) {
-                sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
-            }
-        }
-    } else {
-        sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
-        if (sentences.length <= 1) sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
-    }
+    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
@@ -257,9 +242,9 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
         let highlightedSentence = sentence.trim().replace(/\n/g, '<br>');
         if (setResult.passage.interactiveWords) {
             setResult.passage.interactiveWords.forEach(wordObj => {
-                const regex = new RegExp(`\\b${wordObj.word}\\b`, 'gi');
+                const regex = new RegExp(`(?<![\w-])${wordObj.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\w-])`, 'gi');
                 highlightedSentence = highlightedSentence.replace(regex, 
-                    `<span class="interactive-word" data-word="${wordObj.word}" data-translation="${wordObj.translation}" data-explanation="${wordObj.explanation}">${wordObj.word}</span>`
+                    (match) => `<span class="interactive-word" data-word="${wordObj.word}" data-translation="${wordObj.translation}" data-explanation="${wordObj.explanation}">${match}</span>`
                 );
             });
         }
@@ -267,7 +252,7 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
         html += `
             <div class="sentence-pair">
                 <div class="sentence-original">${highlightedSentence}</div>
-                <div class="sentence-translation">${translation}</div>
+                ${translation && translation.trim() ? `<div class="sentence-translation">${translation}</div>` : ''}
             </div>
         `;
     });
@@ -471,25 +456,10 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리
+    // \n 처리 + 번역 기반 문장 분리 - 단락(\n\n) 기준 통일
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    
-    let sentences;
-    if (translations.length > 0) {
-        const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
-        if (paragraphs.length === translations.length) {
-            sentences = paragraphs;
-        } else {
-            sentences = cleanContent.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
-            if (sentences.length !== translations.length) {
-                sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
-            }
-        }
-    } else {
-        sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
-        if (sentences.length <= 1) sentences = cleanContent.match(/[^.!?]+[.!?]+/g) || [cleanContent];
-    }
+    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
@@ -497,9 +467,9 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
         let highlightedSentence = sentence.trim().replace(/\n/g, '<br>');
         if (setResult.passage.interactiveWords) {
             setResult.passage.interactiveWords.forEach(wordObj => {
-                const regex = new RegExp(`\\b${wordObj.word}\\b`, 'gi');
+                const regex = new RegExp(`(?<![\w-])${wordObj.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\w-])`, 'gi');
                 highlightedSentence = highlightedSentence.replace(regex, 
-                    `<span class="interactive-word" data-word="${wordObj.word}" data-translation="${wordObj.translation}" data-explanation="${wordObj.explanation}">${wordObj.word}</span>`
+                    (match) => `<span class="interactive-word" data-word="${wordObj.word}" data-translation="${wordObj.translation}" data-explanation="${wordObj.explanation}">${match}</span>`
                 );
             });
         }
@@ -507,7 +477,7 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
         html += `
             <div class="sentence-pair">
                 <div class="sentence-original">${highlightedSentence}</div>
-                <div class="sentence-translation">${translation}</div>
+                ${translation && translation.trim() ? `<div class="sentence-translation">${translation}</div>` : ''}
             </div>
         `;
     });

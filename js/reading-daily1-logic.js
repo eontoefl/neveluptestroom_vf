@@ -215,25 +215,8 @@ function renderDaily1SetResultOriginal(setResult, setIndex) {
         .replace(/\\n/g, '\n')  // escaped \n → real newline
         .replace(/\r\n/g, '\n');
     
-    // 번역 개수 기반 문장 분리
-    let sentences;
-    if (translations.length > 0) {
-        // 번역 배열이 있으면 그 개수에 맞춰 분리
-        // 1순위: \n\n (단락 구분)으로 분리
-        const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
-        if (paragraphs.length === translations.length) {
-            sentences = paragraphs;
-        } else {
-            // 2순위: 문장 끝(. ! ?) + 줄바꿈 또는 공백 기준 분리 (이메일 주소 보호)
-            sentences = cleanContent.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
-            // 그래도 안 맞으면 기존 방식 폴백
-            if (sentences.length !== translations.length) {
-                sentences = cleanContent.split(/(?<=[.!?])\s+/).filter(s => s.trim());
-            }
-        }
-    } else {
-        sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
-    }
+    // 번역 개수 기반 문장 분리 - 단락(\n\n) 기준 통일
+    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
     
     // 문장별 해석 HTML 생성
     let sentencesHTML = '';
@@ -243,14 +226,14 @@ function renderDaily1SetResultOriginal(setResult, setIndex) {
         // 문장 내 \n → <br> 변환 + 인터랙티브 단어 하이라이트
         let sentenceHTML = escapeHtml(sentence).replace(/\n/g, '<br>');
         interactiveWords.forEach(wordData => {
-            const regex = new RegExp(`\\b(${wordData.word})\\b`, 'gi');
-            sentenceHTML = sentenceHTML.replace(regex, `<span class="interactive-word" data-translation="${escapeHtml(wordData.translation)}" data-explanation="${escapeHtml(wordData.explanation)}">$1</span>`);
+            const regex = new RegExp(`(?<![\\w-])${wordData.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`, 'gi');
+            sentenceHTML = sentenceHTML.replace(regex, (match) => `<span class="interactive-word" data-translation="${escapeHtml(wordData.translation)}" data-explanation="${escapeHtml(wordData.explanation)}">${match}</span>`);
         });
         
         sentencesHTML += `
             <div class="sentence-pair">
                 <div class="sentence-original">${sentenceHTML}</div>
-                ${translation ? `<div class="sentence-translation">${escapeHtml(translation)}</div>` : ''}
+                ${translation && translation.trim() ? `<div class="sentence-translation">${escapeHtml(translation)}</div>` : ''}
             </div>
         `;
     });
@@ -356,21 +339,8 @@ function renderDaily1SetResult(setResult, secondAttemptData, firstResults, secon
         .replace(/\\n/g, '\n')  // escaped \n → real newline
         .replace(/\r\n/g, '\n');
     
-    // 번역 개수 기반 문장 분리
-    let sentences;
-    if (translations.length > 0) {
-        const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
-        if (paragraphs.length === translations.length) {
-            sentences = paragraphs;
-        } else {
-            sentences = cleanContent.split(/(?<=[.!?])(?:\s*\n|\s{2,})/).filter(s => s.trim());
-            if (sentences.length !== translations.length) {
-                sentences = cleanContent.split(/(?<=[.!?])\s+/).filter(s => s.trim());
-            }
-        }
-    } else {
-        sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
-    }
+    // 번역 개수 기반 문장 분리 - 단락(\n\n) 기준 통일
+    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
     
     // 문장별 해석 HTML 생성
     let sentencesHTML = '';
@@ -380,14 +350,14 @@ function renderDaily1SetResult(setResult, secondAttemptData, firstResults, secon
         // 문장 내 \n → <br> 변환 + 인터랙티브 단어 하이라이트
         let sentenceHTML = escapeHtml(sentence).replace(/\n/g, '<br>');
         interactiveWords.forEach(wordData => {
-            const regex = new RegExp(`\\b(${wordData.word})\\b`, 'gi');
-            sentenceHTML = sentenceHTML.replace(regex, `<span class="interactive-word" data-translation="${escapeHtml(wordData.translation)}" data-explanation="${escapeHtml(wordData.explanation)}">$1</span>`);
+            const regex = new RegExp(`(?<![\\w-])${wordData.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`, 'gi');
+            sentenceHTML = sentenceHTML.replace(regex, (match) => `<span class="interactive-word" data-translation="${escapeHtml(wordData.translation)}" data-explanation="${escapeHtml(wordData.explanation)}">${match}</span>`);
         });
         
         sentencesHTML += `
             <div class="sentence-pair">
                 <div class="sentence-original">${sentenceHTML}</div>
-                ${translation ? `<div class="sentence-translation">${escapeHtml(translation)}</div>` : ''}
+                ${translation && translation.trim() ? `<div class="sentence-translation">${escapeHtml(translation)}</div>` : ''}
             </div>
         `;
     });
