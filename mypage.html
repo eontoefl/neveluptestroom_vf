@@ -308,5 +308,15 @@
   <script src="js/result-replay.js?v=20260222_003"></script>
   <!-- 마이페이지 전용 로직 -->
   <script src="js/mypage.js"></script>
+
+  <!-- 이동 중 로딩 오버레이 -->
+  <div id="loadingOverlay" style="
+    display:none; position:fixed; inset:0; z-index:99999;
+    background:rgba(255,255,255,.92);
+    flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  ">
+    <i class="fa-solid fa-spinner fa-spin" style="font-size:32px; color:#6c5ce7;"></i>
+    <p id="loadingMessage" style="font-size:15px; font-weight:600; color:#333;">이동 중...</p>
+  </div>
 </body>
 </html>
