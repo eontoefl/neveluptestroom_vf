@@ -347,14 +347,9 @@ function renderGrass() {
     const programType = mpUser.programType || 'standard';
     const gridId = programType === 'fast' ? 'grass-fast' : 'grass-standard';
 
-    // ★ 시작 전이면 잔디 업데이트 안 함 (모두 empty 유지)
-    if (isBeforeStart()) {
-        console.log('📊 [MyPage] 시작 전 – 잔디 전부 empty 유지');
-        return;
-    }
-
+    // ★ 시작 전이어도 과제를 풀었으면 잔디에 표시
     const completedMap = buildCompletedMap();
-    const currentDay = getCurrentScheduleDay();
+    const currentDay = isBeforeStart() ? 0 : getCurrentScheduleDay(); // 시작 전이면 fail 처리 안 함
 
     document.querySelectorAll(`#${gridId} .g`).forEach(cell => {
         const dayNum = parseInt(cell.dataset.day);
