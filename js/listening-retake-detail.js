@@ -7,26 +7,67 @@
 function showListeningRetakeDetailPage(pageIndex) {
     console.log(`📄 [리스닝 세부 결과] 페이지 ${pageIndex} 표시`);
     
-    // 모든 화면 숨기기
+    // ★ 데이터 사전 검증 - 없으면 화면을 숨기지 않고 즉시 복귀
+    const resultData = window.currentListeningResultData;
+    const firstAttemptStr = sessionStorage.getItem('listening_firstAttempt');
+    let firstAttemptData = {};
+    try { firstAttemptData = JSON.parse(firstAttemptStr || '{}'); } catch(e) {}
+    
+    if (!resultData) {
+        console.error('❌ [리스닝 세부 결과] currentListeningResultData가 없습니다');
+        alert('결과 데이터가 없습니다. 2차 결과 화면으로 돌아갑니다.');
+        backToListeningRetakeResult();
+        return;
+    }
+    
+    if (!firstAttemptData.componentResults) {
+        console.warn('⚠️ [리스닝 세부 결과] listening_firstAttempt에 componentResults 없음 - FlowController에서 복원 시도');
+        // FlowController의 firstAttemptResult에서 복원
+        const fc = window.FlowController;
+        if (fc && fc.firstAttemptResult && fc.firstAttemptResult.componentResults) {
+            firstAttemptData = {
+                sectionType: 'listening',
+                componentResults: fc.firstAttemptResult.componentResults,
+                totalCorrect: fc.firstAttemptResult.totalCorrect,
+                totalQuestions: fc.firstAttemptResult.totalQuestions
+            };
+            sessionStorage.setItem('listening_firstAttempt', JSON.stringify(firstAttemptData));
+            console.log('✅ FlowController에서 listening_firstAttempt 복원 완료');
+        } else {
+            console.error('❌ 1차 풀이 데이터를 어디서도 찾을 수 없습니다');
+            alert('1차 풀이 데이터가 없습니다. 2차 결과 화면으로 돌아갑니다.');
+            backToListeningRetakeResult();
+            return;
+        }
+    }
+    
+    // 데이터 확인 완료 → 화면 전환
     document.querySelectorAll('.screen, .result-screen, .test-screen').forEach(screen => {
         screen.style.display = 'none';
     });
     
-    switch(pageIndex) {
-        case 1:
-            showResponseDetailInFinalExplain();
-            break;
-        case 2:
-            showConverDetailInFinalExplain();
-            break;
-        case 3:
-            showAnnouncementDetailInFinalExplain();
-            break;
-        case 4:
-            showLectureDetailInFinalExplain();
-            break;
-        default:
-            console.error(`❌ 알 수 없는 페이지 인덱스: ${pageIndex}`);
+    try {
+        switch(pageIndex) {
+            case 1:
+                showResponseDetailInFinalExplain();
+                break;
+            case 2:
+                showConverDetailInFinalExplain();
+                break;
+            case 3:
+                showAnnouncementDetailInFinalExplain();
+                break;
+            case 4:
+                showLectureDetailInFinalExplain();
+                break;
+            default:
+                console.error(`❌ 알 수 없는 페이지 인덱스: ${pageIndex}`);
+                backToListeningRetakeResult();
+        }
+    } catch(e) {
+        console.error('❌ [리스닝 세부 결과] 표시 중 에러:', e);
+        alert('해설 화면 표시 중 오류가 발생했습니다. 2차 결과 화면으로 돌아갑니다.');
+        backToListeningRetakeResult();
     }
 }
 
@@ -1402,7 +1443,6 @@ function renderAnnouncementScriptForDetail(script, scriptTrans, highlights) {
                 ${translation ? `<span class="announce-paragraph-translation">${translation.replace(/\n/g, '<br>')}</span>` : ''}
             </div>
         `;
-    });
     });
     
     return html;
