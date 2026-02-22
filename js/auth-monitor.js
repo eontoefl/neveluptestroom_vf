@@ -298,6 +298,23 @@ var AuthMonitor = {
         var originalShowRetake = fc.showRetakeResult.bind(fc);
         fc.showRetakeResult = function(secondResults) {
             AuthMonitor.markStep2();
+            
+            // ★ 2차 결과를 result_json에 추가 저장
+            if (AuthMonitor._studyRecordId && secondResults) {
+                try {
+                    var updatedJson = {
+                        firstAttemptResult: fc.firstAttemptResult ? JSON.parse(JSON.stringify(fc.firstAttemptResult)) : null,
+                        retakeResult: JSON.parse(JSON.stringify(secondResults))
+                    };
+                    supabaseUpdate('tr_study_records', 'id=eq.' + AuthMonitor._studyRecordId, {
+                        result_json: updatedJson
+                    });
+                    console.log('💾 [Auth] result_json 업데이트 — 1차+2차 결과 저장 완료');
+                } catch (e) {
+                    console.warn('⚠️ [Auth] 2차 결과 저장 실패:', e);
+                }
+            }
+            
             return originalShowRetake(secondResults);
         };
 

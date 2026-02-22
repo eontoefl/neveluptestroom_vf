@@ -78,9 +78,26 @@ async function replayExplanation(studyRecordId) {
         const taskType = record.task_type;
         
         // result_json 구조 판별:
+        // - 1차+2차 방식: { firstAttemptResult: {...}, retakeResult: {...} }
+        // - 1차만 방식: { componentResults: [...], sectionType, totalQuestions, ... }
         // - 기존 방식: { data: [...] }
-        // - auth-monitor 방식: { componentResults: [...], sectionType, totalQuestions, ... }
-        const resultData = resultJson ? (resultJson.data || resultJson.componentResults || null) : null;
+        let resultData = null;
+        let retakeData = null;
+        
+        if (resultJson) {
+            if (resultJson.firstAttemptResult) {
+                // 1차+2차 구조
+                resultData = resultJson.firstAttemptResult.componentResults || null;
+                retakeData = resultJson.retakeResult || null;
+                console.log('📖 [ResultReplay] 1차+2차 결과 구조 감지');
+            } else if (resultJson.componentResults) {
+                // 1차만 구조
+                resultData = resultJson.componentResults;
+            } else if (resultJson.data) {
+                // 기존 방식
+                resultData = resultJson.data;
+            }
+        }
         
         if (!resultJson || !resultData) {
             // ★ result_json 없음 → 원본 콘텐츠에서 재조합 (fallback)
@@ -119,6 +136,7 @@ async function replayExplanation(studyRecordId) {
                     studyRecordId,
                     taskType,
                     resultData,
+                    retakeData,
                     week: record.week,
                     day: record.day,
                     moduleNumber: record.module_number,
@@ -130,7 +148,7 @@ async function replayExplanation(studyRecordId) {
             }
             
             // index.html에서 직접 실행
-            executeModuleReplay(taskType, resultData, record);
+            executeModuleReplay(taskType, resultData, record, retakeData);
             return;
         }
         
@@ -161,7 +179,7 @@ async function replayExplanation(studyRecordId) {
 // ================================================
 // 2.5. 모듈 전체 결과 → 타입 선택 후 개별 해설 표시
 // ================================================
-function executeModuleReplay(taskType, componentResults, record) {
+function executeModuleReplay(taskType, componentResults, record, retakeData) {
     console.log(`🎨 [ModuleReplay] 모듈 결과 → 타입 선택 UI 표시`);
     
     window._isReplayMode = true;
@@ -185,13 +203,23 @@ function executeModuleReplay(taskType, componentResults, record) {
         };
     }
     
-    // componentResults를 타입별로 그룹화
+    // componentResults를 타입별로 그룹화 (1차)
     const typeMap = {};
     componentResults.forEach(comp => {
         const type = comp.componentType || comp.type || 'unknown';
         if (!typeMap[type]) typeMap[type] = [];
         typeMap[type].push(comp);
     });
+    
+    // retakeData도 타입별로 그룹화 (2차)
+    const retakeTypeMap = {};
+    if (retakeData && retakeData.componentResults) {
+        retakeData.componentResults.forEach(comp => {
+            const type = comp.componentType || comp.type || 'unknown';
+            if (!retakeTypeMap[type]) retakeTypeMap[type] = [];
+            retakeTypeMap[type].push(comp);
+        });
+    }
     
     const typeLabels = {
         'fillblanks': '빈칸 채우기 (Fill in the Blanks)',
@@ -200,15 +228,17 @@ function executeModuleReplay(taskType, componentResults, record) {
         'academic': 'Academic Reading'
     };
     
+    const hasRetake = Object.keys(retakeTypeMap).length > 0;
+    
     // 타입 선택 UI 생성
     const selector = document.createElement('div');
     selector.id = 'moduleReplaySelector';
     selector.style.cssText = 'position:fixed; inset:0; z-index:9998; background:rgba(255,255,255,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
     
     let html = `
-        <div style="max-width:400px; width:100%; text-align:center;">
+        <div style="max-width:420px; width:100%; text-align:center;">
             <div style="font-size:28px; margin-bottom:12px;">📖</div>
-            <h2 style="margin:0 0:6px; font-size:18px; font-weight:700;">해설 보기</h2>
+            <h2 style="margin:0 0 6px; font-size:18px; font-weight:700;">해설 보기</h2>
             <p style="font-size:13px; color:#888; margin:0 0 24px;">Week ${record.week || '?'} ${record.day || ''} · Module ${record.module_number || '?'}</p>
             <p style="font-size:14px; color:#555; margin:0 0 20px;">유형을 선택해주세요</p>
     `;
@@ -216,13 +246,27 @@ function executeModuleReplay(taskType, componentResults, record) {
     Object.keys(typeMap).forEach(type => {
         const label = typeLabels[type] || type;
         const comps = typeMap[type];
-        // 점수 계산
-        let correct = 0, total = 0;
+        // 1차 점수
+        let correct1 = 0, total1 = 0;
         comps.forEach(comp => {
             const answers = comp.answers || comp.results || [];
-            total += answers.length;
-            correct += answers.filter(a => a.isCorrect).length;
+            total1 += answers.length;
+            correct1 += answers.filter(a => a.isCorrect).length;
         });
+        
+        // 2차 점수
+        let scoreText = '';
+        if (hasRetake && retakeTypeMap[type]) {
+            let correct2 = 0, total2 = 0;
+            retakeTypeMap[type].forEach(comp => {
+                const answers = comp.answers || comp.results || [];
+                total2 += answers.length;
+                correct2 += answers.filter(a => a.isCorrect).length;
+            });
+            scoreText = `<span style="font-size:12px; color:#888;">1차</span> <span style="color:${correct1 > 0 ? '#38a169' : '#e53e3e'}">${correct1}/${total1}</span> <span style="font-size:12px; color:#888; margin-left:6px;">2차</span> <span style="color:${correct2 > 0 ? '#38a169' : '#e53e3e'}">${correct2}/${total2}</span>`;
+        } else {
+            scoreText = `<span style="color:${correct1 > 0 ? '#38a169' : '#e53e3e'};">${correct1}/${total1}</span>`;
+        }
         
         html += `
             <button onclick="loadModuleReplayType('${type}')" style="
@@ -233,7 +277,7 @@ function executeModuleReplay(taskType, componentResults, record) {
             " onmouseover="this.style.borderColor='#6c5ce7';this.style.background='#f9f7ff'"
                onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#fff'">
                 <span>${label}</span>
-                <span style="float:right; color:${correct > 0 ? '#38a169' : '#e53e3e'}; font-size:13px;">${correct}/${total}</span>
+                <span style="float:right; font-size:13px;">${scoreText}</span>
             </button>
         `;
     });
@@ -250,7 +294,7 @@ function executeModuleReplay(taskType, componentResults, record) {
     document.body.appendChild(selector);
     
     // 타입별 로드 함수를 전역에 등록
-    window._moduleReplayData = { typeMap, record };
+    window._moduleReplayData = { typeMap, retakeTypeMap, record, retakeData };
 }
 
 /**
@@ -509,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         day: replayData.day,
                         module_number: replayData.moduleNumber,
                         task_type: replayData.taskType
-                    });
+                    }, replayData.retakeData);
                 } else {
                     executeReplay(replayData.taskType, replayData.resultData, {
                         week: replayData.week,
