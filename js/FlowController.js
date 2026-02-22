@@ -876,6 +876,11 @@ const FlowController = {
         window.currentAttemptNumber = 1;
         window.isSecondAttempt = false;
         window.flowExplainData = null;
+        
+        // ★ 2차 뱃지 모두 숨기기 (이전 과제 잔재 방지)
+        document.querySelectorAll('.retake-badge').forEach(function(badge) {
+            badge.style.display = 'none';
+        });
     },
 
     // ========================================
