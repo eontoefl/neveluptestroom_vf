@@ -215,31 +215,43 @@
             box-shadow:0 20px 60px rgba(0,0,0,.3);
             animation: noticeIn .3s ease;
         ">
-            <div style="font-size:36px; margin-bottom:12px;">🔧</div>
-            <h2 style="margin:0 0 8px; font-size:18px; color:#1a1a1a; font-weight:700;">긴급 점검 중</h2>
+            <div style="font-size:36px; margin-bottom:12px;">✅</div>
+            <h2 style="margin:0 0 8px; font-size:18px; color:#1a1a1a; font-weight:700;">점검 완료 — 정상 운영 중</h2>
             <p style="font-size:11px; color:#999; margin:0 0 16px;">2026.02.22</p>
             <div style="
                 text-align:left; font-size:14px; line-height:1.75; color:#333;
                 background:#f8f9fa; border-radius:10px; padding:16px 18px;
-                margin-bottom:20px; border-left:4px solid #6c5ce7;
+                margin-bottom:20px; border-left:4px solid #00b894;
             ">
-                현재 사이트 <b>긴급 점검</b>이 진행 중입니다.<br>
-                <b style="color:#6c5ce7;">약 1시간 정도</b> 소요될 예정이며,
-                점검이 완료되면 <b>완료 안내 팝업으로</b> 바껴있을거예요!<br><br>
-                📅 <b>오늘(2/22 일요일) 과제 데드라인</b>은<br>
-                <b style="color:#6c5ce7;">2/23(월) 새벽 4시까지</b>로 자동 연장되니<br>
-                걱정하지 않으셔도 됩니다!<br><br>
-                그동안 <b>입문서 정독</b>이나 <b>단어 외우기</b>를 해주시면 좋습니다! 📖<br><br>
-                조금만 기다려주세요 🙏
+                점검이 완료되어 <b style="color:#00b894;">정상 운영</b> 중입니다. 지금부터 풀어주시면 됩니다! 🎉<br><br>
+                
+                ⚠️ <b>시작 전 반드시 강력 새로고침</b> 해주세요!<br>
+                <b style="color:#e17055;">Ctrl + Shift + R</b> (Mac: <b style="color:#e17055;">Cmd + Shift + R</b>)<br><br>
+                
+                🕐 <b>오늘(2/22) 과제 데드라인</b><br>
+                첫날 오류가 많았던 점 사과드리며,<br>
+                <b style="color:#00b894;">2/23(월) 새벽 4시까지</b> 연장합니다.<br><br>
+                
+                ✅ <b>오늘 하루는 모두 인증률 100%</b>입니다.<br><br>
+                
+                🔄 오류로 못 푸신 부분은 <b>마이페이지</b>에서<br>
+                다시 풀어보실 수 있습니다.<br><br>
+                
+                🔁 처음부터 다시 시도하고 싶으신 분은<br>
+                <b>개별적으로 말씀</b> 주시면 바로 리셋해드립니다.<br><br>
+                
+                💾 <b>"여기까지 저장" 버튼</b>은 오늘 내로 구현해놓겠습니다.<br><br>
+                
+                불편을 드려 죄송합니다. 감사합니다 🙏
             </div>
             <button onclick="document.getElementById('noticeOverlay').style.display='none'" style="
-                background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+                background:linear-gradient(135deg,#00b894,#55efc4); color:#fff;
                 border:none; border-radius:10px; padding:12px 40px;
                 font-size:15px; font-weight:700; cursor:pointer;
                 transition:transform .15s, box-shadow .15s;
-                box-shadow:0 4px 12px rgba(108,92,231,.35);
-            " onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(108,92,231,.45)'"
-               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(108,92,231,.35)'"
+                box-shadow:0 4px 12px rgba(0,184,148,.35);
+            " onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(0,184,148,.45)'"
+               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,184,148,.35)'"
             >확인했습니다</button>
         </div>
     </div>
@@ -3170,11 +3182,11 @@
     <script src="js/listening-response-logic.js?v=20250221_flex_fix"></script>
     <!-- 컨버 Component -->
     <script src="js/components/ConverComponent.js?v=20260219_intro_hide"></script>
-    <script src="js/listening-conver-logic-v2.js?v=20260221_v2"></script>
+    <script src="js/listening-conver-logic-v2.js?v=20260222_fix"></script>
     <!-- 공지사항 Component -->
     <script src="js/components/AnnouncementComponent.js?v=004_intro_hide"></script>
     <script src="js/listening-announcement-logic-v2.js?v=20260221_v2"></script>
-    <script src="js/listening-announcement-result-v2.js?v=20260221_v2"></script>
+    <script src="js/listening-announcement-result-v2.js?v=20260222_fix"></script>
     <!-- 렉쳐 Component -->
     <script src="js/components/LectureComponent.js?v=003_intro_hide"></script>
     <script src="js/listening-lecture-logic-v2.js?v=20260221_v2"></script>
@@ -3214,7 +3226,7 @@
     <!-- reading-module-controller.js, listening-module-controller.js 제거됨 -->
     <!-- FlowController.js가 startReadingModule, startListeningModule을 이미 정의함 -->
     
-<script src="js/vocab-test-logic-v2.js?v=20250209-arrow-layout"></script>
+<script src="js/vocab-test-logic-v2.js?v=20260222_synonym_order"></script>
     <script src="js/timer.js"></script>
     <script src="js/main.js?v=20250209-vocab-v2"></script>
     <script src="js/navigation.js?v=20250209-002"></script>
