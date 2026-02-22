@@ -231,10 +231,32 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리 - 단락(\n\n) 기준 통일
+    // \n 처리 + 번역 기반 문장 분리
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    
+    // 1순위: 단락(\n\n) 기준 split
+    let sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    
+    // 단락 수와 번역 수가 안 맞으면 → 문장 단위 split (academic은 문장 단위 번역)
+    if (sentences.length !== translations.length && translations.length > 0) {
+        const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        // 문장 끝(. ! ?) + 선택적 괄호마커 (A)(B)등 뒤에 공백 + 대문자/괄호로 시작
+        // (A)(B)(C)(D) 같은 짧은 마커는 앞 문장에 병합
+        const rawSplit = allText.split(/(?<=[.!?](?:\s*\([A-Z]\))?)\s+(?=[A-Z\("])/).filter(s => s.trim());
+        
+        // 단독 괄호 마커만 남은 항목은 이전 문장에 병합
+        const merged = [];
+        rawSplit.forEach(s => {
+            if (/^\([A-Z]\)$/.test(s.trim()) && merged.length > 0) {
+                merged[merged.length - 1] += ' ' + s.trim();
+            } else {
+                merged.push(s);
+            }
+        });
+        sentences = merged;
+    }
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
@@ -456,10 +478,32 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리 - 단락(\n\n) 기준 통일
+    // \n 처리 + 번역 기반 문장 분리
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    
+    // 1순위: 단락(\n\n) 기준 split
+    let sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    
+    // 단락 수와 번역 수가 안 맞으면 → 문장 단위 split (academic은 문장 단위 번역)
+    if (sentences.length !== translations.length && translations.length > 0) {
+        const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        // 문장 끝(. ! ?) + 선택적 괄호마커 (A)(B)등 뒤에 공백 + 대문자/괄호로 시작
+        // (A)(B)(C)(D) 같은 짧은 마커는 앞 문장에 병합
+        const rawSplit = allText.split(/(?<=[.!?](?:\s*\([A-Z]\))?)\s+(?=[A-Z\("])/).filter(s => s.trim());
+        
+        // 단독 괄호 마커만 남은 항목은 이전 문장에 병합
+        const merged = [];
+        rawSplit.forEach(s => {
+            if (/^\([A-Z]\)$/.test(s.trim()) && merged.length > 0) {
+                merged[merged.length - 1] += ' ' + s.trim();
+            } else {
+                merged.push(s);
+            }
+        });
+        sentences = merged;
+    }
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
