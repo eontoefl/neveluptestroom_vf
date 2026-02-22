@@ -545,6 +545,8 @@ var ErrorNote = {
         // Supabase에 저장 (tr_study_records 업데이트)
         try {
             var user = window.currentUser;
+            console.log('📝 [ErrorNote] 저장 시작 - user:', user ? user.id : 'null', 'sectionType:', this._sectionType, 'moduleNumber:', this._moduleNumber);
+            
             if (!user || !user.id) {
                 console.warn('📝 [ErrorNote] 사용자 정보 없음, 저장 생략');
                 return;
@@ -552,14 +554,15 @@ var ErrorNote = {
 
             // 현재 진행 중인 과제의 study_record를 찾아서 업데이트
             if (typeof supabaseSelect === 'function') {
-                var records = await supabaseSelect(
-                    'tr_study_records',
-                    'select=id' +
+                var query = 'select=id' +
                     '&user_id=eq.' + user.id + 
                     '&task_type=eq.' + this._sectionType + 
                     '&module_number=eq.' + this._moduleNumber +
-                    '&order=completed_at.desc&limit=1'
-                );
+                    '&order=completed_at.desc&limit=1';
+                console.log('📝 [ErrorNote] SELECT 쿼리:', query);
+                
+                var records = await supabaseSelect('tr_study_records', query);
+                console.log('📝 [ErrorNote] SELECT 결과:', records ? records.length + '건' : 'null', records);
 
                 if (records && records.length > 0) {
                     var recordId = records[0].id;
@@ -572,13 +575,17 @@ var ErrorNote = {
                         updateData.speaking_file_1 = file1Path || null;
                         updateData.speaking_file_2 = file2Path || null;
                     }
-                    await supabaseUpdate('tr_study_records', 'id=eq.' + recordId, updateData);
+                    console.log('📝 [ErrorNote] UPDATE 실행 - recordId:', recordId, 'data:', updateData);
+                    var updateResult = await supabaseUpdate('tr_study_records', 'id=eq.' + recordId, updateData);
+                    console.log('📝 [ErrorNote] UPDATE 결과:', updateResult);
                     console.log('📝 [ErrorNote] Supabase 저장 완료, record:', recordId);
                     if (file1Path) console.log('📎 1차 파일:', file1Path);
                     if (file2Path) console.log('📎 2차 파일:', file2Path);
                 } else {
-                    console.warn('📝 [ErrorNote] study_record를 찾을 수 없음');
+                    console.warn('📝 [ErrorNote] study_record를 찾을 수 없음 - query:', query);
                 }
+            } else {
+                console.warn('📝 [ErrorNote] supabaseSelect 함수 없음');
             }
         } catch (e) {
             console.error('📝 [ErrorNote] 저장 실패:', e);

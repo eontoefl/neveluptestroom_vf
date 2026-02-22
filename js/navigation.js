@@ -11,7 +11,8 @@ function backToSchedule() {
     const isResultScreen = currentScreenId && (
         currentScreenId.includes('Result') || 
         currentScreenId === 'vocabResultScreen' ||
-        currentScreenId === 'resultScreen'
+        currentScreenId === 'resultScreen' ||
+        currentScreenId === 'finalExplainScreen'
     );
     
     // 실제 시험 화면인 경우에만 경고 표시 (과제목록/결과화면은 스킵)
@@ -30,6 +31,15 @@ function backToSchedule() {
         
         if (!confirm(msg)) {
             return; // 취소하면 함수 종료
+        }
+    }
+    
+    // 해설 화면에서 오답노트 미제출 시 경고
+    if (currentScreenId === 'finalExplainScreen') {
+        if (window.ErrorNote && !ErrorNote.isSubmitted()) {
+            if (!confirm('⚠️ 오답노트를 제출하지 않았습니다.\n그래도 나가시겠습니까?')) {
+                return;
+            }
         }
     }
     
