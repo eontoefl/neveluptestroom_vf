@@ -177,6 +177,17 @@ var AuthMonitor = {
             }
         }
 
+        // ── result_json 구성 (답안 전체 저장 - 해설 다시보기용) ──
+        var resultJson = null;
+        if (firstResult && firstResult.componentResults) {
+            try {
+                resultJson = JSON.parse(JSON.stringify(firstResult));
+                console.log('💾 [Auth] result_json 준비 완료 - componentResults:', firstResult.componentResults.length, '개');
+            } catch (e) {
+                console.warn('⚠️ [Auth] result_json 직렬화 실패:', e);
+            }
+        }
+
         var scheduleInfo = this.getCurrentScheduleInfo();
 
         // ── tr_study_records 저장 ──
@@ -191,6 +202,7 @@ var AuthMonitor = {
             total: total,
             time_spent: timeSpent,
             detail: detail,
+            result_json: resultJson,
             completed_at: new Date().toISOString()
         };
 
