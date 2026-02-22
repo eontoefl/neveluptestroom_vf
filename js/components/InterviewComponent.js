@@ -141,8 +141,8 @@ class InterviewComponent {
                     id: row.id,
                     contextText: row.context_text || '',
                     contextTranslation: row.translation || '',
-                    contextAudio: row.audio || '',
-                    contextImage: row.image || '',
+                    contextAudio: row.context_audio || '',
+                    contextImage: row.context_image || '',
                     noddingVideo: row.nodding_video || '',
                     videos: videos
                 };
