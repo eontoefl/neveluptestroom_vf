@@ -560,11 +560,11 @@ var ProgressTracker = {
             console.log('📊 [ProgressTracker] showTaskListScreen 연동 완료');
         }
 
-        // AuthMonitor.saveRecords 후 캐시 갱신 연동
+        // AuthMonitor.saveFinalRecords 후 캐시 갱신 연동
         if (window.AuthMonitor) {
-            var originalSave = AuthMonitor.saveRecords.bind(AuthMonitor);
-            AuthMonitor.saveRecords = async function() {
-                await originalSave();
+            var originalSaveFinal = AuthMonitor.saveFinalRecords.bind(AuthMonitor);
+            AuthMonitor.saveFinalRecords = async function() {
+                await originalSaveFinal();
                 // 저장 후 캐시 갱신
                 var snap = AuthMonitor._snapshot || {};
                 var sType = AuthMonitor._lastSectionType || snap.sectionType;
