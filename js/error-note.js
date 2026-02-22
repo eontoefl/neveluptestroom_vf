@@ -131,13 +131,17 @@ var ErrorNote = {
                 e.preventDefault();
                 startY = e.clientY;
                 startHeight = panel.offsetHeight;
+                var panelRect = panel.getBoundingClientRect();
+                var startBottom = panelRect.bottom; // 하단 고정 기준점
                 
                 function onMouseMove(e) {
                     var diff = startY - e.clientY;
                     var newHeight = Math.max(200, Math.min(window.innerHeight - 40, startHeight + diff));
                     panel.style.height = newHeight + 'px';
                     panel.style.overflow = 'hidden';
-                    // header(50) + guide(40) + footer(50) + resize(20) + padding = ~200
+                    // bottom 고정, top 자동 계산
+                    panel.style.top = (startBottom - newHeight) + 'px';
+                    panel.style.bottom = 'auto';
                     var ta = document.getElementById('errorNoteTextarea');
                     if (ta) {
                         var taHeight = newHeight - 220;
@@ -157,13 +161,18 @@ var ErrorNote = {
                 var touch = e.touches[0];
                 startY = touch.clientY;
                 startHeight = panel.offsetHeight;
+                var panelRect = panel.getBoundingClientRect();
+                var startBottom = panelRect.bottom;
                 
                 function onTouchMove(e) {
+                    e.preventDefault(); // 스크롤 방지
                     var touch = e.touches[0];
                     var diff = startY - touch.clientY;
                     var newHeight = Math.max(200, Math.min(window.innerHeight - 40, startHeight + diff));
                     panel.style.height = newHeight + 'px';
                     panel.style.overflow = 'hidden';
+                    panel.style.top = (startBottom - newHeight) + 'px';
+                    panel.style.bottom = 'auto';
                     var ta = document.getElementById('errorNoteTextarea');
                     if (ta) {
                         var taHeight = newHeight - 220;
@@ -174,7 +183,7 @@ var ErrorNote = {
                     document.removeEventListener('touchmove', onTouchMove);
                     document.removeEventListener('touchend', onTouchEnd);
                 }
-                document.addEventListener('touchmove', onTouchMove);
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
                 document.addEventListener('touchend', onTouchEnd);
             }, { passive: true });
         }
@@ -187,14 +196,66 @@ var ErrorNote = {
             });
         }
 
+        // 헤더: 드래그 이동 + 클릭 토글
         var header = document.getElementById('errorNoteHeader');
-        if (header) {
-            header.addEventListener('click', function(e) {
-                // 토글 버튼 영역 클릭은 위에서 처리하므로 스킵
-                if (!e.target.closest('#errorNoteToggle')) {
-                    ErrorNote.togglePanel();
-                }
+        if (header && panel) {
+            var dragState = { isDragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, moved: false };
+
+            function startDrag(clientX, clientY) {
+                var rect = panel.getBoundingClientRect();
+                dragState.startX = clientX;
+                dragState.startY = clientY;
+                dragState.startLeft = rect.left;
+                dragState.startTop = rect.top;
+                dragState.moved = false;
+                dragState.isDragging = true;
+                header.style.cursor = 'grabbing';
+            }
+            function onDragMove(clientX, clientY) {
+                if (!dragState.isDragging) return;
+                var dx = clientX - dragState.startX;
+                var dy = clientY - dragState.startY;
+                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragState.moved = true;
+                if (!dragState.moved) return;
+                var newLeft = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, dragState.startLeft + dx));
+                var newTop = Math.max(0, Math.min(window.innerHeight - 60, dragState.startTop + dy));
+                panel.style.left = newLeft + 'px';
+                panel.style.top = newTop + 'px';
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+            }
+            function endDrag() {
+                dragState.isDragging = false;
+                header.style.cursor = 'grab';
+            }
+
+            // 마우스
+            header.addEventListener('mousedown', function(e) {
+                if (e.target.closest('#errorNoteToggle')) return;
+                e.preventDefault();
+                startDrag(e.clientX, e.clientY);
+                function onMM(e) { onDragMove(e.clientX, e.clientY); }
+                function onMU() { endDrag(); document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); }
+                document.addEventListener('mousemove', onMM);
+                document.addEventListener('mouseup', onMU);
             });
+            // 터치
+            header.addEventListener('touchstart', function(e) {
+                if (e.target.closest('#errorNoteToggle')) return;
+                var t = e.touches[0];
+                startDrag(t.clientX, t.clientY);
+                function onTM(e) { var t = e.touches[0]; onDragMove(t.clientX, t.clientY); }
+                function onTE() { endDrag(); document.removeEventListener('touchmove', onTM); document.removeEventListener('touchend', onTE); }
+                document.addEventListener('touchmove', onTM, { passive: true });
+                document.addEventListener('touchend', onTE);
+            }, { passive: true });
+            // 클릭 토글 (드래그 안 했을 때만)
+            header.addEventListener('click', function(e) {
+                if (e.target.closest('#errorNoteToggle')) return;
+                if (dragState.moved) { dragState.moved = false; return; }
+                ErrorNote.togglePanel();
+            });
+            header.style.cursor = 'grab';
         }
     },
 
