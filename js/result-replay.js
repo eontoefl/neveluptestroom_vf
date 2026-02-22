@@ -314,6 +314,77 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 800);
         }
     }
+
+    // ── retry(다시 풀기) 파라미터 처리 ──
+    if (params.get('retry') === 'true') {
+        const retryDataStr = sessionStorage.getItem('retryData');
+        if (retryDataStr) {
+            sessionStorage.removeItem('retryData');
+            
+            const retryData = JSON.parse(retryDataStr);
+            console.log('🔄 [Retry] 다시 풀기 모드 감지:', retryData);
+            
+            // 연습 모드 플래그 설정
+            window._deadlinePassedMode = true;
+            window._isPracticeMode = true;
+            
+            setTimeout(() => {
+                // currentTest에 주차/요일 설정
+                if (typeof currentTest !== 'undefined') {
+                    currentTest.currentWeek = retryData.week;
+                    currentTest.currentDay = retryData.day;
+                } else if (window.currentTest) {
+                    window.currentTest.currentWeek = retryData.week;
+                    window.currentTest.currentDay = retryData.day;
+                }
+                
+                // task-router의 과제 실행 함수 호출
+                const taskType = retryData.taskType;
+                const moduleNum = retryData.moduleNumber;
+                
+                try {
+                    switch (taskType) {
+                        case 'reading':
+                            if (typeof startReadingModule === 'function') {
+                                startReadingModule(moduleNum);
+                            }
+                            break;
+                        case 'listening':
+                            if (typeof startListeningModule === 'function') {
+                                startListeningModule(moduleNum);
+                            }
+                            break;
+                        case 'writing':
+                            if (typeof startWriting === 'function') {
+                                startWriting(moduleNum);
+                            }
+                            break;
+                        case 'speaking':
+                            if (typeof startSpeaking === 'function') {
+                                startSpeaking(moduleNum);
+                            }
+                            break;
+                        case 'vocab':
+                            if (typeof initVocabTest === 'function') {
+                                // vocab은 페이지 정보가 필요 — 스케줄에서 찾기
+                                console.log('📝 [Retry] Vocab 다시풀기 — 스케줄에서 시작');
+                                showScreen('scheduleScreen');
+                            }
+                            break;
+                        default:
+                            console.warn('⚠️ [Retry] 지원하지 않는 과제 타입:', taskType);
+                            showScreen('scheduleScreen');
+                    }
+                } catch (e) {
+                    console.error('❌ [Retry] 과제 실행 실패:', e);
+                    showScreen('scheduleScreen');
+                }
+                
+                // URL 정리
+                window.history.replaceState({}, '', 'index.html');
+            }, 1000);
+        }
+    }
 });
 
 // ================================================

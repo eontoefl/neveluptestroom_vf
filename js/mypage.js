@@ -467,6 +467,7 @@ function renderRecentRecords() {
         const scoreHtml = renderScore(record);
         const noteHtml = renderNoteButton(record);
         const replayHtml = renderReplayButton(record);
+        const retryHtml = renderRetryButton(record);
 
         return `
             <tr>
@@ -479,7 +480,12 @@ function renderRecentRecords() {
                 </td>
                 <td>${scoreHtml}</td>
                 <td>${noteHtml}</td>
-                <td>${replayHtml}</td>
+                <td>
+                    <div class="action-buttons">
+                        ${replayHtml}
+                        ${retryHtml}
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -570,9 +576,57 @@ function renderReplayButton(record) {
     // 지원 타입이면 버튼 표시 (클릭 시 서버에서 result_json 확인)
     return `
         <button class="btn-replay" onclick="replayExplanation('${record.id}')">
-            <i class="fa-solid fa-book-open"></i> 해설보기
+            <i class="fa-solid fa-book-open"></i> 해설
         </button>
     `;
+}
+
+/**
+ * 다시 풀기 버튼 렌더링
+ * 마이페이지에서 이전 과제를 연습 모드로 다시 풀 수 있음
+ * (인증률/점수에 영향 없음)
+ */
+function renderRetryButton(record) {
+    // 다시 풀기 지원 타입
+    const supported = ['reading', 'listening', 'writing', 'speaking', 'vocab'];
+    if (!supported.includes(record.task_type)) {
+        return '';
+    }
+    
+    // task_type + module_number로 과제 식별
+    const taskType = record.task_type;
+    const moduleNum = record.module_number || 1;
+    const week = record.week || 1;
+    const day = record.day || '';
+    
+    return `
+        <button class="btn-retry" onclick="retryTask('${taskType}', ${moduleNum}, ${week}, '${day}')">
+            <i class="fa-solid fa-rotate-right"></i> 다시풀기
+        </button>
+    `;
+}
+
+/**
+ * 다시 풀기 실행
+ * index.html로 이동하여 해당 과제를 연습 모드로 실행
+ */
+function retryTask(taskType, moduleNumber, week, day) {
+    if (!confirm('연습 모드로 다시 풀어봅니다.\n(기존 점수/인증률에 영향 없습니다)\n\n진행하시겠습니까?')) {
+        return;
+    }
+    
+    // sessionStorage에 retry 정보 저장
+    const retryData = {
+        taskType: taskType,
+        moduleNumber: moduleNumber,
+        week: week,
+        day: day,
+        isPracticeMode: true
+    };
+    sessionStorage.setItem('retryData', JSON.stringify(retryData));
+    
+    // index.html로 이동
+    window.location.href = 'index.html?retry=true';
 }
 
 /**
