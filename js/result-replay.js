@@ -1394,80 +1394,222 @@ function setupListeningReplayFromResultData(resultData, record) {
 }
 
 // ================================================
-// ★ 라이팅 해설 리플레이 요약 화면
+// ★ 라이팅 해설 리플레이 — 기존 결과 화면 활용
 // ================================================
 function showWritingReplaySummary(type, resultList, replayData) {
-    console.log('✏️ [WritingReplay] 요약 화면 표시:', type);
+    console.log('✏️ [WritingReplay] 해설 화면 표시:', type);
     
     const record = replayData?.record;
-    const components = type === 'all' ? resultList : [].concat(resultList);
+    const components = type === 'all' ? (Array.isArray(resultList) ? resultList : []) : [].concat(resultList);
     
     // 기존 선택 UI 제거
     const selector = document.getElementById('moduleReplaySelector');
     if (selector) selector.remove();
     
+    // 모든 화면 숨기기
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.style.display = 'none';
     });
     
+    // 컴포넌트 타입별로 분류
+    const arrangeComp = components.find(c => (c.componentType || c.type) === 'arrange');
+    const emailComp = components.find(c => (c.componentType || c.type) === 'email');
+    const discussionComp = components.find(c => (c.componentType || c.type) === 'discussion');
+    
+    // 특정 타입만 선택된 경우
+    if (type === 'arrange' && arrangeComp) {
+        setupArrangeReplay(arrangeComp);
+        addWritingReplayNav('arrange', components, replayData);
+        return;
+    }
+    if (type === 'email' && emailComp) {
+        showEmailReplay(emailComp);
+        addWritingReplayNav('email', components, replayData);
+        return;
+    }
+    if (type === 'discussion' && discussionComp) {
+        showDiscussionReplay(discussionComp);
+        addWritingReplayNav('discussion', components, replayData);
+        return;
+    }
+    
+    // 'all' — 순서대로 표시: arrange → email → discussion
+    if (arrangeComp) {
+        setupArrangeReplay(arrangeComp);
+        addWritingReplayNav('arrange', components, replayData);
+    } else if (emailComp) {
+        showEmailReplay(emailComp);
+        addWritingReplayNav('email', components, replayData);
+    } else if (discussionComp) {
+        showDiscussionReplay(discussionComp);
+        addWritingReplayNav('discussion', components, replayData);
+    } else {
+        showWritingFallbackSummary(components, record);
+    }
+}
+
+/**
+ * 단어배열 결과를 sessionStorage에 세팅하고 showArrangeResult() 호출
+ */
+function setupArrangeReplay(arrangeComp) {
+    console.log('✏️ [WritingReplay] 단어배열 해설 표시');
+    
+    // arrangeResults 형태로 변환
+    const answers = arrangeComp.answers || arrangeComp.results || [];
+    const correct = answers.filter(a => a.isCorrect).length;
+    
+    const arrangeData = {
+        accuracy: answers.length > 0 ? Math.round((correct / answers.length) * 100) : 0,
+        correct: correct,
+        total: answers.length,
+        results: answers.map((a, idx) => ({
+            questionNumber: idx + 1,
+            isCorrect: a.isCorrect,
+            userAnswer: a.userAnswer || '',
+            correctAnswer: a.correctAnswer || '',
+            koreanSentence: a.koreanSentence || '',
+            explanation: a.explanation || '',
+            profilePair: a.profilePair || null
+        }))
+    };
+    
+    sessionStorage.setItem('arrangeResults', JSON.stringify(arrangeData));
+    
+    if (typeof window.showArrangeResult === 'function') {
+        window.showArrangeResult();
+        // 해설 표시
+        setTimeout(() => {
+            const screen = document.getElementById('writingArrangeResultScreen');
+            if (screen) {
+                screen.querySelectorAll('.arrange-explanation-section, .arrange-explanation-title, .arrange-explanation-text')
+                    .forEach(el => el.style.display = '');
+            }
+        }, 100);
+    } else {
+        console.warn('⚠️ showArrangeResult 함수 없음');
+    }
+}
+
+/**
+ * 이메일 결과 화면 표시
+ */
+function showEmailReplay(emailComp) {
+    console.log('✏️ [WritingReplay] 이메일 해설 표시');
+    
+    if (typeof window.showEmailResult === 'function') {
+        window.showEmailResult(emailComp);
+    } else {
+        console.warn('⚠️ showEmailResult 함수 없음');
+    }
+}
+
+/**
+ * 토론 결과 화면 표시
+ */
+function showDiscussionReplay(discussionComp) {
+    console.log('✏️ [WritingReplay] 토론 해설 표시');
+    
+    if (typeof window.showDiscussionResult === 'function') {
+        window.showDiscussionResult(discussionComp);
+    } else {
+        console.warn('⚠️ showDiscussionResult 함수 없음');
+    }
+}
+
+/**
+ * 라이팅 리플레이 네비게이션 버튼
+ */
+function addWritingReplayNav(currentType, allComponents, replayData) {
+    // 기존 버튼 제거
+    const existing = document.getElementById('writingReplayNav');
+    if (existing) existing.remove();
+    const existingModule = document.getElementById('moduleReplayBackBtn');
+    if (existingModule) existingModule.remove();
+    
+    const arrangeComp = allComponents.find(c => (c.componentType || c.type) === 'arrange');
+    const emailComp = allComponents.find(c => (c.componentType || c.type) === 'email');
+    const discussionComp = allComponents.find(c => (c.componentType || c.type) === 'discussion');
+    
+    const nav = document.createElement('div');
+    nav.id = 'writingReplayNav';
+    nav.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;display:flex;gap:6px;justify-content:center;padding:12px 16px 20px;background:linear-gradient(transparent,rgba(255,255,255,.97) 30%);flex-wrap:wrap;';
+    
+    const typeOrder = ['arrange', 'email', 'discussion'];
+    const typeNames = { 'arrange': '단어배열', 'email': '이메일', 'discussion': '토론' };
+    const typeComps = { 'arrange': arrangeComp, 'email': emailComp, 'discussion': discussionComp };
+    
+    // 라이팅 유형 버튼들
+    typeOrder.forEach(t => {
+        if (!typeComps[t]) return;
+        const isActive = t === currentType;
+        const btn = document.createElement('button');
+        btn.textContent = typeNames[t];
+        btn.style.cssText = `padding:10px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${isActive?'#6c5ce7':'#e8e0ff'};background:${isActive?'linear-gradient(135deg,#6c5ce7,#a29bfe)':'#fff'};color:${isActive?'#fff':'#5a4a8a'};transition:all .2s;`;
+        if (!isActive) {
+            btn.onclick = () => {
+                document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+                nav.remove();
+                showWritingReplaySummary(t, allComponents, replayData);
+            };
+        }
+        nav.appendChild(btn);
+    });
+    
+    // 타입 선택으로 돌아가기
+    if (replayData?.typeMap) {
+        const backBtn = document.createElement('button');
+        backBtn.innerHTML = '<i class="fas fa-list"></i> 유형 선택';
+        backBtn.style.cssText = 'padding:10px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #e8e0ff;background:#fff;color:#5a4a8a;';
+        backBtn.onclick = () => {
+            document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+            nav.remove();
+            const taskType = replayData.record?.task_type || 'writing';
+            executeModuleReplay(taskType, Object.values(replayData.typeMap).flat(), replayData.record, replayData.retakeData);
+        };
+        nav.appendChild(backBtn);
+    }
+    
+    // 마이페이지 버튼
+    const mpBtn = document.createElement('button');
+    mpBtn.innerHTML = '<i class="fas fa-arrow-left"></i> 마이페이지';
+    mpBtn.style.cssText = 'padding:10px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,#9480c5,#7a66b0);color:#fff;box-shadow:0 4px 12px rgba(108,92,231,.3);';
+    mpBtn.onclick = () => { window._isReplayMode = false; window.location.href = 'mypage.html'; };
+    nav.appendChild(mpBtn);
+    
+    document.body.appendChild(nav);
+    
+    // 기존 backToSchedule 버튼 숨기기
+    setTimeout(() => {
+        document.querySelectorAll('.btn-back-to-schedule, [onclick*="backToSchedule"]').forEach(btn => {
+            if (!btn.closest('#writingReplayNav')) btn.style.display = 'none';
+        });
+    }, 300);
+}
+
+/**
+ * 라이팅 폴백 요약 (기존 결과 함수가 없을 때)
+ */
+function showWritingFallbackSummary(components, record) {
     const container = document.createElement('div');
     container.id = 'writingReplaySummary';
     container.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#f7f6fb;overflow-y:auto;font-family:"Pretendard Variable",-apple-system,sans-serif;';
-    
-    let html = `<div style="max-width:600px;margin:0 auto;padding:32px 20px 120px;">`;
-    html += `<div style="text-align:center;margin-bottom:24px;">
+    container.innerHTML = `<div style="max-width:600px;margin:0 auto;padding:32px 20px 120px;text-align:center;">
         <div style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(135deg,#e8e0ff,#d4c8f5);border-radius:16px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-pen" style="font-size:24px;color:#6c5ce7;"></i></div>
-        <h2 style="font-size:20px;font-weight:800;color:#2d2252;margin:0 0 4px;">Writing 결과 요약</h2>
-        <p style="font-size:13px;color:#9a8fc0;margin:0;">Week ${record?.week||'?'} ${record?.day||''} · Module ${record?.module_number||'?'}</p>
+        <h2 style="font-size:20px;font-weight:800;color:#2d2252;">Writing 결과</h2>
+        <p style="color:#999;margin-top:12px;">상세 결과 데이터가 없습니다.</p>
     </div>`;
-    
-    const comps = Array.isArray(components) ? components : [];
-    const typeLabelsLocal = { 'arrange': '단어 배열', 'email': '이메일 작성', 'discussion': '토론 작성' };
-    
-    comps.forEach((comp, idx) => {
-        const cType = comp.componentType || comp.type || 'unknown';
-        const label = typeLabelsLocal[cType] || cType;
-        const answers = comp.answers || comp.results || [];
-        const correct = answers.filter(a => a.isCorrect).length;
-        const total = answers.length;
-        const pct = total > 0 ? Math.round((correct/total)*100) : 0;
-        const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
-        
-        html += `<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid #ece7f6;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <span style="font-size:15px;font-weight:700;color:#2d2252;">${label}</span>
-                <span style="font-size:15px;font-weight:700;color:${color};">${correct}/${total} (${pct}%)</span>
-            </div>`;
-        
-        // 개별 답안 표시
-        answers.forEach((a, qi) => {
-            const icon = a.isCorrect ? '✅' : '❌';
-            html += `<div style="padding:8px 12px;margin:4px 0;background:${a.isCorrect?'#f0fdf4':'#fef2f2'};border-radius:8px;font-size:13px;color:#333;">
-                ${icon} Q${qi+1}: ${a.userAnswer ? '"'+a.userAnswer+'"' : '-'} ${!a.isCorrect && a.correctAnswer ? '→ 정답: "'+a.correctAnswer+'"' : ''}
-            </div>`;
-        });
-        html += `</div>`;
-    });
-    
-    if (comps.length === 0) {
-        html += '<div style="text-align:center;padding:40px;color:#999;">결과 데이터가 없습니다.</div>';
-    }
-    
-    html += `</div>`;
-    container.innerHTML = html;
     document.body.appendChild(container);
     addModuleReplayBackButton();
 }
 
 // ================================================
-// ★ 스피킹 해설 리플레이 요약 화면
+// ★ 스피킹 해설 리플레이 — 안내 화면
 // ================================================
 function showSpeakingReplaySummary(type, resultList, replayData) {
-    console.log('🎤 [SpeakingReplay] 요약 화면 표시:', type);
+    console.log('🎤 [SpeakingReplay] 안내 화면 표시:', type);
     
     const record = replayData?.record;
-    const components = type === 'all' ? resultList : [].concat(resultList);
     
     // 기존 선택 UI 제거
     const selector = document.getElementById('moduleReplaySelector');
@@ -1482,50 +1624,25 @@ function showSpeakingReplaySummary(type, resultList, replayData) {
     container.id = 'speakingReplaySummary';
     container.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#f7f6fb;overflow-y:auto;font-family:"Pretendard Variable",-apple-system,sans-serif;';
     
-    let html = `<div style="max-width:600px;margin:0 auto;padding:32px 20px 120px;">`;
-    html += `<div style="text-align:center;margin-bottom:24px;">
-        <div style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(135deg,#ffe8e0,#f5c8d4);border-radius:16px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-microphone" style="font-size:24px;color:#e74c6c;"></i></div>
-        <h2 style="font-size:20px;font-weight:800;color:#2d2252;margin:0 0 4px;">Speaking 결과 요약</h2>
-        <p style="font-size:13px;color:#9a8fc0;margin:0;">Week ${record?.week||'?'} ${record?.day||''} · Module ${record?.module_number||'?'}</p>
+    container.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:60px 20px 120px;text-align:center;">
+        <div style="width:72px;height:72px;margin:0 auto 20px;background:linear-gradient(135deg,#ffe8e0,#f5c8d4);border-radius:20px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-microphone" style="font-size:32px;color:#e74c6c;"></i>
+        </div>
+        <h2 style="font-size:22px;font-weight:800;color:#2d2252;margin:0 0 8px;">Speaking 해설</h2>
+        <p style="font-size:14px;color:#9a8fc0;margin:0 0 24px;">Week ${record?.week||'?'} ${record?.day||''} · Module ${record?.module_number||'?'}</p>
+        <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid #ece7f6;text-align:left;">
+            <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">
+                <i class="fas fa-info-circle" style="color:#a29bfe;margin-right:6px;"></i>
+                스피킹 해설은 음성 녹음과 원본 오디오 재생이 포함되어 있어, 
+                마이페이지에서 다시보기가 제한됩니다.
+            </p>
+            <p style="font-size:14px;color:#555;line-height:1.7;margin:12px 0 0;">
+                <i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:6px;"></i>
+                학습일정에서 <strong>"다시 풀기"</strong>를 통해 따라말하기와 인터뷰를 다시 연습할 수 있습니다.
+            </p>
+        </div>
     </div>`;
     
-    const comps = Array.isArray(components) ? components : [];
-    const typeLabelsLocal = { 'repeat': '따라 말하기', 'interview': '인터뷰' };
-    
-    comps.forEach((comp, idx) => {
-        const cType = comp.componentType || comp.type || 'unknown';
-        const label = typeLabelsLocal[cType] || cType;
-        const answers = comp.answers || comp.results || [];
-        const correct = answers.filter(a => a.isCorrect).length;
-        const total = answers.length;
-        const pct = total > 0 ? Math.round((correct/total)*100) : 0;
-        const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
-        
-        html += `<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid #ece7f6;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-size:15px;font-weight:700;color:#2d2252;">${label}</span>
-                ${total > 0 ? '<span style="font-size:15px;font-weight:700;color:'+color+';">'+correct+'/'+total+' ('+pct+'%)</span>' : '<span style="font-size:13px;color:#999;">채점 없음</span>'}
-            </div>`;
-        
-        if (answers.length > 0) {
-            answers.forEach((a, qi) => {
-                const icon = a.isCorrect ? '✅' : '❌';
-                html += `<div style="padding:8px 12px;margin:4px 0;background:${a.isCorrect?'#f0fdf4':'#fef2f2'};border-radius:8px;font-size:13px;color:#333;">
-                    ${icon} Q${qi+1}
-                </div>`;
-            });
-        } else {
-            html += `<div style="padding:12px;color:#999;font-size:13px;text-align:center;">스피킹 컴포넌트의 상세 답안은 음성 기반이라 텍스트로 표시할 수 없습니다.</div>`;
-        }
-        html += `</div>`;
-    });
-    
-    if (comps.length === 0) {
-        html += '<div style="text-align:center;padding:40px;color:#999;">결과 데이터가 없습니다.</div>';
-    }
-    
-    html += `</div>`;
-    container.innerHTML = html;
     document.body.appendChild(container);
     addModuleReplayBackButton();
 }
