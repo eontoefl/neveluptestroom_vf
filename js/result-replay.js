@@ -233,20 +233,21 @@ function executeModuleReplay(taskType, componentResults, record, retakeData) {
     // 타입 선택 UI 생성
     const selector = document.createElement('div');
     selector.id = 'moduleReplaySelector';
-    selector.style.cssText = 'position:fixed; inset:0; z-index:9998; background:rgba(255,255,255,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
+    selector.style.cssText = 'position:fixed; inset:0; z-index:9998; background:linear-gradient(180deg, #f5f0ff 0%, #fff 40%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; overflow-y:auto;';
     
     let html = `
-        <div style="max-width:420px; width:100%; text-align:center;">
-            <div style="font-size:28px; margin-bottom:12px;">📖</div>
-            <h2 style="margin:0 0 6px; font-size:18px; font-weight:700;">해설 보기</h2>
-            <p style="font-size:13px; color:#888; margin:0 0 24px;">Week ${record.week || '?'} ${record.day || ''} · Module ${record.module_number || '?'}</p>
-            <p style="font-size:14px; color:#555; margin:0 0 20px;">유형을 선택해주세요</p>
+        <div style="max-width:440px; width:100%; text-align:center;">
+            <div style="width:56px; height:56px; margin:0 auto 16px; background:linear-gradient(135deg,#e8e0ff,#d4c8f5); border-radius:16px; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-book-open" style="font-size:24px; color:#6c5ce7;"></i>
+            </div>
+            <h2 style="margin:0 0 6px; font-size:20px; font-weight:800; color:#2d2252;">해설 보기</h2>
+            <p style="font-size:13px; color:#9a8fc0; margin:0 0 28px; font-weight:500;">Week ${record.week || '?'} ${record.day || ''} · Module ${record.module_number || '?'}</p>
+            <p style="font-size:14px; color:#6b5f8a; margin:0 0 16px; font-weight:600;">유형을 선택해주세요</p>
     `;
     
     Object.keys(typeMap).forEach(type => {
         const label = typeLabels[type] || type;
         const comps = typeMap[type];
-        // 1차 점수
         let correct1 = 0, total1 = 0;
         comps.forEach(comp => {
             const answers = comp.answers || comp.results || [];
@@ -254,8 +255,10 @@ function executeModuleReplay(taskType, componentResults, record, retakeData) {
             correct1 += answers.filter(a => a.isCorrect).length;
         });
         
-        // 2차 점수
-        let scoreText = '';
+        const pct1 = total1 > 0 ? Math.round((correct1 / total1) * 100) : 0;
+        const color1 = pct1 >= 80 ? '#22c55e' : pct1 >= 50 ? '#f59e0b' : '#ef4444';
+        
+        let scoreHtml = '';
         if (hasRetake && retakeTypeMap[type]) {
             let correct2 = 0, total2 = 0;
             retakeTypeMap[type].forEach(comp => {
@@ -263,30 +266,43 @@ function executeModuleReplay(taskType, componentResults, record, retakeData) {
                 total2 += answers.length;
                 correct2 += answers.filter(a => a.isCorrect).length;
             });
-            scoreText = `<span style="font-size:12px; color:#888;">1차</span> <span style="color:${correct1 > 0 ? '#38a169' : '#e53e3e'}">${correct1}/${total1}</span> <span style="font-size:12px; color:#888; margin-left:6px;">2차</span> <span style="color:${correct2 > 0 ? '#38a169' : '#e53e3e'}">${correct2}/${total2}</span>`;
+            const pct2 = total2 > 0 ? Math.round((correct2 / total2) * 100) : 0;
+            const color2 = pct2 >= 80 ? '#22c55e' : pct2 >= 50 ? '#f59e0b' : '#ef4444';
+            scoreHtml = `
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="text-align:center;"><div style="font-size:10px; color:#aaa; font-weight:600;">1차</div><div style="font-size:14px; font-weight:700; color:${color1};">${correct1}/${total1}</div></div>
+                    <div style="color:#ddd;">→</div>
+                    <div style="text-align:center;"><div style="font-size:10px; color:#aaa; font-weight:600;">2차</div><div style="font-size:14px; font-weight:700; color:${color2};">${correct2}/${total2}</div></div>
+                </div>`;
         } else {
-            scoreText = `<span style="color:${correct1 > 0 ? '#38a169' : '#e53e3e'};">${correct1}/${total1}</span>`;
+            scoreHtml = `<div style="font-size:15px; font-weight:700; color:${color1};">${correct1}/${total1}</div>`;
         }
         
         html += `
             <button onclick="loadModuleReplayType('${type}')" style="
-                display:block; width:100%; padding:14px 18px; margin-bottom:10px;
-                border:1.5px solid #e2e8f0; border-radius:12px; background:#fff;
-                font-size:14px; font-weight:600; cursor:pointer;
-                text-align:left; transition:all .15s;
-            " onmouseover="this.style.borderColor='#6c5ce7';this.style.background='#f9f7ff'"
-               onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#fff'">
+                display:flex; align-items:center; justify-content:space-between;
+                width:100%; padding:16px 20px; margin-bottom:10px;
+                border:1.5px solid #ece7f6; border-radius:14px; background:#fff;
+                font-size:15px; font-weight:600; color:#2d2252; cursor:pointer;
+                transition:all .2s; box-shadow:0 2px 8px rgba(108,92,231,.06);
+            " onmouseover="this.style.borderColor='#6c5ce7';this.style.background='#faf8ff';this.style.boxShadow='0 4px 16px rgba(108,92,231,.12)';this.style.transform='translateY(-1px)'"
+               onmouseout="this.style.borderColor='#ece7f6';this.style.background='#fff';this.style.boxShadow='0 2px 8px rgba(108,92,231,.06)';this.style.transform='none'">
                 <span>${label}</span>
-                <span style="float:right; font-size:13px;">${scoreText}</span>
+                ${scoreHtml}
             </button>
         `;
     });
     
     html += `
             <button onclick="window.location.href='mypage.html'" style="
-                margin-top:16px; padding:10px 30px; border:none; border-radius:8px;
-                background:#eee; color:#666; font-size:13px; font-weight:600; cursor:pointer;
-            ">← 마이페이지로 돌아가기</button>
+                margin-top:20px; padding:12px 32px; border:none; border-radius:12px;
+                background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+                font-size:14px; font-weight:700; cursor:pointer;
+                box-shadow:0 4px 12px rgba(108,92,231,.25); transition:all .2s;
+            " onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(108,92,231,.35)'"
+               onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 12px rgba(108,92,231,.25)'">
+                <i class="fas fa-arrow-left" style="margin-right:6px;"></i> 마이페이지로 돌아가기
+            </button>
         </div>
     `;
     
@@ -340,6 +356,15 @@ function loadModuleReplayType(type) {
             alert('지원하지 않는 유형입니다: ' + type);
     }
     
+    // 리플레이 모드에서 기존 "학습일정으로 돌아가기" 버튼 숨기기
+    setTimeout(function() {
+        document.querySelectorAll('.btn-back-to-schedule, [onclick*="backToSchedule"]').forEach(function(btn) {
+            if (!btn.closest('#moduleReplayBackBtn') && !btn.closest('#replayBackBtn')) {
+                btn.style.display = 'none';
+            }
+        });
+    }, 300);
+    
     // 마이페이지 돌아가기 버튼 추가
     addModuleReplayBackButton();
 }
@@ -351,20 +376,26 @@ function addModuleReplayBackButton() {
     
     const bar = document.createElement('div');
     bar.id = 'moduleReplayBackBtn';
-    bar.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; display:flex; gap:8px;';
+    bar.style.cssText = 'position:fixed; bottom:0; left:0; right:0; z-index:9999; display:flex; gap:8px; justify-content:center; padding:12px 16px 20px; background:linear-gradient(transparent, rgba(255,255,255,.95) 30%);';
     
     bar.innerHTML = `
-        <button onclick="document.getElementById('moduleReplayBackBtn').remove(); executeModuleReplay('${window._moduleReplayData?.record?.task_type || 'reading'}', Object.values(window._moduleReplayData.typeMap).flat(), window._moduleReplayData.record)" style="
-            padding:10px 20px; border:none; border-radius:20px;
+        <button onclick="document.getElementById('moduleReplayBackBtn').remove(); executeModuleReplay('${window._moduleReplayData?.record?.task_type || 'reading'}', Object.values(window._moduleReplayData.typeMap).flat(), window._moduleReplayData.record, window._moduleReplayData?.retakeData)" style="
+            padding:12px 20px; border:none; border-radius:12px;
             background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
             font-size:13px; font-weight:700; cursor:pointer;
-            box-shadow:0 4px 12px rgba(108,92,231,.35);
-        ">📖 다른 유형 보기</button>
+            box-shadow:0 4px 12px rgba(108,92,231,.3);
+            transition:all .2s;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+            <i class="fas fa-list" style="margin-right:5px;"></i> 다른 유형 보기
+        </button>
         <button onclick="window.location.href='mypage.html'" style="
-            padding:10px 20px; border:none; border-radius:20px;
-            background:#fff; color:#666; font-size:13px; font-weight:700; cursor:pointer;
-            box-shadow:0 2px 8px rgba(0,0,0,.1); border:1px solid #e2e8f0;
-        ">← 마이페이지</button>
+            padding:12px 20px; border:none; border-radius:12px;
+            background:#fff; color:#5a4a8a; font-size:13px; font-weight:700; cursor:pointer;
+            box-shadow:0 2px 8px rgba(0,0,0,.08); border:1.5px solid #e8e0ff;
+            transition:all .2s;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+            <i class="fas fa-arrow-left" style="margin-right:5px;"></i> 마이페이지
+        </button>
     `;
     document.body.appendChild(bar);
 }
@@ -438,6 +469,15 @@ function executeReplay(taskType, resultData, record) {
         default:
             alert(`${taskType} 해설 다시보기는 아직 지원하지 않습니다.`);
     }
+    
+    // 리플레이 모드에서 기존 "학습일정으로 돌아가기" 버튼 숨기기
+    setTimeout(function() {
+        document.querySelectorAll('.btn-back-to-schedule, [onclick*="backToSchedule"]').forEach(function(btn) {
+            if (!btn.closest('#replayBackBtn')) {
+                btn.style.display = 'none';
+            }
+        });
+    }, 300);
     
     // ★ 마이페이지 돌아가기 플로팅 버튼 삽입
     addReplayBackButton();
@@ -540,14 +580,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // 약간의 지연 (다른 스크립트 로드 대기)
             setTimeout(async () => {
                 if (replayData.fallback) {
-                    // result_json 없음 → 원본 콘텐츠 재조합
                     await executeFallbackReplay(replayData.taskType, {
                         week: replayData.week,
                         day: replayData.day,
                         module_number: replayData.moduleNumber
                     });
                 } else if (replayData.isModuleResult) {
-                    // 모듈 전체 결과 → 타입 선택 UI
                     executeModuleReplay(replayData.taskType, replayData.resultData, {
                         week: replayData.week,
                         day: replayData.day,
@@ -560,6 +598,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         day: replayData.day,
                         module_number: replayData.moduleNumber
                     });
+                }
+                
+                // 로딩 오버레이 제거
+                if (typeof window._removeReplayLoading === 'function') {
+                    window._removeReplayLoading();
                 }
                 
                 // URL에서 ?replay=true 제거 (뒤로가기 시 깔끔하게)
@@ -631,6 +674,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) {
                     console.error('❌ [Retry] 과제 실행 실패:', e);
                     showScreen('scheduleScreen');
+                }
+                
+                // 로딩 오버레이 제거
+                if (typeof window._removeReplayLoading === 'function') {
+                    window._removeReplayLoading();
                 }
                 
                 // URL 정리
