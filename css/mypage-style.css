@@ -602,6 +602,36 @@ body {
   color: var(--text-secondary);
 }
 
+/* 해설 + 다시풀기 버튼 그룹 */
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.btn-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #d0e0d8;
+  background: #f0faf5;
+  color: #3a8a5c;
+  font-size: .75rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .18s;
+}
+.btn-retry:hover {
+  border-color: #6ab88a;
+  background: #e0f5ea;
+  color: #2a6a44;
+}
+.btn-retry i {
+  font-size: .7rem;
+}
+
 /* ══════════════════════════════════════════
    Modal Base
 ══════════════════════════════════════════ */
