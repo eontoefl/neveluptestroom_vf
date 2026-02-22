@@ -4,6 +4,54 @@
 // - AcademicComponent: 실제 문제 풀이 로직
 // - 이 파일: 어댑터 + 결과 화면
 
+/**
+ * 번역 수에 맞춰 원문을 문장 단위로 분리 (academic 전용)
+ * (A)(B)(C)(D) 괄호 마커를 앞 문장에 병합
+ */
+function splitToMatchTranslations_ac(cleanContent, translationCount) {
+    if (translationCount <= 0) {
+        return cleanContent.split(/\n\n+/).filter(s => s.trim());
+    }
+    const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    if (paragraphs.length === translationCount) return paragraphs;
+    
+    const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // 문장 끝 + 선택적 (A)(B) 마커 뒤에서 split
+    const rawSplit = allText.split(/(?<=[.!?](?:\s*\([A-Z]\))?)\s+(?=[A-Z\("])/).filter(s => s.trim());
+    // 단독 괄호 마커만 남은 항목은 이전 문장에 병합
+    const merged = [];
+    rawSplit.forEach(s => {
+        if (/^\([A-Z]\)$/.test(s.trim()) && merged.length > 0) {
+            merged[merged.length - 1] += ' ' + s.trim();
+        } else {
+            merged.push(s);
+        }
+    });
+    if (merged.length === translationCount) return merged;
+    
+    // 더 단순한 split
+    const simpleSplit = allText.split(/(?<=[.!?])\s+(?=[A-Z\("])/).filter(s => s.trim());
+    const merged2 = [];
+    simpleSplit.forEach(s => {
+        if (/^\([A-Z]\)$/.test(s.trim()) && merged2.length > 0) {
+            merged2[merged2.length - 1] += ' ' + s.trim();
+        } else {
+            merged2.push(s);
+        }
+    });
+    if (merged2.length === translationCount) return merged2;
+    
+    // 최후: 가장 가까운 결과
+    const diffs = [
+        { s: paragraphs, d: Math.abs(paragraphs.length - translationCount) },
+        { s: merged, d: Math.abs(merged.length - translationCount) },
+        { s: merged2, d: Math.abs(merged2.length - translationCount) }
+    ];
+    diffs.sort((a, b) => a.d - b.d);
+    return diffs[0].s;
+}
+
 // ============================================
 // 1. 어댑터 함수 (Component 사용)
 // ============================================
@@ -231,32 +279,10 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리
+    // \n 처리 + 번역 수에 맞춰 문장 분리
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    
-    // 1순위: 단락(\n\n) 기준 split
-    let sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
-    
-    // 단락 수와 번역 수가 안 맞으면 → 문장 단위 split (academic은 문장 단위 번역)
-    if (sentences.length !== translations.length && translations.length > 0) {
-        const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-        
-        // 문장 끝(. ! ?) + 선택적 괄호마커 (A)(B)등 뒤에 공백 + 대문자/괄호로 시작
-        // (A)(B)(C)(D) 같은 짧은 마커는 앞 문장에 병합
-        const rawSplit = allText.split(/(?<=[.!?](?:\s*\([A-Z]\))?)\s+(?=[A-Z\("])/).filter(s => s.trim());
-        
-        // 단독 괄호 마커만 남은 항목은 이전 문장에 병합
-        const merged = [];
-        rawSplit.forEach(s => {
-            if (/^\([A-Z]\)$/.test(s.trim()) && merged.length > 0) {
-                merged[merged.length - 1] += ' ' + s.trim();
-            } else {
-                merged.push(s);
-            }
-        });
-        sentences = merged;
-    }
+    const sentences = splitToMatchTranslations_ac(cleanContent, translations.length);
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
@@ -478,32 +504,10 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리
+    // \n 처리 + 번역 수에 맞춰 문장 분리
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    
-    // 1순위: 단락(\n\n) 기준 split
-    let sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
-    
-    // 단락 수와 번역 수가 안 맞으면 → 문장 단위 split (academic은 문장 단위 번역)
-    if (sentences.length !== translations.length && translations.length > 0) {
-        const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-        
-        // 문장 끝(. ! ?) + 선택적 괄호마커 (A)(B)등 뒤에 공백 + 대문자/괄호로 시작
-        // (A)(B)(C)(D) 같은 짧은 마커는 앞 문장에 병합
-        const rawSplit = allText.split(/(?<=[.!?](?:\s*\([A-Z]\))?)\s+(?=[A-Z\("])/).filter(s => s.trim());
-        
-        // 단독 괄호 마커만 남은 항목은 이전 문장에 병합
-        const merged = [];
-        rawSplit.forEach(s => {
-            if (/^\([A-Z]\)$/.test(s.trim()) && merged.length > 0) {
-                merged[merged.length - 1] += ' ' + s.trim();
-            } else {
-                merged.push(s);
-            }
-        });
-        sentences = merged;
-    }
+    const sentences = splitToMatchTranslations_ac(cleanContent, translations.length);
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';

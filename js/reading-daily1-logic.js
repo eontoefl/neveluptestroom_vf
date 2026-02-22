@@ -4,6 +4,49 @@
 // - Daily1Component: 실제 문제 풀이 로직
 // - 이 파일: 어댑터 + 결과 화면
 
+/**
+ * 번역 수에 맞춰 원문을 문장 단위로 분리하는 공통 함수
+ * 이메일 주소(.com, .gov 등)에서 끊기지 않도록 보호
+ */
+function splitToMatchTranslations(cleanContent, translationCount) {
+    if (translationCount <= 0) {
+        return cleanContent.split(/\n\n+/).filter(s => s.trim());
+    }
+    
+    // 1순위: 단락(\n\n) 기준 split
+    const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    if (paragraphs.length === translationCount) {
+        return paragraphs;
+    }
+    
+    // 2순위: 문장 단위 split (이메일 주소 보호)
+    // 전체 텍스트를 하나로 합치고 문장 끝에서 분리
+    const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // 문장 끝(. ! ?) 뒤에 공백 + 대문자/괄호로 시작하는 지점에서 split
+    // 단, 이메일/URL(.com .gov .org 등) 뒤에서는 끊지 않음
+    const sentenceSplit = allText.split(/(?<=[.!?])(?<!\w\.\w)(?<![A-Z])(?:\s*\([A-Z]\))?\s+(?=[A-Z\("])/).filter(s => s.trim());
+    
+    if (sentenceSplit.length === translationCount) {
+        return sentenceSplit;
+    }
+    
+    // 3순위: 더 단순한 문장 split
+    const simpleSplit = allText.split(/(?<=[.!?])\s+(?=[A-Z])/).filter(s => s.trim());
+    if (simpleSplit.length === translationCount) {
+        return simpleSplit;
+    }
+    
+    // 최후: 가장 가까운 결과 반환
+    const diffs = [
+        { s: paragraphs, d: Math.abs(paragraphs.length - translationCount) },
+        { s: sentenceSplit, d: Math.abs(sentenceSplit.length - translationCount) },
+        { s: simpleSplit, d: Math.abs(simpleSplit.length - translationCount) }
+    ];
+    diffs.sort((a, b) => a.d - b.d);
+    return diffs[0].s;
+}
+
 // ============================================
 // 1. 어댑터 함수 (Component 사용)
 // ============================================
@@ -215,8 +258,8 @@ function renderDaily1SetResultOriginal(setResult, setIndex) {
         .replace(/\\n/g, '\n')  // escaped \n → real newline
         .replace(/\r\n/g, '\n');
     
-    // 번역 개수 기반 문장 분리 - 단락(\n\n) 기준 통일
-    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    // 번역 수에 맞춰 문장 분리
+    const sentences = splitToMatchTranslations(cleanContent, translations.length);
     
     // 문장별 해석 HTML 생성
     let sentencesHTML = '';
@@ -339,8 +382,8 @@ function renderDaily1SetResult(setResult, secondAttemptData, firstResults, secon
         .replace(/\\n/g, '\n')  // escaped \n → real newline
         .replace(/\r\n/g, '\n');
     
-    // 번역 개수 기반 문장 분리 - 단락(\n\n) 기준 통일
-    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    // 번역 수에 맞춰 문장 분리
+    const sentences = splitToMatchTranslations(cleanContent, translations.length);
     
     // 문장별 해석 HTML 생성
     let sentencesHTML = '';

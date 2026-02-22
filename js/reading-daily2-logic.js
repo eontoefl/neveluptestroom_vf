@@ -4,6 +4,33 @@
 // - Daily2Component: 실제 문제 풀이 로직
 // - 이 파일: 어댑터 + 결과 화면
 
+/**
+ * 번역 수에 맞춰 원문을 문장 단위로 분리하는 공통 함수
+ * (daily1-logic.js와 동일)
+ */
+function splitToMatchTranslations_d2(cleanContent, translationCount) {
+    if (translationCount <= 0) {
+        return cleanContent.split(/\n\n+/).filter(s => s.trim());
+    }
+    const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    if (paragraphs.length === translationCount) return paragraphs;
+    
+    const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    const sentenceSplit = allText.split(/(?<=[.!?])(?<!\w\.\w)(?<![A-Z])(?:\s*\([A-Z]\))?\s+(?=[A-Z\("])/).filter(s => s.trim());
+    if (sentenceSplit.length === translationCount) return sentenceSplit;
+    
+    const simpleSplit = allText.split(/(?<=[.!?])\s+(?=[A-Z])/).filter(s => s.trim());
+    if (simpleSplit.length === translationCount) return simpleSplit;
+    
+    const diffs = [
+        { s: paragraphs, d: Math.abs(paragraphs.length - translationCount) },
+        { s: sentenceSplit, d: Math.abs(sentenceSplit.length - translationCount) },
+        { s: simpleSplit, d: Math.abs(simpleSplit.length - translationCount) }
+    ];
+    diffs.sort((a, b) => a.d - b.d);
+    return diffs[0].s;
+}
+
 // ============================================
 // 1. 어댑터 함수 (Component 사용)
 // ============================================
@@ -236,10 +263,10 @@ function renderDaily2SetResult(setResult, secondAttemptData, firstResults, secon
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리 - 단락(\n\n) 기준 통일
+    // \n 처리 + 번역 수에 맞춰 문장 분리
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    const sentences = splitToMatchTranslations_d2(cleanContent, translations.length);
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
@@ -490,10 +517,10 @@ function renderDaily2SetResultOriginal(setResult, setIdx) {
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 기반 문장 분리 - 단락(\n\n) 기준 통일
+    // \n 처리 + 번역 수에 맞춰 문장 분리
     const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
-    const sentences = cleanContent.split(/\n\n+/).filter(s => s.trim());
+    const sentences = splitToMatchTranslations_d2(cleanContent, translations.length);
     
     sentences.forEach((sentence, idx) => {
         const translation = translations[idx] || '';
