@@ -52,7 +52,16 @@ function initScheduleScreen() {
         // 진도율 Progress Bar 표시
         if (typeof ProgressTracker !== 'undefined') {
             const pt = currentUser.programType || (currentUser.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
+            
+            // ★ _loaded와 _loading 모두 리셋하여 강제 재조회
             ProgressTracker._loaded = false;
+            ProgressTracker._loading = false;
+            
+            // ★ 캐시에 이미 있는 데이터로 먼저 진도율 표시 (0% 방지)
+            if (Object.keys(ProgressTracker._completedTasks || {}).length > 0) {
+                ProgressTracker.renderTotalProgressBar(pt);
+            }
+            
             ProgressTracker.loadCompletedTasks().then(function() {
                 renderSchedule(currentUser.program);
                 ProgressTracker.renderTotalProgressBar(pt);

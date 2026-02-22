@@ -343,10 +343,11 @@ var AuthMonitor = {
             document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
                 el.style.display = 'none';
             });
-            originalFinish();
+            // ★ 순서 변경: saveRecords → markCompleted를 먼저 한 뒤 → backToSchedule
             await AuthMonitor.saveRecords();
             AuthMonitor.stop();
             AuthMonitor._snapshot = null;
+            originalFinish();
         };
 
         console.log('✅ [Auth] FlowController 연동');

@@ -40,6 +40,16 @@ var ProgressTracker = {
 
         try {
             var records = await getStudyRecords(user.id);
+            
+            // ★ markCompleted()로 캐시에 넣은 로컬 데이터 보존
+            var localCache = {};
+            var existingKeys = Object.keys(this._completedTasks || {});
+            existingKeys.forEach(function(k) {
+                if (ProgressTracker._completedTasks[k] && ProgressTracker._completedTasks[k]._local) {
+                    localCache[k] = ProgressTracker._completedTasks[k];
+                }
+            });
+            
             this._completedTasks = {};
 
             if (records && records.length > 0) {
@@ -68,6 +78,14 @@ var ProgressTracker = {
                 });
             }
 
+            // ★ DB 결과에 없는 로컬 캐시 복원 (비동기 저장 완료 전 보호)
+            Object.keys(localCache).forEach(function(k) {
+                if (!ProgressTracker._completedTasks[k]) {
+                    ProgressTracker._completedTasks[k] = localCache[k];
+                    console.log('📊 [ProgressTracker] 로컬 캐시 복원:', k);
+                }
+            });
+            
             this._loaded = true;
             console.log('📊 [ProgressTracker] 완료 과제:', Object.keys(this._completedTasks).length, '건');
 
@@ -502,7 +520,8 @@ var ProgressTracker = {
         this._completedTasks[key] = {
             week: week,
             day: day,
-            completedAt: new Date().toISOString()
+            completedAt: new Date().toISOString(),
+            _local: true  // ★ 로컬 캐시 표시 (DB 재조회 시 보존용)
         };
         // vocab, intro-book은 week_day 키도 추가
         if (taskType === 'vocab' || taskType === 'intro-book') {
@@ -510,7 +529,8 @@ var ProgressTracker = {
             this._completedTasks[wdKey] = {
                 week: week,
                 day: day,
-                completedAt: new Date().toISOString()
+                completedAt: new Date().toISOString(),
+                _local: true
             };
             console.log('📊 [ProgressTracker] 캐시 업데이트:', wdKey);
         }
