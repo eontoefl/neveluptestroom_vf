@@ -135,12 +135,9 @@
             console.log('⏭ [Admin] Repeat 타이머 스킵');
             clearInterval(repeatComp.repeatTimer);
             repeatComp.repeatTimer = null;
-            // 현재 녹음 세트/인덱스를 찾아서 stopRepeatRecording 호출
-            if (typeof repeatComp.stopRepeatRecording === 'function') {
+            if (typeof repeatComp.stopRepeatRecording === 'function' && repeatComp._currentRecordingSet) {
                 try {
-                    var set = repeatComp.currentSet;
-                    var audioIdx = repeatComp.currentNarration || 0;
-                    repeatComp.stopRepeatRecording(set, audioIdx);
+                    repeatComp.stopRepeatRecording(repeatComp._currentRecordingSet, repeatComp._currentRecordingAudioIndex || 0);
                 } catch(e) {
                     console.log('  → Repeat 녹음 중지 실패:', e.message);
                 }
@@ -153,12 +150,9 @@
             console.log('⏭ [Admin] Interview 타이머 스킵');
             clearInterval(interviewComp.interviewTimer);
             interviewComp.interviewTimer = null;
-            // stopInterviewRecording 호출
-            if (typeof interviewComp.stopInterviewRecording === 'function') {
+            if (typeof interviewComp.stopInterviewRecording === 'function' && interviewComp._currentRecordingSet) {
                 try {
-                    var iSet = interviewComp.currentSet;
-                    var qIdx = interviewComp.currentQuestion || 0;
-                    interviewComp.stopInterviewRecording(iSet, qIdx);
+                    interviewComp.stopInterviewRecording(interviewComp._currentRecordingSet, interviewComp._currentRecordingQuestionIndex || 0);
                 } catch(e) {
                     console.log('  → Interview 녹음 중지 실패:', e.message);
                 }
