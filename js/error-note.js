@@ -614,7 +614,7 @@ var ErrorNote = {
 
         // Supabase에 저장 (tr_study_records 업데이트)
         try {
-            var user = window.currentUser;
+            var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
             console.log('📝 [ErrorNote] 저장 시작 - user:', user ? user.id : 'null', 'sectionType:', this._sectionType, 'moduleNumber:', this._moduleNumber);
             
             if (!user || !user.id) {

@@ -562,8 +562,8 @@ function renderScore(record) {
  * 해설 다시보기 버튼 렌더링
  */
 function renderReplayButton(record) {
-    // reading만 지원 (listening은 추후 추가)
-    const supported = ['reading'];
+    // reading, listening, speaking, writing 지원
+    const supported = ['reading', 'listening', 'speaking', 'writing'];
     if (!supported.includes(record.task_type)) {
         return `<button class="btn-replay" disabled><i class="fa-solid fa-book-open"></i> -</button>`;
     }
