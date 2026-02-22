@@ -53,11 +53,11 @@ function backToSchedule() {
     }
     
     // 해설 화면에서 오답노트 미제출 시 경고
-    if (isOnExplainScreen || currentScreenId === 'finalExplainScreen') {
-        if (window.ErrorNote && !ErrorNote.isSubmitted()) {
-            if (!confirm('⚠️ 오답노트를 제출하지 않았습니다.\n그래도 나가시겠습니까?')) {
-                return;
-            }
+    // ErrorNote 패널이 존재하고 아직 제출 안 했으면 = 해설 화면에서 나가려는 것
+    var errorNotePanel = document.getElementById('errorNotePanel');
+    if (errorNotePanel && window.ErrorNote && !ErrorNote.isSubmitted()) {
+        if (!confirm('⚠️ 오답노트를 제출하지 않았습니다.\n그래도 나가시겠습니까?')) {
+            return;
         }
     }
     
