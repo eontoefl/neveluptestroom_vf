@@ -77,7 +77,12 @@ async function replayExplanation(studyRecordId) {
         
         const taskType = record.task_type;
         
-        if (!resultJson || !resultJson.data) {
+        // result_json 구조 판별:
+        // - 기존 방식: { data: [...] }
+        // - auth-monitor 방식: { componentResults: [...], sectionType, totalQuestions, ... }
+        const resultData = resultJson ? (resultJson.data || resultJson.componentResults || null) : null;
+        
+        if (!resultJson || !resultData) {
             // ★ result_json 없음 → 원본 콘텐츠에서 재조합 (fallback)
             console.log('📖 [ResultReplay] result_json 없음 — 원본 콘텐츠로 해설 재구성');
             
@@ -100,11 +105,36 @@ async function replayExplanation(studyRecordId) {
             return;
         }
         
-        const resultData = resultJson.data;
-        
         console.log(`📖 [ResultReplay] taskType: ${taskType}, 데이터 크기: ${JSON.stringify(resultData).length} bytes`);
         
-        // 마이페이지 → 메인 페이지로 이동
+        // componentResults 배열인 경우 (auth-monitor에서 모듈 전체 저장)
+        // → 개별 컴포넌트로 분리하여 타입 선택 UI 제공
+        const isModuleResult = Array.isArray(resultData) && resultData.length > 1 && resultData[0].componentType;
+        
+        if (isModuleResult) {
+            console.log(`📖 [ResultReplay] 모듈 전체 결과 감지 — ${resultData.length}개 컴포넌트`);
+            
+            if (window.location.pathname.includes('mypage')) {
+                sessionStorage.setItem('replayData', JSON.stringify({
+                    studyRecordId,
+                    taskType,
+                    resultData,
+                    week: record.week,
+                    day: record.day,
+                    moduleNumber: record.module_number,
+                    isModuleResult: true
+                }));
+                if (typeof showLoadingOverlay === 'function') showLoadingOverlay('해설을 불러오고 있습니다...');
+                window.location.href = 'index.html?replay=true';
+                return;
+            }
+            
+            // index.html에서 직접 실행
+            executeModuleReplay(taskType, resultData, record);
+            return;
+        }
+        
+        // 마이페이지 → 메인 페이지로 이동 (단일 타입 결과)
         if (window.location.pathname.includes('mypage')) {
             sessionStorage.setItem('replayData', JSON.stringify({
                 studyRecordId,
@@ -129,7 +159,176 @@ async function replayExplanation(studyRecordId) {
 }
 
 // ================================================
-// 3. 실제 해설 화면 렌더링 실행
+// 2.5. 모듈 전체 결과 → 타입 선택 후 개별 해설 표시
+// ================================================
+function executeModuleReplay(taskType, componentResults, record) {
+    console.log(`🎨 [ModuleReplay] 모듈 결과 → 타입 선택 UI 표시`);
+    
+    window._isReplayMode = true;
+    
+    // 모든 화면 숨기기
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+    
+    // currentTest 복원
+    if (window.currentTest) {
+        window.currentTest.currentWeek = record.week || 1;
+        window.currentTest.currentDay = record.day || '월';
+    } else {
+        window.currentTest = {
+            currentWeek: record.week || 1,
+            currentDay: record.day || '월',
+            section: null, currentQuestion: 0, currentPassage: 0,
+            currentTask: 0, startTime: null, answers: {}
+        };
+    }
+    
+    // componentResults를 타입별로 그룹화
+    const typeMap = {};
+    componentResults.forEach(comp => {
+        const type = comp.componentType || comp.type || 'unknown';
+        if (!typeMap[type]) typeMap[type] = [];
+        typeMap[type].push(comp);
+    });
+    
+    const typeLabels = {
+        'fillblanks': '빈칸 채우기 (Fill in the Blanks)',
+        'daily1': 'Daily Reading 1',
+        'daily2': 'Daily Reading 2',
+        'academic': 'Academic Reading'
+    };
+    
+    // 타입 선택 UI 생성
+    const selector = document.createElement('div');
+    selector.id = 'moduleReplaySelector';
+    selector.style.cssText = 'position:fixed; inset:0; z-index:9998; background:rgba(255,255,255,.97); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;';
+    
+    let html = `
+        <div style="max-width:400px; width:100%; text-align:center;">
+            <div style="font-size:28px; margin-bottom:12px;">📖</div>
+            <h2 style="margin:0 0:6px; font-size:18px; font-weight:700;">해설 보기</h2>
+            <p style="font-size:13px; color:#888; margin:0 0 24px;">Week ${record.week || '?'} ${record.day || ''} · Module ${record.module_number || '?'}</p>
+            <p style="font-size:14px; color:#555; margin:0 0 20px;">유형을 선택해주세요</p>
+    `;
+    
+    Object.keys(typeMap).forEach(type => {
+        const label = typeLabels[type] || type;
+        const comps = typeMap[type];
+        // 점수 계산
+        let correct = 0, total = 0;
+        comps.forEach(comp => {
+            const answers = comp.answers || comp.results || [];
+            total += answers.length;
+            correct += answers.filter(a => a.isCorrect).length;
+        });
+        
+        html += `
+            <button onclick="loadModuleReplayType('${type}')" style="
+                display:block; width:100%; padding:14px 18px; margin-bottom:10px;
+                border:1.5px solid #e2e8f0; border-radius:12px; background:#fff;
+                font-size:14px; font-weight:600; cursor:pointer;
+                text-align:left; transition:all .15s;
+            " onmouseover="this.style.borderColor='#6c5ce7';this.style.background='#f9f7ff'"
+               onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#fff'">
+                <span>${label}</span>
+                <span style="float:right; color:${correct > 0 ? '#38a169' : '#e53e3e'}; font-size:13px;">${correct}/${total}</span>
+            </button>
+        `;
+    });
+    
+    html += `
+            <button onclick="window.location.href='mypage.html'" style="
+                margin-top:16px; padding:10px 30px; border:none; border-radius:8px;
+                background:#eee; color:#666; font-size:13px; font-weight:600; cursor:pointer;
+            ">← 마이페이지로 돌아가기</button>
+        </div>
+    `;
+    
+    selector.innerHTML = html;
+    document.body.appendChild(selector);
+    
+    // 타입별 로드 함수를 전역에 등록
+    window._moduleReplayData = { typeMap, record };
+}
+
+/**
+ * 모듈 해설에서 특정 타입 선택 시 호출
+ */
+function loadModuleReplayType(type) {
+    const { typeMap, record } = window._moduleReplayData;
+    const comps = typeMap[type];
+    if (!comps || comps.length === 0) {
+        alert('해당 유형의 데이터가 없습니다.');
+        return;
+    }
+    
+    // 선택 UI 제거
+    const selector = document.getElementById('moduleReplaySelector');
+    if (selector) selector.remove();
+    
+    // 각 컴포넌트의 결과를 해설 화면이 기대하는 형태로 변환
+    // gradeAnswers()가 반환하는 구조: { type, setId, setNumber, mainTitle, passage, answers }
+    // componentResults에는 이미 이 구조가 spread되어 있음
+    const resultList = comps.map(comp => comp);
+    
+    console.log(`📖 [ModuleReplay] ${type} 선택 — ${resultList.length}개 세트`);
+    
+    switch (type) {
+        case 'fillblanks':
+            sessionStorage.setItem('fillBlanksResults', JSON.stringify(resultList));
+            showResultScreen();
+            break;
+        case 'daily1':
+            sessionStorage.setItem('daily1Results', JSON.stringify(resultList));
+            showDaily1Results();
+            break;
+        case 'daily2':
+            sessionStorage.setItem('daily2Results', JSON.stringify(resultList));
+            showDaily2Results();
+            break;
+        case 'academic':
+            sessionStorage.setItem('academicResults', JSON.stringify(resultList));
+            showAcademicResults();
+            break;
+        default:
+            alert('지원하지 않는 유형입니다: ' + type);
+    }
+    
+    // 마이페이지 돌아가기 버튼 추가
+    addModuleReplayBackButton();
+}
+
+function addModuleReplayBackButton() {
+    // 기존 버튼 제거
+    const existing = document.getElementById('moduleReplayBackBtn');
+    if (existing) existing.remove();
+    
+    const bar = document.createElement('div');
+    bar.id = 'moduleReplayBackBtn';
+    bar.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; display:flex; gap:8px;';
+    
+    bar.innerHTML = `
+        <button onclick="document.getElementById('moduleReplayBackBtn').remove(); executeModuleReplay('${window._moduleReplayData?.record?.task_type || 'reading'}', Object.values(window._moduleReplayData.typeMap).flat(), window._moduleReplayData.record)" style="
+            padding:10px 20px; border:none; border-radius:20px;
+            background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+            font-size:13px; font-weight:700; cursor:pointer;
+            box-shadow:0 4px 12px rgba(108,92,231,.35);
+        ">📖 다른 유형 보기</button>
+        <button onclick="window.location.href='mypage.html'" style="
+            padding:10px 20px; border:none; border-radius:20px;
+            background:#fff; color:#666; font-size:13px; font-weight:700; cursor:pointer;
+            box-shadow:0 2px 8px rgba(0,0,0,.1); border:1px solid #e2e8f0;
+        ">← 마이페이지</button>
+    `;
+    document.body.appendChild(bar);
+}
+
+window.loadModuleReplayType = loadModuleReplayType;
+
+// ================================================
+// 3. 실제 해설 화면 렌더링 실행 (단일 타입)
 // ================================================
 function executeReplay(taskType, resultData, record) {
     console.log(`🎨 [ResultReplay] 렌더링 실행 — taskType: ${taskType}`);
@@ -302,6 +501,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         week: replayData.week,
                         day: replayData.day,
                         module_number: replayData.moduleNumber
+                    });
+                } else if (replayData.isModuleResult) {
+                    // 모듈 전체 결과 → 타입 선택 UI
+                    executeModuleReplay(replayData.taskType, replayData.resultData, {
+                        week: replayData.week,
+                        day: replayData.day,
+                        module_number: replayData.moduleNumber,
+                        task_type: replayData.taskType
                     });
                 } else {
                     executeReplay(replayData.taskType, replayData.resultData, {

@@ -720,15 +720,6 @@ function handleLogout() {
 // ================================================
 // 유틸리티
 // ================================================
-function showLoadingOverlay(message) {
-    const overlay = document.getElementById('loadingOverlay');
-    const msg = document.getElementById('loadingMessage');
-    if (overlay) {
-        if (msg) msg.textContent = message || '이동 중...';
-        overlay.style.display = 'flex';
-    }
-}
-
 function showNotLoggedIn() {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('notLoggedScreen').style.display = 'flex';
