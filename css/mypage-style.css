@@ -368,17 +368,15 @@ body {
   font-size: .8rem;
   font-weight: 600;
   color: var(--text-muted);
-  cursor: pointer;
+  cursor: default;
   transition: all .2s;
-}
-.plan-tab:hover {
-  border-color: var(--signature);
-  color: var(--signature);
+  opacity: 0.5;
 }
 .plan-tab.active {
   background: var(--signature);
   border-color: var(--signature);
   color: #fff;
+  opacity: 1;
 }
 
 .grass-grid {
