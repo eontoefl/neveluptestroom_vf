@@ -202,7 +202,53 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- 로그인 화면 -->
+        <!-- ========== 긴급 공지 팝업 ========== -->
+    <div id="noticeOverlay" style="
+        position:fixed; inset:0; z-index:99999;
+        background:rgba(0,0,0,.55);
+        display:flex; align-items:center; justify-content:center;
+        padding:20px;
+    ">
+        <div style="
+            background:#fff; border-radius:16px; max-width:420px; width:100%;
+            padding:32px 28px 24px; text-align:center;
+            box-shadow:0 20px 60px rgba(0,0,0,.3);
+            animation: noticeIn .3s ease;
+        ">
+            <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
+            <h2 style="margin:0 0 8px; font-size:18px; color:#1a1a1a; font-weight:700;">테스트룸 긴급 공지</h2>
+            <p style="font-size:11px; color:#999; margin:0 0 16px;">2026.02.22</p>
+            <div style="
+                text-align:left; font-size:14px; line-height:1.75; color:#333;
+                background:#f8f9fa; border-radius:10px; padding:16px 18px;
+                margin-bottom:20px; border-left:4px solid #ff6b35;
+            ">
+                현재 <b>데이터베이스 공격으로 추정되는 비정상 트래픽</b>이 감지되어,
+                일부 환경에서 <b style="color:#e53e3e;">오류(저장/제출/로딩)</b>나
+                <b style="color:#e53e3e;">화면 깨짐</b>이 발생할 수 있습니다.<br><br>
+                화면이 다소 불안정할 수 있으나
+                <b style="color:#2b6cb0;">모든 데이터는 정상적으로 로드되고 있으며</b>,
+                <b>오늘 내로 복구 완료</b>하겠습니다.<br><br>
+                불편을 드려 죄송합니다. 🙏
+            </div>
+            <button onclick="document.getElementById('noticeOverlay').style.display='none'" style="
+                background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff;
+                border:none; border-radius:10px; padding:12px 40px;
+                font-size:15px; font-weight:700; cursor:pointer;
+                transition:transform .15s, box-shadow .15s;
+                box-shadow:0 4px 12px rgba(108,92,231,.35);
+            " onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(108,92,231,.45)'"
+               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(108,92,231,.35)'"
+            >확인했습니다</button>
+        </div>
+    </div>
+    <style>
+        @keyframes noticeIn {
+            from { opacity:0; transform:scale(.92) translateY(10px); }
+            to   { opacity:1; transform:scale(1) translateY(0); }
+        }
+    </style>
+<!-- 로그인 화면 -->
     <div id="loginScreen" class="screen active">
         <div class="login-container">
             <div class="login-card">
