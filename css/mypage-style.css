@@ -596,6 +596,34 @@ body {
   cursor: default;
 }
 
+/* 해설 다시보기 버튼 */
+.btn-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid #d8d0eb;
+  background: #f9f7ff;
+  color: #7a66b0;
+  font-size: .8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .18s;
+}
+.btn-replay:hover {
+  border-color: #9480c5;
+  background: #eee9f7;
+  color: #5a4a8a;
+}
+.btn-replay:disabled {
+  opacity: .4;
+  cursor: default;
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
 /* ══════════════════════════════════════════
    Modal Base
 ══════════════════════════════════════════ */
