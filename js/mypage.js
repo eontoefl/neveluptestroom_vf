@@ -115,6 +115,16 @@ function isBeforeStart() {
     return now < start;
 }
 
+// 등급/환급 산정 전 여부: 시작일 다음날부터 산정 (시작일 당일 포함 = 산정 전)
+function isGradeBeforeStart() {
+    if (!mpUser.startDate) return false;
+    const start = new Date(mpUser.startDate);
+    start.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now <= start; // 당일 포함
+}
+
 function getDaysUntilStart() {
     if (!mpUser.startDate) return 0;
     const start = new Date(mpUser.startDate);
@@ -190,30 +200,42 @@ function renderSummaryCards() {
     document.getElementById('tasksBar').style.width = `${Math.min(tasksPct, 100)}%`;
     document.getElementById('tasksPct').textContent = `${tasksPct}% 완료`;
 
-    // --- 현재 등급 ---
-    const successDays = countSuccessDays();
-    const grade = calculateGrade(successDays, totalDays);
+    // --- 현재 등급 / 보증금 환급 ---
+    if (isGradeBeforeStart()) {
+        // 시작일 다음날부터 산정 (관리자 대시보드와 동일)
+        document.getElementById('currentGrade').textContent = '-';
+        const gradeHint = document.getElementById('gradeHint');
+        gradeHint.querySelector('span').textContent = '시작일 다음날부터 산정';
 
-    document.getElementById('currentGrade').textContent = grade.letter;
-    const gradeHint = document.getElementById('gradeHint');
-    gradeHint.querySelector('span').textContent = grade.hint;
-
-    // --- 보증금 환급 예상 ---
-    const deposit = 100000;
-    const refundRate = grade.refundRate;
-    const refundAmount = Math.round(deposit * refundRate);
-
-    document.getElementById('refundAmount').textContent = refundAmount.toLocaleString();
-    const refundStatus = document.getElementById('refundStatus');
-    if (refundRate >= 0.8) {
+        document.getElementById('refundAmount').textContent = '-';
+        const refundStatus = document.getElementById('refundStatus');
         refundStatus.className = 'sc-sub refund-tag';
-        refundStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>환급 기준 충족 중</span>';
-    } else if (refundRate > 0) {
-        refundStatus.className = 'sc-sub refund-tag warning';
-        refundStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>환급률 낮음 – 더 열심히!</span>';
+        refundStatus.innerHTML = '<i class="fa-solid fa-clock"></i><span>시작일 다음날부터 산정</span>';
     } else {
-        refundStatus.className = 'sc-sub refund-tag warning';
-        refundStatus.innerHTML = '<i class="fa-solid fa-circle-xmark"></i><span>아직 데이터가 없어요</span>';
+        const successDays = countSuccessDays();
+        const grade = calculateGrade(successDays, totalDays);
+
+        document.getElementById('currentGrade').textContent = grade.letter;
+        const gradeHint = document.getElementById('gradeHint');
+        gradeHint.querySelector('span').textContent = grade.hint;
+
+        // --- 보증금 환급 예상 ---
+        const deposit = 100000;
+        const refundRate = grade.refundRate;
+        const refundAmount = Math.round(deposit * refundRate);
+
+        document.getElementById('refundAmount').textContent = refundAmount.toLocaleString();
+        const refundStatus = document.getElementById('refundStatus');
+        if (refundRate >= 0.8) {
+            refundStatus.className = 'sc-sub refund-tag';
+            refundStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>환급 기준 충족 중</span>';
+        } else if (refundRate > 0) {
+            refundStatus.className = 'sc-sub refund-tag warning';
+            refundStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>환급률 낮음 – 더 열심히!</span>';
+        } else {
+            refundStatus.className = 'sc-sub refund-tag warning';
+            refundStatus.innerHTML = '<i class="fa-solid fa-circle-xmark"></i><span>아직 데이터가 없어요</span>';
+        }
     }
 }
 
@@ -589,10 +611,7 @@ function renderNoteButton(record) {
 function setupPlanTabs() {
     const programType = mpUser.programType || 'standard';
 
-    // 유저 프로그램에 맞는 탭을 활성화 (클릭 전환 없음 – disabled 처리)
-    
-
-    // 해당 잔디 그리드만 표시
+    // 해당 잔디 그리드만 표시 (탭 버튼 없음)
     document.getElementById('grass-fast').style.display = programType === 'fast' ? '' : 'none';
     document.getElementById('grass-standard').style.display = programType === 'standard' ? '' : 'none';
 
