@@ -2,7 +2,9 @@
 function backToSchedule() {
     // 현재 활성화된 화면 확인
     const activeScreen = document.querySelector('.screen.active');
-    const currentScreenId = activeScreen ? activeScreen.id : null;
+    // active 클래스가 없는 경우 display:block인 화면도 확인
+    const visibleScreen = activeScreen || document.querySelector('.screen[style*="display: block"], .screen[style*="display:block"]');
+    const currentScreenId = visibleScreen ? visibleScreen.id : null;
     
     console.log('🔙 [뒤로가기] 현재 화면:', currentScreenId);
     

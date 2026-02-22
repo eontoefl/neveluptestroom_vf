@@ -179,7 +179,8 @@ var ErrorNote = {
 
         var toggle = document.getElementById('errorNoteToggle');
         if (toggle) {
-            toggle.addEventListener('click', function() {
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
                 ErrorNote.togglePanel();
             });
         }
@@ -187,8 +188,8 @@ var ErrorNote = {
         var header = document.getElementById('errorNoteHeader');
         if (header) {
             header.addEventListener('click', function(e) {
-                // 토글 버튼 영역이 아닌 헤더 클릭 시에도 토글
-                if (e.target.id !== 'errorNoteToggle' && !e.target.closest('#errorNoteToggle')) {
+                // 토글 버튼 영역 클릭은 위에서 처리하므로 스킵
+                if (!e.target.closest('#errorNoteToggle')) {
                     ErrorNote.togglePanel();
                 }
             });
