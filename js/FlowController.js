@@ -123,7 +123,8 @@ const FlowController = {
         }
         
         // ★ 리딩/리스닝: 중간저장 기록 확인 후 시작
-        if ((sectionType === 'reading' || sectionType === 'listening') && window.AutoSave) {
+        // ✅ 연습 모드(다시풀기)에서는 중간저장 체크 스킵
+        if ((sectionType === 'reading' || sectionType === 'listening') && window.AutoSave && !window._isPracticeMode) {
             this._checkAndStart(sectionType, moduleNumber);
             return;
         }
