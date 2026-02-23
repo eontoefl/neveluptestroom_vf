@@ -42,6 +42,14 @@ function isTaskDeadlinePassed() {
     deadline.setDate(deadline.getDate() + 1);
     deadline.setHours(4, 0, 0, 0);
 
+    // ★ 예외: 2/22(토) 과제 → 2/24 새벽 4시로 연장
+    var tm = taskDate.getMonth();
+    var td = taskDate.getDate();
+    var ty = taskDate.getFullYear();
+    if (ty === 2026 && tm === 1 && td === 22) {
+        deadline = new Date(2026, 1, 24, 4, 0, 0, 0);
+    }
+
     var now = new Date();
     var passed = now > deadline;
     
