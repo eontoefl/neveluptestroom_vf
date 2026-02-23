@@ -719,6 +719,15 @@ class ModuleController {
             return;
         }
         
+        // 🔴 이전 컴포넌트 오디오 정리 (겹침 방지)
+        if (this.currentComponentInstance && this.currentComponentInstance.cleanup) {
+            console.log('🧹 [ModuleController] 이전 컴포넌트 cleanup 실행');
+            this.currentComponentInstance.cleanup();
+        }
+        
+        // 🔴 전역 안전장치: 페이지 내 모든 audio/video 요소 강제 정지
+        this._stopAllMediaElements();
+        
         const component = this.config.components[this.currentComponentIndex];
         
         console.log(`📝 컴포넌트 로드 [${this.currentComponentIndex + 1}/${this.config.components.length}]:`, 
@@ -1020,11 +1029,41 @@ class ModuleController {
             this.currentComponentInstance.cleanup();
         }
         
+        // 전역 미디어 정지
+        this._stopAllMediaElements();
+        
         this.currentComponentInstance = null;
         
         // 모듈 모드 플래그 해제
         window.isModuleMode = false;
         window.moduleController = null;
+    }
+    
+    /**
+     * ================================================
+     * 전역 미디어 정지 안전장치
+     * cleanup()을 통해 정리되지 못한 audio/video 원천 차단
+     * ================================================
+     */
+    _stopAllMediaElements() {
+        try {
+            // 모든 audio 요소 정지
+            document.querySelectorAll('audio').forEach(audio => {
+                if (!audio.paused) {
+                    audio.pause();
+                    console.log('🛑 [Global] audio 요소 강제 정지');
+                }
+            });
+            // 모든 video 요소 정지 (컨트롤 있는 것은 제외)
+            document.querySelectorAll('video').forEach(video => {
+                if (!video.paused && !video.controls) {
+                    video.pause();
+                    console.log('🛑 [Global] video 요소 강제 정지');
+                }
+            });
+        } catch (e) {
+            console.warn('⚠️ [Global] 미디어 정지 중 오류:', e);
+        }
     }
     
     /**
