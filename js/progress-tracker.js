@@ -261,7 +261,7 @@ var ProgressTracker = {
     },
 
     // ========================================
-    // 전체 진도율 계산 (v2 — 오늘까지 할당 과제 기준)
+    // 전체 진도율 계산 (v3 — 챌린지 전체 과제 기준)
     // ========================================
     getTotalProgress(programType) {
         var totalWeeks = programType === 'standard' ? 8 : 4;
@@ -271,45 +271,13 @@ var ProgressTracker = {
         };
         var days = ['일', '월', '화', '수', '목', '금'];
 
-        // 오늘까지 할당된 과제만 분모로 사용
-        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
-        var useAllWeeks = true; // 폴백: 전체 주차
-        var startDate = null;
-        
-        if (user && user.startDate) {
-            startDate = new Date(user.startDate + 'T00:00:00');
-            if (!isNaN(startDate.getTime())) {
-                useAllWeeks = false;
-            }
-        }
-
-        // 새벽 4시 기준: 4시 이전이면 "오늘"은 어제
-        var now = new Date();
-        var effectiveToday = new Date(now);
-        if (now.getHours() < 4) {
-            effectiveToday.setDate(effectiveToday.getDate() - 1);
-        }
-        effectiveToday.setHours(0, 0, 0, 0);
-
         var total = 0;
         var completed = 0;
-
-        // 시작 전인지 확인
-        var isBeforeStart = !useAllWeeks && startDate && startDate > effectiveToday;
 
         for (var w = 1; w <= totalWeeks; w++) {
             for (var di = 0; di < days.length; di++) {
                 var dayKr = days[di];
                 var dayEn = dayMapping[dayKr];
-                
-                if (!useAllWeeks && startDate && !isBeforeStart) {
-                    // 시작 후: 미도래일 제외
-                    var taskDate = new Date(startDate);
-                    taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + di);
-                    taskDate.setHours(0, 0, 0, 0);
-                    if (taskDate > effectiveToday) continue;
-                }
-                // 시작 전: 전체 과제를 분모로 사용 (선제출 반영을 위해)
 
                 var dayProgress = ProgressTracker.getDayProgress(programType, w, dayEn);
                 total += dayProgress.total;
@@ -406,7 +374,7 @@ var ProgressTracker = {
         container.innerHTML = 
             '<div class="total-progress-header">' +
                 '<span class="total-progress-label">전체 진도율</span>' +
-                '<span class="total-progress-count">' + progress.completed + ' / ' + progress.total + ' 과제 완료 (오늘까지)</span>' +
+                '<span class="total-progress-count">' + progress.completed + ' / ' + progress.total + ' 과제 완료</span>' +
             '</div>' +
             '<div class="total-progress-bar-track">' +
                 '<div class="total-progress-bar-fill" style="width: ' + progress.percent + '%"></div>' +
