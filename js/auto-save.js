@@ -57,6 +57,7 @@ const AutoSave = {
                 day: scheduleInfo.day,
                 attempt: data.attempt || 1,
                 current_component_index: data.nextComponentIndex,
+                total_components: data.totalComponents || null,
                 completed_components: data.componentResults || [],
                 all_answers: data.allAnswers || [],
                 timer_remaining: data.timerRemaining,
