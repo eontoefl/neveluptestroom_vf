@@ -6,7 +6,7 @@
   <title>마이페이지 – 학습 현황</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/mypage-style.css" />
+  <link rel="stylesheet" href="css/mypage-style.css?v=006_metrics_v2" />
   <link rel="stylesheet" href="css/mypage-grass-fast.css" />
   <link rel="stylesheet" href="css/mypage-grass-standard.css" />
 </head>
@@ -58,55 +58,55 @@
 
       <div class="summary-grid">
 
-        <!-- 총 학습일 -->
+        <!-- 1칸: 챌린지 현황 -->
         <div class="summary-card card-blue">
           <div class="sc-icon"><i class="fa-solid fa-calendar-check"></i></div>
           <div class="sc-body">
-            <p class="sc-label">총 학습일</p>
-            <p class="sc-value"><span id="studyDays">-</span><span class="sc-total" id="studyDaysTotal"> / -일</span></p>
+            <p class="sc-label">📅 챌린지 현황</p>
+            <p class="sc-value"><span id="challengeStatus">-</span></p>
             <div class="progress-bar">
-              <div class="progress-fill" id="studyDaysBar" style="width: 0%;"></div>
+              <div class="progress-fill" id="challengeBar" style="width: 0%;"></div>
             </div>
-            <p class="sc-sub" id="studyDaysPct">0% 달성</p>
+            <p class="sc-sub" id="challengeSub">로딩 중...</p>
           </div>
         </div>
 
-        <!-- 완료한 과제 -->
+        <!-- 2칸: 제출률 -->
         <div class="summary-card card-green">
           <div class="sc-icon"><i class="fa-solid fa-list-check"></i></div>
           <div class="sc-body">
-            <p class="sc-label">완료한 과제</p>
-            <p class="sc-value"><span id="tasksDone">-</span><span class="sc-total" id="tasksTotal"> / -개</span></p>
+            <p class="sc-label">📝 제출률</p>
+            <p class="sc-value"><span id="submitRate">-</span><span class="sc-total" id="submitRateUnit">%</span></p>
             <div class="progress-bar">
-              <div class="progress-fill" id="tasksBar" style="width: 0%;"></div>
+              <div class="progress-fill" id="submitBar" style="width: 0%;"></div>
             </div>
-            <p class="sc-sub" id="tasksPct">0% 완료</p>
+            <p class="sc-sub" id="submitSub">로딩 중...</p>
+            <p class="sc-hint" id="submitHint">오늘까지 해야 할 과제 중 제출한 비율이에요</p>
           </div>
         </div>
 
-        <!-- 현재 등급 -->
+        <!-- 3칸: 인증률 -->
         <div class="summary-card card-purple">
-          <div class="sc-icon"><i class="fa-solid fa-medal"></i></div>
+          <div class="sc-icon"><i class="fa-solid fa-shield-halved"></i></div>
           <div class="sc-body">
-            <p class="sc-label">현재 등급</p>
-            <p class="sc-value grade-badge" id="currentGrade">-</p>
-            <p class="sc-sub next-grade" id="gradeHint">
-              <i class="fa-solid fa-arrow-trend-up"></i>
-              <span>데이터 로딩 중...</span>
-            </p>
+            <p class="sc-label">🎯 인증률</p>
+            <p class="sc-value"><span id="authRate">-</span><span class="sc-total" id="authRateUnit">%</span></p>
+            <div class="progress-bar">
+              <div class="progress-fill" id="authBar" style="width: 0%;"></div>
+            </div>
+            <p class="sc-sub" id="authSub">로딩 중...</p>
+            <p class="sc-hint" id="authHint">1차·2차·오답노트까지 완료해야 100%예요</p>
           </div>
         </div>
 
-        <!-- 보증금 환급 예상 -->
+        <!-- 4칸: 등급 & 환급 예상 -->
         <div class="summary-card card-orange">
-          <div class="sc-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+          <div class="sc-icon"><i class="fa-solid fa-trophy"></i></div>
           <div class="sc-body">
-            <p class="sc-label">보증금 환급 예상</p>
-            <p class="sc-value"><span id="refundAmount">-</span><span class="sc-total">원</span></p>
-            <p class="sc-sub refund-tag" id="refundStatus">
-              <i class="fa-solid fa-circle-check"></i>
-              <span>계산 중...</span>
-            </p>
+            <p class="sc-label">🏆 등급 & 환급</p>
+            <p class="sc-value grade-badge" id="currentGrade">-</p>
+            <p class="sc-sub" id="gradeRefund">로딩 중...</p>
+            <p class="sc-hint" id="gradeHint">현재 기준이며 챌린지 종료 시 확정돼요</p>
           </div>
         </div>
 
@@ -325,8 +325,8 @@
 
   <script src="js/supabase-client.js"></script>
   <!-- 해설 다시보기 -->
-  <script src="js/result-replay.js?v=20260222_listening_fix"></script>
+  <script src="js/result-replay.js?v=20260222_writing_fix"></script>
   <!-- 마이페이지 전용 로직 -->
-  <script src="js/mypage.js?v=005_replay_all"></script>
+  <script src="js/mypage.js?v=006_metrics_v2"></script>
 </body>
 </html>
