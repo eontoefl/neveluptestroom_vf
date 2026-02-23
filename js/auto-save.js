@@ -66,8 +66,18 @@ const AutoSave = {
                 updated_at: new Date().toISOString()
             };
             
+            // ✅ 모든 컴포넌트 완료 시 자동으로 completed 처리
+            if (data.totalComponents && data.nextComponentIndex >= data.totalComponents) {
+                saveData.status = 'completed';
+                console.log('💾 [AutoSave] 모든 컴포넌트 완료 → status: completed');
+            }
+            
             // sessionStorage에도 백업 (즉시 복원용)
-            sessionStorage.setItem('autoSaveProgress', JSON.stringify(saveData));
+            if (saveData.status === 'completed') {
+                sessionStorage.removeItem('autoSaveProgress');
+            } else {
+                sessionStorage.setItem('autoSaveProgress', JSON.stringify(saveData));
+            }
             
             // Supabase 저장 (기존 레코드 있으면 UPDATE, 없으면 INSERT)
             if (this._currentSaveId) {
