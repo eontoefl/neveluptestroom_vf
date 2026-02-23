@@ -618,6 +618,12 @@ class ConverComponent {
       window.moduleController.updateCurrentQuestionInComponent(questionIndex);
     }
     
+    // 타이머 리셋 (다음 문제로 넘어갈 때)
+    if (questionIndex > 0 && window.moduleController) {
+      window.moduleController.stopQuestionTimer();
+      window.moduleController.startQuestionTimer(this.TIME_LIMIT);  // 20초
+    }
+    
     // 작은 이미지 표시 (인트로와 동일)
     this.renderSmallImage();
     
