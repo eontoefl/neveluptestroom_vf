@@ -1,6 +1,6 @@
 /**
  * ================================================
- * auth-monitor.js v2
+ * auth-monitor.js v3 — auth_record 선행 INSERT 수정
  * 인증시스템 — 체크리스트 방식 (30/30/40)
  * ================================================
  * 
@@ -31,6 +31,7 @@ var AuthMonitor = {
     _explanationDone: false, // 해설+오답노트 완료
     _fraudFlag: false,      // 부정행위 플래그 (경고 무시 제출)
     _studyRecordId: null,   // 저장된 study_record ID
+    _authRecordCreated: false, // auth_record가 이미 INSERT 되었는지
 
     // ========================================
     // 시작 — 과제 진입 시
@@ -50,6 +51,7 @@ var AuthMonitor = {
         this._explanationDone = false;
         this._fraudFlag = false;
         this._studyRecordId = null;
+        this._authRecordCreated = false;
     },
 
     // ========================================
@@ -112,6 +114,89 @@ var AuthMonitor = {
     },
 
     // ========================================
+    // Writing 결과 조합 헬퍼
+    // ========================================
+    _buildWritingFirstResult: function(wf) {
+        if (!wf) return null;
+        var componentResults = [];
+        
+        // arrange (단어 배열) - sessionStorage에서 가져오기
+        var arrangeData = wf.arrange1stResult;
+        if (arrangeData) {
+            componentResults.push({
+                componentType: 'arrange',
+                setId: 1,
+                answers: arrangeData.results || [],
+                correct: arrangeData.correct || 0,
+                total: arrangeData.total || 10,
+                accuracy: arrangeData.accuracy || 0
+            });
+        }
+        
+        // email 1차
+        if (wf.email1stData) {
+            componentResults.push(wf.email1stData);
+        }
+        
+        // discussion 1차
+        if (wf.discussion1stData) {
+            componentResults.push(wf.discussion1stData);
+        }
+        
+        if (componentResults.length === 0) return null;
+        
+        return {
+            sectionType: 'writing',
+            componentResults: componentResults,
+            totalQuestions: componentResults.length,
+            totalCorrect: componentResults.reduce(function(sum, c) {
+                var arr = c.answers || c.results || [];
+                return sum + (Array.isArray(arr) ? arr.filter(function(a) { return a.isCorrect; }).length : (c.correctCount || c.correct || 0));
+            }, 0)
+        };
+    },
+    
+    _buildWritingRetakeResult: function(wf) {
+        if (!wf) return null;
+        var componentResults = [];
+        
+        // arrange 2차
+        var arrange2nd = wf.arrange2ndResult;
+        if (arrange2nd) {
+            componentResults.push({
+                componentType: 'arrange',
+                setId: 1,
+                answers: arrange2nd.results || [],
+                correct: arrange2nd.correct || 0,
+                total: arrange2nd.total || 10,
+                accuracy: arrange2nd.accuracy || 0
+            });
+        }
+        
+        // email 2차
+        if (wf.email2ndData) {
+            componentResults.push(wf.email2ndData);
+        }
+        
+        // discussion 2차
+        if (wf.discussion2ndData) {
+            componentResults.push(wf.discussion2ndData);
+        }
+        
+        if (componentResults.length === 0) return null;
+        
+        return {
+            sectionType: 'writing',
+            componentResults: componentResults,
+            totalQuestions: componentResults.length,
+            totalCorrect: componentResults.reduce(function(sum, c) {
+                var arr = c.answers || c.results || [];
+                return sum + (Array.isArray(arr) ? arr.filter(function(a) { return a.isCorrect; }).length : (c.correctCount || c.correct || 0));
+            }, 0)
+        };
+    },
+
+    // ========================================
     // 1차 제출 완료 시: study_record INSERT + _studyRecordId 확보
     // ========================================
     saveFirstAttempt: async function() {
@@ -138,8 +223,10 @@ var AuthMonitor = {
         var wf = window.WritingFlow;
         var firstResult = null;
 
-        if (sectionType === 'writing' && wf && wf.arrange1stResult) {
-            firstResult = wf.arrange1stResult;
+        // ★ Writing인 경우 WritingFlow에서 componentResults를 조합
+        if (sectionType === 'writing' && wf) {
+            firstResult = this._buildWritingFirstResult(wf);
+            console.log('💾 [Auth] Writing 1차 결과 조합:', firstResult ? firstResult.componentResults.length + '개 컴포넌트' : 'null');
         } else if (fc && fc.firstAttemptResult) {
             firstResult = fc.firstAttemptResult;
         }
@@ -175,7 +262,7 @@ var AuthMonitor = {
         var resultJson = null;
         if (firstResult && firstResult.componentResults) {
             try {
-                resultJson = JSON.parse(JSON.stringify(firstResult));
+                resultJson = { firstAttemptResult: JSON.parse(JSON.stringify(firstResult)) };
                 console.log('💾 [Auth] result_json 준비 완료 - componentResults:', firstResult.componentResults.length, '개');
             } catch (e) {
                 console.warn('⚠️ [Auth] result_json 직렬화 실패:', e);
@@ -259,8 +346,33 @@ var AuthMonitor = {
 
         // 2차 결과 업데이트 (retakeResult가 있으면)
         var fc = window.FlowController;
+        var wf = window.WritingFlow;
         var snap = this._snapshot || {};
-        if (fc && fc.firstAttemptResult) {
+        var sectionType = this.sectionType || this._lastSectionType;
+
+        // ★ Writing인 경우 WritingFlow에서 전체 결과 조합
+        if (sectionType === 'writing' && wf) {
+            try {
+                var firstResult = this._buildWritingFirstResult(wf);
+                var retakeResult = this._buildWritingRetakeResult(wf);
+                if (firstResult) {
+                    var updatedJson = {
+                        firstAttemptResult: JSON.parse(JSON.stringify(firstResult))
+                    };
+                    if (retakeResult) {
+                        updatedJson.retakeResult = JSON.parse(JSON.stringify(retakeResult));
+                    }
+                    await supabaseUpdate('tr_study_records', 'id=eq.' + this._studyRecordId, {
+                        result_json: updatedJson
+                    });
+                    console.log('💾 [Auth] Writing result_json 최종 업데이트 완료');
+                } else {
+                    console.warn('⚠️ [Auth] Writing firstResult 조합 실패');
+                }
+            } catch (e) {
+                console.warn('⚠️ [Auth] Writing result_json 업데이트 실패:', e);
+            }
+        } else if (fc && fc.firstAttemptResult) {
             try {
                 var updatedJson = {
                     firstAttemptResult: JSON.parse(JSON.stringify(fc.firstAttemptResult))
@@ -277,11 +389,9 @@ var AuthMonitor = {
             }
         }
 
-        // auth_record 저장
+        // auth_record 최종 저장 (이미 있으면 UPDATE, 없으면 INSERT)
         var authRate = this.calculateAuthRate();
         var authRecordData = {
-            user_id: user.id,
-            study_record_id: this._studyRecordId,
             auth_rate: authRate,
             step1_completed: this._step1Done,
             step2_completed: this._step2Done,
@@ -290,8 +400,26 @@ var AuthMonitor = {
             focus_lost_count: 0
         };
 
-        var authRecord = await saveAuthRecord(authRecordData);
-        console.log('🔒 [Auth] 최종 저장 완료:', authRate + '%');
+        if (this._authRecordCreated) {
+            // 이미 showExplain에서 INSERT됨 → UPDATE
+            try {
+                await supabaseUpdate(
+                    'tr_auth_records',
+                    'study_record_id=eq.' + this._studyRecordId,
+                    authRecordData
+                );
+                console.log('🔒 [Auth] 최종 UPDATE 완료:', authRate + '%');
+            } catch (e) {
+                console.error('🔒 [Auth] 최종 UPDATE 실패:', e);
+            }
+        } else {
+            // 아직 INSERT 안 됨 (showExplain을 거치지 않은 예외 케이스)
+            authRecordData.user_id = user.id;
+            authRecordData.study_record_id = this._studyRecordId;
+            await saveAuthRecord(authRecordData);
+            this._authRecordCreated = true;
+            console.log('🔒 [Auth] 최종 INSERT 완료:', authRate + '%');
+        }
     },
 
     // ========================================
@@ -311,8 +439,9 @@ var AuthMonitor = {
         var wf = window.WritingFlow;
         var firstResult = null;
 
-        if (sectionType === 'writing' && wf && wf.arrange1stResult) {
-            firstResult = wf.arrange1stResult;
+        // ★ Writing인 경우 WritingFlow에서 componentResults를 조합
+        if (sectionType === 'writing' && wf) {
+            firstResult = this._buildWritingFirstResult(wf);
         } else if (fc && fc.firstAttemptResult) {
             firstResult = fc.firstAttemptResult;
         } else if (snap.firstAttemptResult) {
@@ -345,7 +474,16 @@ var AuthMonitor = {
 
         var resultJson = null;
         if (firstResult && firstResult.componentResults) {
-            try { resultJson = JSON.parse(JSON.stringify(firstResult)); } catch (e) {}
+            try {
+                resultJson = { firstAttemptResult: JSON.parse(JSON.stringify(firstResult)) };
+                // Writing인 경우 retakeResult도 추가
+                if (sectionType === 'writing' && wf) {
+                    var retakeResult = this._buildWritingRetakeResult(wf);
+                    if (retakeResult) resultJson.retakeResult = JSON.parse(JSON.stringify(retakeResult));
+                }
+            } catch (e) {
+                console.warn('⚠️ [Auth] 폴백 result_json 직렬화 실패:', e);
+            }
         }
 
         var scheduleInfo = this.getCurrentScheduleInfo();
@@ -394,6 +532,11 @@ var AuthMonitor = {
             return;
         }
 
+        // auth_record가 아직 없으면 먼저 생성
+        if (!this._authRecordCreated) {
+            await this._ensureAuthRecordExists();
+        }
+
         var authRate = this.calculateAuthRate();
 
         try {
@@ -409,6 +552,45 @@ var AuthMonitor = {
             console.log('🔒 [Auth] 인증률 업데이트:', authRate + '%');
         } catch (e) {
             console.error('🔒 [Auth] 업데이트 실패:', e);
+        }
+    },
+
+    // ========================================
+    // auth_record 선행 INSERT (해설 진입 시점)
+    // ========================================
+    _ensureAuthRecordExists: async function() {
+        if (this._authRecordCreated) return; // 이미 생성됨
+        if (!this._studyRecordId) {
+            console.warn('🔒 [Auth] _ensureAuthRecord — studyRecordId 없음');
+            return;
+        }
+
+        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+        if (!user || !user.id || user.id === 'dev-user-001') return;
+
+        if (window._deadlinePassedMode || window._isPracticeMode) {
+            console.log('🔒 [Auth] 마감/연습 모드 — auth_record 생성 생략');
+            return;
+        }
+
+        var authRate = this.calculateAuthRate();
+        var authRecordData = {
+            user_id: user.id,
+            study_record_id: this._studyRecordId,
+            auth_rate: authRate,
+            step1_completed: this._step1Done,
+            step2_completed: this._step2Done,
+            explanation_completed: this._explanationDone,
+            fraud_flag: this._fraudFlag,
+            focus_lost_count: 0
+        };
+
+        try {
+            await saveAuthRecord(authRecordData);
+            this._authRecordCreated = true;
+            console.log('🔒 [Auth] auth_record 선행 INSERT 완료:', authRate + '%');
+        } catch (e) {
+            console.error('🔒 [Auth] auth_record 선행 INSERT 실패:', e);
         }
     }
 };
@@ -475,18 +657,21 @@ var AuthMonitor = {
             return originalShowRetake(secondResults);
         };
 
-        // ── FlowController.showExplain → 2차 완료 (Speaking) ──
+        // ── FlowController.showExplain → 2차 완료 + auth_record 선행 INSERT ──
         // 스피킹은 retakeResult를 거치지 않고 바로 explain으로 가는 경우가 있음
         // showExplain 진입 시 step2가 아직 안 됐으면 마킹
+        // ★ 해설 진입 시점에 auth_record를 미리 INSERT (60%) → 오답노트 제출 시 UPDATE 가능
         var originalShowExplain = fc.showExplain.bind(fc);
-        fc.showExplain = function() {
+        fc.showExplain = async function() {
             if (!AuthMonitor._step2Done) {
                 AuthMonitor.markStep2();
             }
+            // ★ auth_record 선행 INSERT (explanation 전이므로 60%)
+            await AuthMonitor._ensureAuthRecordExists();
             return originalShowExplain();
         };
 
-        // ── FlowController.finish → 최종 인증률 + auth_record 저장 ──
+        // ── FlowController.finish → 최종 인증률 + auth_record 최종 UPDATE ──
         var originalFinish = fc.finish.bind(fc);
         fc.finish = async function() {
             if (fc.sectionType) {
@@ -499,7 +684,7 @@ var AuthMonitor = {
             document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
                 el.style.display = 'none';
             });
-            // ★ 최종 저장: auth_record + 인증률 (study_record는 이미 1차 시점에 생성됨)
+            // ★ 최종 저장: result_json 업데이트 + auth_record 최종 UPDATE
             await AuthMonitor.saveFinalRecords();
             AuthMonitor.stop();
             AuthMonitor._snapshot = null;
@@ -524,8 +709,10 @@ var AuthMonitor = {
             // Step 4 (arrange 1차 결과)에 진입하면 1차 완료
             if (wf.runStep4) {
                 var originalStep4 = wf.runStep4.bind(wf);
-                wf.runStep4 = function() {
+                wf.runStep4 = async function() {
                     AuthMonitor.markStep1();
+                    // ★ 1차 결과를 즉시 DB에 저장하여 _studyRecordId 확보
+                    await AuthMonitor.saveFirstAttempt();
                     return originalStep4();
                 };
             }
@@ -588,4 +775,4 @@ var AuthMonitor = {
     }, 1000);
 })();
 
-console.log('✅ auth-monitor.js v2 로드');
+console.log('✅ auth-monitor.js v3 로드');
