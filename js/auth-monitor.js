@@ -784,6 +784,7 @@ var AuthMonitor = {
                         }
                     }
                 }
+            }
 
             // 4) 인증률 계산 (도래 과제 기준)
             var authRateCalc = tasksDue > 0 ? tasksDueAuthSum : authSum;
