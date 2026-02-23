@@ -103,9 +103,66 @@ var AuthMonitor = {
     },
 
     // ========================================
-    // 현재 스케줄 정보
+    // 현재 스케줄 정보 (스케줄 데이터 기반 역조회)
     // ========================================
     getCurrentScheduleInfo: function() {
+        var sectionType = this.sectionType || this._lastSectionType;
+        var moduleNumber = this.moduleNumber || this._lastModuleNumber;
+
+        // 스케줄 데이터에서 정확한 week/day 역조회 시도
+        if (sectionType && moduleNumber && typeof SCHEDULE_DATA !== 'undefined' && typeof parseTaskName === 'function') {
+            var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
+            var programType = 'fast';
+            if (user) {
+                programType = user.programType || (user.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
+            }
+
+            var programData = SCHEDULE_DATA[programType];
+            if (programData) {
+                var dayToKr = { sunday: '일', monday: '월', tuesday: '화', wednesday: '수', thursday: '목', friday: '금' };
+                var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                var totalWeeks = programType === 'standard' ? 8 : 4;
+
+                for (var w = 1; w <= totalWeeks; w++) {
+                    var weekData = programData['week' + w];
+                    if (!weekData) continue;
+
+                    for (var di = 0; di < days.length; di++) {
+                        var dayEn = days[di];
+                        var tasks = weekData[dayEn] || [];
+
+                        for (var ti = 0; ti < tasks.length; ti++) {
+                            var parsed = parseTaskName(tasks[ti]);
+                            if (!parsed || parsed.type === 'unknown') continue;
+
+                            var matchType = parsed.type;
+                            var matchNum = null;
+
+                            if (matchType === 'reading' || matchType === 'listening') {
+                                matchNum = parsed.params.module;
+                            } else if (matchType === 'writing' || matchType === 'speaking') {
+                                matchNum = parsed.params.number;
+                            } else if (matchType === 'vocab' || matchType === 'intro-book') {
+                                // vocab/intro-book: week+day만으로 매칭
+                                if (matchType === sectionType) {
+                                    console.log('🔒 [Auth] 스케줄 역조회 성공:', sectionType, moduleNumber, '→ week' + w, dayToKr[dayEn]);
+                                    return { week: w, day: dayToKr[dayEn] };
+                                }
+                                continue;
+                            }
+
+                            if (matchType === sectionType && matchNum === parseInt(moduleNumber)) {
+                                console.log('🔒 [Auth] 스케줄 역조회 성공:', sectionType, moduleNumber, '→ week' + w, dayToKr[dayEn]);
+                                return { week: w, day: dayToKr[dayEn] };
+                            }
+                        }
+                    }
+                }
+                console.warn('🔒 [Auth] 스케줄 역조회 실패 — 폴백 사용:', sectionType, moduleNumber);
+            }
+        }
+
+        // 폴백: 기존 방식 (currentTest에서 가져오기)
         var ct = window.currentTest;
         if (ct && ct.currentWeek) {
             return { week: ct.currentWeek, day: ct.currentDay || '월' };
@@ -316,6 +373,10 @@ var AuthMonitor = {
 
             await supabaseUpdate('tr_study_records', 'id=eq.' + this._studyRecordId, updateData);
             console.log('📝 [Auth] 오답노트 저장 완료:', this._studyRecordId);
+
+            // ★ 학생 통계 갱신
+            this.updateStudentStats();
+
             return true;
         } catch (e) {
             console.error('📝 [Auth] 오답노트 저장 실패:', e);
@@ -420,6 +481,9 @@ var AuthMonitor = {
             this._authRecordCreated = true;
             console.log('🔒 [Auth] 최종 INSERT 완료:', authRate + '%');
         }
+
+        // ★ 학생 통계 갱신
+        this.updateStudentStats();
     },
 
     // ========================================
@@ -553,6 +617,9 @@ var AuthMonitor = {
         } catch (e) {
             console.error('🔒 [Auth] 업데이트 실패:', e);
         }
+
+        // ★ 학생 통계 갱신
+        this.updateStudentStats();
     },
 
     // ========================================
@@ -591,6 +658,111 @@ var AuthMonitor = {
             console.log('🔒 [Auth] auth_record 선행 INSERT 완료:', authRate + '%');
         } catch (e) {
             console.error('🔒 [Auth] auth_record 선행 INSERT 실패:', e);
+        }
+    },
+
+    // ========================================
+    // 학생 통계 갱신 (tr_student_stats UPSERT)
+    // 1차 제출, 해설 완료, 오답노트 제출 시 호출
+    // ========================================
+    updateStudentStats: async function() {
+        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+        if (!user || !user.id || user.id === 'dev-user-001') return;
+
+        try {
+            // 1) study_records 건수 (제출 수)
+            var studyRecords = await supabaseSelect(
+                'tr_study_records',
+                'user_id=eq.' + user.id + '&select=id'
+            );
+            var tasksSubmitted = studyRecords ? studyRecords.length : 0;
+
+            // 2) auth_records에서 auth_rate 합계
+            var authRecords = await supabaseSelect(
+                'tr_auth_records',
+                'user_id=eq.' + user.id + '&select=auth_rate'
+            );
+            var authSum = 0;
+            if (authRecords) {
+                authRecords.forEach(function(r) { authSum += (r.auth_rate || 0); });
+            }
+
+            // 3) 오늘까지 할당 과제 수 (분모)
+            var tasksDue = 0;
+            if (typeof getDayTasks === 'function' && user.startDate) {
+                var programType = user.programType || (user.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
+                var totalWeeks = programType === 'standard' ? 8 : 4;
+                var dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                var startDate = new Date(user.startDate + 'T00:00:00');
+
+                if (!isNaN(startDate.getTime())) {
+                    var now = new Date();
+                    var effectiveToday = new Date(now);
+                    if (now.getHours() < 4) {
+                        effectiveToday.setDate(effectiveToday.getDate() - 1);
+                    }
+                    effectiveToday.setHours(0, 0, 0, 0);
+
+                    for (var w = 1; w <= totalWeeks; w++) {
+                        for (var d = 0; d < dayOrder.length; d++) {
+                            var taskDate = new Date(startDate);
+                            taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
+                            taskDate.setHours(0, 0, 0, 0);
+                            if (taskDate <= effectiveToday) {
+                                var tasks = getDayTasks(programType, w, dayOrder[d]);
+                                tasksDue += tasks.length;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4) 인증률 계산
+            var authDenominator = tasksDue > 0 ? tasksDue : tasksSubmitted;
+            var authRate = authDenominator > 0 ? Math.round(authSum / authDenominator) : 0;
+
+            // 5) 제출률 계산
+            var submitRate = tasksDue > 0 ? Math.round((tasksSubmitted / tasksDue) * 100) : 0;
+
+            // 6) 등급 & 환급 (tr_grade_rules 또는 하드코딩 폴백)
+            var grade = 'F';
+            var refundRate = 0;
+            var deposit = 100000;
+
+            if (typeof getGradeFromRules === 'function') {
+                var gradeInfo = getGradeFromRules(authRate);
+                grade = gradeInfo.letter;
+                refundRate = gradeInfo.refundRate;
+                deposit = gradeInfo.deposit || 100000;
+            } else {
+                // 폴백
+                if (authRate >= 95) { grade = 'A'; refundRate = 1.0; }
+                else if (authRate >= 90) { grade = 'B'; refundRate = 0.9; }
+                else if (authRate >= 80) { grade = 'C'; refundRate = 0.8; }
+                else if (authRate >= 70) { grade = 'D'; refundRate = 0.7; }
+                else { grade = 'F'; refundRate = 0; }
+            }
+
+            var refundAmount = Math.round(deposit * refundRate);
+
+            // 7) UPSERT
+            var statsData = {
+                user_id: user.id,
+                calc_auth_rate: authRate,
+                calc_grade: grade,
+                calc_submit_rate: submitRate,
+                calc_refund_amount: refundAmount,
+                calc_tasks_due: tasksDue,
+                calc_tasks_submitted: tasksSubmitted,
+                calc_auth_sum: authSum,
+                calc_updated_at: new Date().toISOString()
+            };
+
+            await supabaseUpsert('tr_student_stats', statsData, 'user_id');
+            console.log('📊 [Auth] 학생 통계 갱신:', grade, authRate + '%', tasksSubmitted + '/' + tasksDue);
+
+        } catch (e) {
+            console.error('📊 [Auth] 학생 통계 갱신 실패:', e);
         }
     }
 };

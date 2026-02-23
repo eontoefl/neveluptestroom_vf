@@ -105,6 +105,26 @@ async function supabaseUpdate(table, query, data) {
     return result ? (Array.isArray(result) ? result[0] : result) : null;
 }
 
+/**
+ * 테이블 데이터 UPSERT (INSERT or UPDATE)
+ * @param {string} table - 테이블 이름
+ * @param {object} data - 저장할 데이터
+ * @param {string} onConflict - 충돌 감지 컬럼 (예: 'user_id')
+ * @returns {Promise<object>} 저장된 데이터
+ */
+async function supabaseUpsert(table, data, onConflict) {
+    var endpoint = '/rest/v1/' + table;
+    var result = await supabaseRequest(endpoint, {
+        method: 'POST',
+        body: data,
+        prefer: 'return=representation,resolution=merge-duplicates',
+        headers: {
+            'Prefer': 'return=representation,resolution=merge-duplicates'
+        }
+    });
+    return result ? (Array.isArray(result) ? result[0] : result) : null;
+}
+
 // ================================================
 // 로그인 관련 함수들
 // ================================================
