@@ -307,14 +307,14 @@ function countTasksDueToday(programType, totalWeeks) {
 
                     // 완료 여부 확인 (progress-tracker와 동일 로직)
                     if (parsed.type === 'vocab' || parsed.type === 'intro-book') {
-                        const wdKey = parsed.type + '_w' + w + '_' + dayKr;
                         const found = mpStudyRecords.find(r => 
                             r.task_type === parsed.type && r.week === w && r.day === dayKr
                         );
                         if (found) completedTasks++;
                     } else {
+                        const modNum = parsed.params && parsed.params.module ? parsed.params.module : parsed.moduleNumber;
                         const found = mpStudyRecords.find(r => 
-                            r.task_type === parsed.type && r.module_number === parsed.moduleNumber
+                            r.task_type === parsed.type && r.module_number == modNum
                         );
                         if (found) completedTasks++;
                     }

@@ -712,12 +712,15 @@ var AuthMonitor = {
                 });
             }
 
-            // 3) 오늘까지 할당 과제 수 (분모)
+            // 3) 오늘까지 할당 과제 수 (분모) + 도래 과제 중 완료된 수 (분자)
             var tasksDue = 0;
-            if (typeof getDayTasks === 'function' && user.startDate) {
+            var tasksDueCompleted = 0;
+            var tasksDueAuthSum = 0;
+            if (typeof getDayTasks === 'function' && typeof parseTaskName === 'function' && user.startDate) {
                 var programType = user.programType || (user.program === '내벨업챌린지 - Standard' ? 'standard' : 'fast');
                 var totalWeeks = programType === 'standard' ? 8 : 4;
                 var dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                var dayEnToKr = { sunday: '일', monday: '월', tuesday: '화', wednesday: '수', thursday: '목', friday: '금' };
                 var startDate = new Date(user.startDate + 'T00:00:00');
 
                 if (!isNaN(startDate.getTime())) {
@@ -734,20 +737,50 @@ var AuthMonitor = {
                             taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
                             taskDate.setHours(0, 0, 0, 0);
                             if (taskDate <= effectiveToday) {
-                                var tasks = getDayTasks(programType, w, dayOrder[d]);
-                                tasksDue += tasks.length;
+                                var dayEn = dayOrder[d];
+                                var dayKr = dayEnToKr[dayEn];
+                                var tasks = getDayTasks(programType, w, dayEn);
+                                tasks.forEach(function(taskName) {
+                                    var parsed = parseTaskName(taskName);
+                                    if (!parsed || parsed.type === 'unknown') return;
+                                    tasksDue++;
+                                    // 도래 과제 중 완료 여부 확인
+                                    var matchedRecord = null;
+                                    if (parsed.type === 'vocab' || parsed.type === 'intro-book') {
+                                        matchedRecord = uniqueRecords.find(function(r) {
+                                            return r.task_type === parsed.type && r.week == w && r.day === dayKr;
+                                        });
+                                    } else {
+                                        var modNum = parsed.params && parsed.params.module ? parsed.params.module : parsed.moduleNumber;
+                                        matchedRecord = uniqueRecords.find(function(r) {
+                                            return r.task_type === parsed.type && r.module_number == modNum;
+                                        });
+                                    }
+                                    if (matchedRecord) {
+                                        tasksDueCompleted++;
+                                        // 매칭된 auth_rate도 합산
+                                        if (authRecords) {
+                                            var ar = authRecords.find(function(a) { return a.study_record_id === matchedRecord.id; });
+                                            if (ar) tasksDueAuthSum += (ar.auth_rate || 0);
+                                        }
+                                    }
+                                });
                             }
+                        }
+                    }
+                }
                         }
                     }
                 }
             }
 
-            // 4) 인증률 계산
+            // 4) 인증률 계산 (도래 과제 기준)
+            var authRateCalc = tasksDue > 0 ? tasksDueAuthSum : authSum;
             var authDenominator = tasksDue > 0 ? tasksDue : tasksSubmitted;
-            var authRate = authDenominator > 0 ? Math.round(authSum / authDenominator) : 0;
+            var authRate = authDenominator > 0 ? Math.round(authRateCalc / authDenominator) : 0;
 
-            // 5) 제출률 계산
-            var submitRate = tasksDue > 0 ? Math.round((tasksSubmitted / tasksDue) * 100) : 0;
+            // 5) 제출률 계산 (도래 과제 중 완료된 것 기준)
+            var submitRate = tasksDue > 0 ? Math.round((tasksDueCompleted / tasksDue) * 100) : 0;
 
             // 6) 등급 & 환급 (tr_grade_rules 또는 하드코딩 폴백)
             var grade = 'F';
@@ -778,13 +811,13 @@ var AuthMonitor = {
                 calc_submit_rate: submitRate,
                 calc_refund_amount: refundAmount,
                 calc_tasks_due: tasksDue,
-                calc_tasks_submitted: tasksSubmitted,
-                calc_auth_sum: authSum,
+                calc_tasks_submitted: tasksDue > 0 ? tasksDueCompleted : tasksSubmitted,
+                calc_auth_sum: tasksDue > 0 ? tasksDueAuthSum : authSum,
                 calc_updated_at: new Date().toISOString()
             };
 
             await supabaseUpsert('tr_student_stats', statsData, 'user_id');
-            console.log('📊 [Auth] 학생 통계 갱신:', grade, authRate + '%', tasksSubmitted + '/' + tasksDue);
+            console.log('📊 [Auth] 학생 통계 갱신:', grade, authRate + '%', (tasksDue > 0 ? tasksDueCompleted : tasksSubmitted) + '/' + tasksDue);
 
         } catch (e) {
             console.error('📊 [Auth] 학생 통계 갱신 실패:', e);
