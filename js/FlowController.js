@@ -495,6 +495,8 @@ const FlowController = {
         // ★ 리딩/리스닝: 2차 결과 = 해설이 합쳐진 구조이므로 여기서 오답노트 표시
         if (typeof ErrorNote !== 'undefined') {
             ErrorNote.show(this.sectionType, this.moduleNumber);
+        } else {
+            console.error('❌ [FlowController] ErrorNote가 로드되지 않았습니다. 오답노트 기능 사용 불가.');
         }
         
         // 기존 retake-result 함수들을 그대로 사용
@@ -528,6 +530,8 @@ const FlowController = {
         // ★ 오답노트 플로팅 UI 표시
         if (typeof ErrorNote !== 'undefined') {
             ErrorNote.show(this.sectionType, this.moduleNumber);
+        } else {
+            console.error('❌ [FlowController] ErrorNote가 로드되지 않았습니다. 오답노트 기능 사용 불가.');
         }
         
         // 해설 화면에 전달할 데이터 준비

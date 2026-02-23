@@ -386,7 +386,17 @@ var AuthMonitor = {
             if (speakingFile1) updateData.speaking_file_1 = speakingFile1;
             if (speakingFile2) updateData.speaking_file_2 = speakingFile2;
 
-            await supabaseUpdate('tr_study_records', 'id=eq.' + this._studyRecordId, updateData);
+            try {
+                await supabaseUpdate('tr_study_records', 'id=eq.' + this._studyRecordId, updateData);
+            } catch (colErr) {
+                // speaking_file 컬럼이 없을 수 있음 — 오답노트만 저장 재시도
+                console.warn('📝 [Auth] 전체 UPDATE 실패, 오답노트만 재시도:', colErr.message || colErr);
+                var fallbackData = {
+                    error_note_text: text,
+                    error_note_word_count: wordCount
+                };
+                await supabaseUpdate('tr_study_records', 'id=eq.' + this._studyRecordId, fallbackData);
+            }
             console.log('📝 [Auth] 오답노트 저장 완료:', this._studyRecordId);
 
             // ★ 학생 통계 갱신

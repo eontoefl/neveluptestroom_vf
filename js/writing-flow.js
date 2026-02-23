@@ -770,6 +770,8 @@ const WritingFlow = {
         // ★ 오답노트 플로팅 UI 표시
         if (typeof ErrorNote !== 'undefined') {
             ErrorNote.show('writing', this.moduleNumber || 1);
+        } else {
+            console.error('❌ [WritingFlow] ErrorNote가 로드되지 않았습니다. 오답노트 기능 사용 불가.');
         }
         
         this.hideAllScreens();

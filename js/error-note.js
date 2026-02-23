@@ -577,13 +577,13 @@ var ErrorNote = {
         console.log('📝 [ErrorNote] 제출:', { wordCount: wordCount, isFraud: isFraud });
 
         this._isSubmitted = true;
+        this._lastSubmitData = { text: text, wordCount: wordCount, isFraud: isFraud };
 
-        // UI 업데이트 — 제출 완료 상태
+        // UI 업데이트 — 저장 중 상태
         var submitBtn = document.getElementById('errorNoteSubmitBtn');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-check"></i> 제출 완료';
-            submitBtn.classList.add('error-note-submitted');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
         }
 
         var textarea = document.getElementById('errorNoteTextarea');
@@ -612,16 +612,47 @@ var ErrorNote = {
             }
         }
 
-        // ★ AuthMonitor._studyRecordId로 직접 DB UPDATE
+        // ★ DB 저장 시도 (폴백 포함)
+        var saveSuccess = false;
+
+        // 방법 1: AuthMonitor._studyRecordId로 UPDATE
         if (window.AuthMonitor && AuthMonitor._studyRecordId) {
-            var saved = await AuthMonitor.saveErrorNote(text, wordCount, file1Path, file2Path);
-            if (saved) {
-                console.log('📝 [ErrorNote] DB 저장 완료');
+            saveSuccess = await AuthMonitor.saveErrorNote(text, wordCount, file1Path, file2Path);
+            if (saveSuccess) {
+                console.log('📝 [ErrorNote] DB 저장 완료 (AuthMonitor)');
             } else {
-                console.warn('📝 [ErrorNote] DB 저장 실패');
+                console.warn('📝 [ErrorNote] AuthMonitor 저장 실패 — 폴백 시도');
             }
-        } else {
-            console.warn('📝 [ErrorNote] studyRecordId 없음 — DB 저장 불가');
+        }
+
+        // 방법 2: 폴백 — studyRecordId 없으면 직접 최신 study_record 찾아서 UPDATE
+        if (!saveSuccess) {
+            saveSuccess = await this._fallbackSave(text, wordCount, file1Path, file2Path);
+        }
+
+        // 방법 3: 최종 폴백 — 새 study_record INSERT 후 오답노트 저장
+        if (!saveSuccess) {
+            saveSuccess = await this._emergencySave(text, wordCount, file1Path, file2Path);
+        }
+
+        // UI 최종 업데이트
+        if (submitBtn) {
+            if (saveSuccess) {
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> 제출 완료';
+                submitBtn.classList.add('error-note-submitted');
+            } else {
+                // 저장 실패 — 재시도 버튼 표시
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 저장 실패 — 다시 시도';
+                submitBtn.classList.add('error-note-failed');
+                submitBtn.onclick = function() { ErrorNote.retrySubmit(); };
+                this._isSubmitted = false;
+                if (textarea) {
+                    textarea.readOnly = false;
+                    textarea.classList.remove('error-note-readonly');
+                }
+                console.error('📝 [ErrorNote] 모든 저장 방법 실패');
+            }
         }
 
         var speakingFileCount = 0;
@@ -631,19 +662,118 @@ var ErrorNote = {
         }
 
         // 커스텀 이벤트 발생 (auth-monitor 등에서 감지 가능)
-        var event = new CustomEvent('errorNoteSubmitted', {
-            detail: {
-                text: text,
-                wordCount: wordCount,
-                isFraud: isFraud,
-                sectionType: this._sectionType,
-                moduleNumber: this._moduleNumber,
-                speakingFileCount: speakingFileCount
-            }
-        });
-        window.dispatchEvent(event);
+        if (saveSuccess) {
+            var event = new CustomEvent('errorNoteSubmitted', {
+                detail: {
+                    text: text,
+                    wordCount: wordCount,
+                    isFraud: isFraud,
+                    sectionType: this._sectionType,
+                    moduleNumber: this._moduleNumber,
+                    speakingFileCount: speakingFileCount
+                }
+            });
+            window.dispatchEvent(event);
+            console.log('📝 [ErrorNote] 제출 이벤트 발생:', isFraud ? '미인정(fraud)' : '정상');
+        }
+    },
 
-        console.log('📝 [ErrorNote] 제출 이벤트 발생:', isFraud ? '미인정(fraud)' : '정상');
+    // ========================================
+    // 폴백 저장: 최신 study_record를 DB에서 찾아서 UPDATE
+    // ========================================
+    async _fallbackSave(text, wordCount, file1Path, file2Path) {
+        try {
+            var user = window.currentUser;
+            if (!user || !user.id) {
+                console.warn('📝 [ErrorNote] 폴백 — 유저 정보 없음');
+                return false;
+            }
+
+            // 해당 유저의 최신 study_record 조회
+            var records = await supabaseSelect(
+                'tr_study_records',
+                'user_id=eq.' + user.id + 
+                '&task_type=eq.' + this._sectionType + 
+                '&order=completed_at.desc&limit=1'
+            );
+
+            if (records && records.length > 0) {
+                var recordId = records[0].id;
+                var updateData = {
+                    error_note_text: text,
+                    error_note_word_count: wordCount
+                };
+
+                await supabaseUpdate('tr_study_records', 'id=eq.' + recordId, updateData);
+
+                // AuthMonitor에도 studyRecordId 동기화
+                if (window.AuthMonitor) {
+                    AuthMonitor._studyRecordId = recordId;
+                }
+
+                console.log('📝 [ErrorNote] 폴백 저장 성공:', recordId);
+                return true;
+            }
+
+            console.warn('📝 [ErrorNote] 폴백 — 매칭되는 study_record 없음');
+            return false;
+        } catch (e) {
+            console.error('📝 [ErrorNote] 폴백 저장 에러:', e);
+            return false;
+        }
+    },
+
+    // ========================================
+    // 최종 폴백: study_record가 아예 없으면 새로 INSERT
+    // ========================================
+    async _emergencySave(text, wordCount, file1Path, file2Path) {
+        try {
+            var user = window.currentUser;
+            if (!user || !user.id) return false;
+
+            var scheduleInfo = { week: 1, day: '일' };
+            if (window.AuthMonitor && typeof AuthMonitor.getCurrentScheduleInfo === 'function') {
+                var info = AuthMonitor.getCurrentScheduleInfo();
+                if (info) scheduleInfo = info;
+            }
+
+            var recordData = {
+                user_id: user.id,
+                week: scheduleInfo.week,
+                day: scheduleInfo.day,
+                task_type: this._sectionType,
+                module_number: this._moduleNumber || 1,
+                attempt: 1,
+                score: 0,
+                total: 0,
+                error_note_text: text,
+                error_note_word_count: wordCount,
+                completed_at: new Date().toISOString()
+            };
+
+            var result = await saveStudyRecord(recordData);
+            if (result && result.id) {
+                if (window.AuthMonitor) {
+                    AuthMonitor._studyRecordId = result.id;
+                }
+                console.log('📝 [ErrorNote] 긴급 INSERT 성공:', result.id);
+                return true;
+            }
+
+            return false;
+        } catch (e) {
+            console.error('📝 [ErrorNote] 긴급 INSERT 에러:', e);
+            return false;
+        }
+    },
+
+    // ========================================
+    // 재시도 제출
+    // ========================================
+    async retrySubmit() {
+        if (!this._lastSubmitData) return;
+        var d = this._lastSubmitData;
+        await this.submitNote(d.text, d.wordCount, d.isFraud);
     },
 
     // ========================================
