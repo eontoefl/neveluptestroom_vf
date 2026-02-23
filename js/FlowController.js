@@ -122,8 +122,102 @@ const FlowController = {
             return;
         }
         
+        // ★ 리딩/리스닝: 중간저장 기록 확인 후 시작
+        if ((sectionType === 'reading' || sectionType === 'listening') && window.AutoSave) {
+            this._checkAndStart(sectionType, moduleNumber);
+            return;
+        }
+        
         // 1단계: 1차 풀이/작성/답변 시작
         this.startFirstAttempt();
+    },
+    
+    // ========================================
+    // ★ 중간저장 확인 후 시작/복원 분기
+    // ========================================
+    async _checkAndStart(sectionType, moduleNumber) {
+        const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+        if (!user || !user.id || user.id === 'dev-user-001') {
+            this.startFirstAttempt();
+            return;
+        }
+        
+        const pending = await AutoSave.checkPendingProgress(user.id, sectionType, moduleNumber);
+        
+        if (pending && pending.completed_components && pending.completed_components.length > 0) {
+            // 미완료 기록 있음 → 팝업
+            AutoSave.showResumePopup(
+                {
+                    ...pending,
+                    total_components: this.moduleConfig.components.length
+                },
+                // 이어하기
+                () => {
+                    console.log('🔄 [FlowController] 이어서 풀기 선택');
+                    AutoSave._isResuming = true;
+                    
+                    if (pending.attempt === 2) {
+                        // 2차 복원
+                        this.firstAttemptResult = pending.first_attempt_result;
+                        this.currentAttemptNumber = 2;
+                        window.currentAttemptNumber = 2;
+                        window.isSecondAttempt = true;
+                        this.state = 'SECOND_ATTEMPT';
+                        
+                        const secondConfig = JSON.parse(JSON.stringify(this.moduleConfig));
+                        const controller = new ModuleController(secondConfig);
+                        this.activeController = controller;
+                        
+                        controller.setOnComplete((result) => {
+                            console.log('✅ [FlowController] 2차 복원 완료');
+                            this.secondAttemptResult = result;
+                            this.secondAttemptResponses = this.collectResponses(result);
+                            window.currentAttemptNumber = 1;
+                            window.isSecondAttempt = false;
+                            AutoSave._isResuming = false;
+                            this.showExplain();
+                        });
+                        
+                        controller.startModule({
+                            nextComponentIndex: pending.current_component_index,
+                            componentResults: pending.completed_components,
+                            allAnswers: pending.all_answers || [],
+                            timerRemaining: pending.timer_remaining
+                        });
+                    } else {
+                        // 1차 복원
+                        this.state = 'FIRST_ATTEMPT';
+                        this.currentAttemptNumber = 1;
+                        
+                        const controller = new ModuleController(this.moduleConfig);
+                        this.activeController = controller;
+                        
+                        controller.setOnComplete((result) => {
+                            console.log('✅ [FlowController] 1차 복원 완료');
+                            this.firstAttemptResult = result;
+                            this.firstAttemptResponses = this.collectResponses(result);
+                            AutoSave._isResuming = false;
+                            this.afterFirstAttempt();
+                        });
+                        
+                        controller.startModule({
+                            nextComponentIndex: pending.current_component_index,
+                            componentResults: pending.completed_components,
+                            allAnswers: pending.all_answers || [],
+                            timerRemaining: pending.timer_remaining
+                        });
+                    }
+                },
+                // 처음부터
+                () => {
+                    console.log('🔄 [FlowController] 처음부터 선택');
+                    this.startFirstAttempt();
+                }
+            );
+        } else {
+            // 미완료 기록 없음 → 정상 시작
+            this.startFirstAttempt();
+        }
     },
 
     // ========================================
@@ -416,6 +510,11 @@ const FlowController = {
     showExplain() {
         this.state = 'EXPLAIN';
         console.log('📖 [FlowController] 최종 해설 화면 표시');
+        
+        // ★ 자동저장 완료 처리 (1차/2차 모두 끝남)
+        if (window.AutoSave) {
+            AutoSave.markCompleted();
+        }
         
         // ★ 오답노트 플로팅 UI 표시
         if (typeof ErrorNote !== 'undefined') {

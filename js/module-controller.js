@@ -63,7 +63,7 @@ class ModuleController {
      * 모듈 시작
      * ================================================
      */
-    startModule() {
+    startModule(resumeData) {
         console.log('🚀 모듈 시작:', this.config.moduleName);
         
         this.startTime = Date.now();
@@ -71,6 +71,28 @@ class ModuleController {
         // 모듈 모드 플래그 설정 (컴포넌트들이 자체 진행률 표시하지 않도록)
         window.isModuleMode = true;
         window.moduleController = this;
+        
+        // ★ 복원 모드: 이전 진행 데이터 로드
+        if (resumeData) {
+            console.log('🔄 [Resume] 복원 모드 — 컴포넌트', resumeData.nextComponentIndex, '부터 시작');
+            this.currentComponentIndex = resumeData.nextComponentIndex;
+            this.componentResults = resumeData.componentResults || [];
+            this.allAnswers = resumeData.allAnswers || [];
+            this.currentQuestionNumber = this.allAnswers.length;
+            
+            // 타이머 복원 (남은 시간으로)
+            if (this.config.sectionType === 'reading' && this.config.timeLimit) {
+                if (resumeData.timerRemaining && resumeData.timerRemaining > 0) {
+                    this.config.timeLimit = resumeData.timerRemaining;
+                    console.log('⏱️ [Resume] 타이머 복원:', resumeData.timerRemaining, '초');
+                }
+                this.startModuleTimer();
+            }
+            
+            // 해당 컴포넌트부터 로드
+            this.loadNextComponent();
+            return;
+        }
         
         // Reading 모듈인 경우 20분 타이머 시작
         if (this.config.sectionType === 'reading' && this.config.timeLimit) {
@@ -924,6 +946,22 @@ class ModuleController {
             setId: component.setId,
             ...componentResult
         });
+        
+        // ★ 자동저장: 다음 컴포넌트로 넘어가기 전에 진행 상태 저장
+        if (window.AutoSave && !window._isReplayMode) {
+            const fc = window.FlowController;
+            window.AutoSave.saveProgress({
+                sectionType: this.config.sectionType,
+                moduleNumber: fc ? fc.moduleNumber : null,
+                attempt: window.currentAttemptNumber || 1,
+                nextComponentIndex: this.currentComponentIndex + 1,
+                totalComponents: this.config.components.length,
+                componentResults: this.componentResults,
+                allAnswers: this.allAnswers,
+                timerRemaining: this.moduleTimeRemaining,
+                firstAttemptResult: (window.currentAttemptNumber === 2 && fc) ? fc.firstAttemptResult : null
+            });
+        }
         
         // 다음 컴포넌트로
         this.currentComponentIndex++;
