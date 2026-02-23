@@ -172,6 +172,17 @@
     background: linear-gradient(135deg, #4CAF50, #43A047);
 }
 
+.error-note-submit-btn.error-note-failed {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    animation: error-note-shake 0.5s ease;
+}
+
+@keyframes error-note-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+
 /* 드래그 리사이즈 핸들 */
 .error-note-resize-handle {
     position: absolute;
