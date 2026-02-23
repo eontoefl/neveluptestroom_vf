@@ -294,8 +294,8 @@ function renderLectureAnswer(result, index, setIdx) {
         ? '<i class="fas fa-check-circle" style="color: #77bf7e;"></i>' 
         : '<i class="fas fa-times-circle" style="color: #e74c5e;"></i>';
     
-    const userAnswerText = userAnswer !== undefined && options[userAnswer] ? options[userAnswer] : '미응답';
-    const correctAnswerText = options[correctAnswer] || '';
+    const userAnswerText = userAnswer !== undefined && options[userAnswer - 1] ? options[userAnswer - 1] : '미응답';
+    const correctAnswerText = options[(correctAnswer || 1) - 1] || '';
     
     const toggleId = `academic-fixed-toggle-q${setIdx || 0}-${index}`;
     
@@ -303,7 +303,7 @@ function renderLectureAnswer(result, index, setIdx) {
     let optionsHtml = '';
     options.forEach((option, optIdx) => {
         const optionLetter = String.fromCharCode(65 + optIdx);
-        const isCorrectOpt = optIdx === correctAnswer;
+        const isCorrectOpt = correctAnswer === (optIdx + 1);
         const translation = translations[optIdx] || '';
         const explanation = explanations[optIdx] || '';
         
