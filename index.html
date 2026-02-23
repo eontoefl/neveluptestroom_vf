@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- CACHE BUST: 20260218_lecture_fix_002 -->
+<!-- CACHE BUST: 20260224_popup_notice -->
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -314,7 +314,7 @@
             <!-- 공지 배너 -->
             <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:10px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:13px;color:#4338ca;line-height:1.5;">
                 <span style="font-size:18px;flex-shrink:0;">💡</span>
-                <span>학습 시작 전 <b>Ctrl+Shift+R</b>(Mac: ⌘+Shift+R)로 <b>새로고침</b> 후 시작해 주세요! 매일 오류 수정이 반영됩니다.</span>
+                <span>새로운 날 접속 시 <b>Ctrl+Shift+R</b>(Mac: ⌘+Shift+R) <b>강력 새로고침 필수!</b> 매일 오류 수정이 반영됩니다.</span>
             </div>
 
             <div class="schedule-header">
@@ -3215,5 +3215,84 @@
         </table>
     </div>
 </div>
+<!-- ========== 팝업 공지 ========== -->
+<div id="systemNoticeOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;max-width:780px;width:94%;padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;animation:noticeSlideUp 0.3s ease;">
+        <!-- 헤더 -->
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:14px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:22px;">🔧</span>
+                <div>
+                    <span style="font-size:15px;font-weight:700;">시스템 공지</span>
+                    <span style="font-size:12px;opacity:0.85;margin-left:8px;">원활한 학습을 위해 꼭 읽어주세요</span>
+                </div>
+            </div>
+        </div>
+        <!-- 본문 — 3열 가로 배치 -->
+        <div style="padding:18px 20px 14px;display:flex;gap:12px;">
+            <div style="flex:1;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:6px;">⏰ 오류 수정 시간</div>
+                <div style="font-size:12px;color:#78350f;line-height:1.6;">매일 <b>오전 2시 ~ 8시</b><br>오류 수정이 진행됩니다.</div>
+            </div>
+            <div style="flex:1;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:6px;">🔄 강력 새로고침 필수</div>
+                <div style="font-size:12px;color:#1e3a5f;line-height:1.6;">새 날 접속 시 <b>캐시 삭제 새로고침</b><br>Win: <b>Ctrl+Shift+R</b><br>Mac: <b>⌘+Shift+R</b></div>
+            </div>
+            <div style="flex:1;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:13px;font-weight:700;color:#166534;margin-bottom:6px;">🛡️ 오류 시 대처법</div>
+                <div style="font-size:12px;color:#14532d;line-height:1.6;">진행 내용 <b>자동 저장</b> 중!<br>종료→새로고침→재로그인<br>→과제 재진입 = <b>이어풀기</b> 😊</div>
+            </div>
+        </div>
+        <!-- 하단 버튼 -->
+        <div style="padding:4px 20px 16px;display:flex;align-items:center;gap:10px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;cursor:pointer;flex:1;">
+                <input type="checkbox" id="noticeHideToday" style="width:15px;height:15px;accent-color:#6366f1;cursor:pointer;">
+                오늘 하루 안 보기
+            </label>
+            <button onclick="closeSystemNotice()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:transform 0.15s;"
+                onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">확인했어요</button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes noticeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 640px) {
+    #systemNoticeOverlay > div { max-width: 95% !important; }
+    #systemNoticeOverlay > div > div:nth-child(2) { flex-direction: column !important; }
+}
+</style>
+
+<script>
+function showSystemNotice() {
+    var today = new Date().toISOString().slice(0, 10);
+    var hideDate = localStorage.getItem('systemNoticeHideDate');
+    if (hideDate === today) return;
+    var overlay = document.getElementById('systemNoticeOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function closeSystemNotice() {
+    var checkbox = document.getElementById('noticeHideToday');
+    if (checkbox && checkbox.checked) {
+        var today = new Date().toISOString().slice(0, 10);
+        localStorage.setItem('systemNoticeHideDate', today);
+    }
+    var overlay = document.getElementById('systemNoticeOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+// 페이지 로드 후 0.5초 뒤 팝업 표시
+setTimeout(function() {
+    showSystemNotice();
+}, 500);
+</script>
 </body>
 </html>
