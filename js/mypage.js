@@ -177,25 +177,26 @@ function renderSummaryCards() {
         document.getElementById('challengeBar').style.width = '0%';
         document.getElementById('challengeSub').textContent = `${startStr} 시작 예정`;
     } else {
-        const elapsedDays = Math.max(1, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1);
-        const remainingDays = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
-        const elapsedPct = Math.min(100, Math.round((elapsedDays / totalCalendarDays) * 100));
-        document.getElementById('challengeStatus').textContent = `D+${elapsedDays} / ${totalCalendarDays}일`;
+        const dplus = Math.min(Math.floor((today - startDate) / (1000 * 60 * 60 * 24)), totalCalendarDays);
+        const remainingDays = Math.max(0, totalCalendarDays - dplus);
+        const elapsedPct = Math.min(100, Math.round((dplus / totalCalendarDays) * 100));
+        document.getElementById('challengeStatus').textContent = `D+${dplus} / ${totalCalendarDays}일`;
         document.getElementById('challengeBar').style.width = `${elapsedPct}%`;
         document.getElementById('challengeSub').textContent = `잔여 ${remainingDays}일`;
     }
 
     // ── 오늘까지 할당된 과제 수 계산 ──
-    const tasksDueToday = countTasksDueToday(programType, totalWeeks);
-    const tasksSubmitted = mpStudyRecords.length;
+    const taskStats = countTasksDueToday(programType, totalWeeks);
+    const tasksDueToday = taskStats.due;
+    const tasksSubmitted = taskStats.completed;
 
     // 시작 전인데 미리 제출한 경우: 분모 0이지만 분자가 있음
     let submitPct, submitSubText;
-    if (tasksDueToday === 0 && tasksSubmitted > 0) {
+    if (tasksDueToday === 0 && mpStudyRecords.length > 0) {
         // 선제출: 퍼센트 대신 건수로 표시
         submitPct = 0; // 바는 0%
-        submitSubText = `${tasksSubmitted}건 미리 완료 🎉`;
-        document.getElementById('submitRate').textContent = tasksSubmitted;
+        submitSubText = `${mpStudyRecords.length}건 미리 완료 🎉`;
+        document.getElementById('submitRate').textContent = mpStudyRecords.length;
         document.getElementById('submitRateUnit').textContent = '건';
     } else {
         submitPct = tasksDueToday > 0 ? Math.round((tasksSubmitted / tasksDueToday) * 100) : 0;
@@ -266,12 +267,13 @@ function renderSummaryCards() {
  * ※ 제출된 과제(분자)는 도래/미도래/오늘 상관없이 무조건 반영
  */
 function countTasksDueToday(programType, totalWeeks) {
-    if (!mpUser.startDate) return 0;
-    if (typeof getDayTasks !== 'function') return 0;
+    if (!mpUser.startDate) return { due: 0, completed: 0 };
+    if (typeof getDayTasks !== 'function') return { due: 0, completed: 0 };
 
     const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const dayEnToKr = { sunday: '일', monday: '월', tuesday: '화', wednesday: '수', thursday: '목', friday: '금' };
     const startDate = new Date(mpUser.startDate + 'T00:00:00');
-    if (isNaN(startDate.getTime())) return 0;
+    if (isNaN(startDate.getTime())) return { due: 0, completed: 0 };
 
     const now = new Date();
 
@@ -283,6 +285,7 @@ function countTasksDueToday(programType, totalWeeks) {
     effectiveToday.setHours(0, 0, 0, 0);
 
     let totalTasks = 0;
+    let completedTasks = 0;
 
     for (let w = 1; w <= totalWeeks; w++) {
         for (let d = 0; d < dayOrder.length; d++) {
@@ -292,13 +295,35 @@ function countTasksDueToday(programType, totalWeeks) {
 
             // 과제 날짜가 오늘(effective) 이하면 분모에 포함
             if (taskDate <= effectiveToday) {
-                const tasks = getDayTasks(programType, w, dayOrder[d]);
-                totalTasks += tasks.length;
+                const dayEn = dayOrder[d];
+                const dayKr = dayEnToKr[dayEn];
+                const tasks = getDayTasks(programType, w, dayEn);
+                
+                tasks.forEach(function(taskName) {
+                    const parsed = (typeof parseTaskName === 'function') ? parseTaskName(taskName) : null;
+                    if (!parsed || parsed.type === 'unknown') return;
+
+                    totalTasks++;
+
+                    // 완료 여부 확인 (progress-tracker와 동일 로직)
+                    if (parsed.type === 'vocab' || parsed.type === 'intro-book') {
+                        const wdKey = parsed.type + '_w' + w + '_' + dayKr;
+                        const found = mpStudyRecords.find(r => 
+                            r.task_type === parsed.type && r.week === w && r.day === dayKr
+                        );
+                        if (found) completedTasks++;
+                    } else {
+                        const found = mpStudyRecords.find(r => 
+                            r.task_type === parsed.type && r.module_number === parsed.moduleNumber
+                        );
+                        if (found) completedTasks++;
+                    }
+                });
             }
         }
     }
 
-    return totalTasks;
+    return { due: totalTasks, completed: completedTasks };
 }
 
 /**
