@@ -1,8 +1,8 @@
 // 학습 일정으로 돌아가기 (과제 진행 중)
+// ★ 팝업 규칙: docs/NAVIGATION_POPUPS.md 참고
 function backToSchedule() {
     // 현재 활성화된 화면 확인
     const activeScreen = document.querySelector('.screen.active');
-    // active 클래스가 없는 경우 실제로 보이는 화면 찾기
     let visibleScreen = activeScreen;
     if (!visibleScreen) {
         document.querySelectorAll('.screen').forEach(function(s) {
@@ -13,50 +13,55 @@ function backToSchedule() {
     }
     const currentScreenId = visibleScreen ? visibleScreen.id : null;
     
-    console.log('🔙 [뒤로가기] 현재 화면:', currentScreenId, 'active:', !!activeScreen, 'visible:', !!visibleScreen);
+    // ── 상태 수집 ──
+    var isTaskListScreen = currentScreenId === 'welcomeScreen';
+    var step1Done = window.AuthMonitor && AuthMonitor._step1Done;
+    var step2Done = window.AuthMonitor && AuthMonitor._step2Done;
+    var explanationDone = window.AuthMonitor && AuthMonitor._explanationDone;
     
-    // 경고 없이 바로 돌아가도 되는 화면들
-    const isTaskListScreen = currentScreenId === 'welcomeScreen';
-    const isResultScreen = currentScreenId && (
-        currentScreenId.includes('Result') || 
-        currentScreenId === 'vocabResultScreen' ||
-        currentScreenId === 'resultScreen' ||
-        currentScreenId === 'finalExplainScreen'
-    );
+    var errorNotePanel = document.getElementById('errorNotePanel');
+    var hasErrorNote = errorNotePanel && window.ErrorNote;
+    var errorNoteSubmitted = hasErrorNote && ErrorNote.isSubmitted();
     
-    // AuthMonitor가 step1+step2 모두 완료 = 과제 다 끝남 → 경고 불필요
-    var isAllStepsDone = window.AuthMonitor && AuthMonitor._step1Done && AuthMonitor._step2Done;
-    
-    // finalExplainScreen이 display:block이면 해설 화면임
     var explainScreen = document.getElementById('finalExplainScreen');
     var isOnExplainScreen = explainScreen && explainScreen.style.display && explainScreen.style.display !== 'none';
     
-    console.log('🔙 [뒤로가기] isTaskList:', isTaskListScreen, 'isResult:', isResultScreen, 'isAllStepsDone:', isAllStepsDone, 'isOnExplain:', isOnExplainScreen, 'screenId:', currentScreenId);
+    // 연습/마감 모드는 팝업 없이 바로 이동
+    var isPracticeOrDeadline = window._isPracticeMode || window._deadlinePassedMode;
     
-    // 실제 시험 화면인 경우에만 경고 표시 (과제목록/결과화면/과제완료 상태는 스킵)
-    if (!isTaskListScreen && !isResultScreen && !isAllStepsDone && !isOnExplainScreen) {
-        // AuthMonitor 상태로 구간 판별
-        var hasSubmitted = window.AuthMonitor && (AuthMonitor._step1Done || AuthMonitor._step2Done);
-        var msg;
-        
-        if (hasSubmitted) {
-            // 1차 이후 (30%~60% 확보 상태)
-            msg = '⚠️ 지금 나가면 남은 인증률을 받을 수 없습니다.\n나가시겠습니까?';
-        } else {
-            // 1차 풀이 중 (아직 제출 전)
-            msg = '⚠️ 지금 나가면 모든 답안이 사라집니다.\n나가시겠습니까?';
-        }
-        
-        if (!confirm(msg)) {
-            return; // 취소하면 함수 종료
+    console.log('🔙 [뒤로가기] screen:', currentScreenId, 'step1:', step1Done, 'step2:', step2Done, 'explanation:', explanationDone, 'errorNote:', errorNoteSubmitted, 'explain:', isOnExplainScreen);
+    
+    // ── 판정 순서 (0→5, 먼저 매칭되면 실행) ──
+    
+    // 순서 0: 과제 목록 화면 / 연습·마감 모드 → 바로 이동
+    if (isTaskListScreen || isPracticeOrDeadline) {
+        // 팝업 없이 통과
+    }
+    // 순서 1: 오답노트 제출 완료 → 완료 알림 후 이동
+    else if (errorNoteSubmitted || explanationDone) {
+        alert('✅ 과제가 완료되었습니다!');
+    }
+    // 순서 2: 해설 화면 진입, 오답노트 미제출
+    else if ((isOnExplainScreen || hasErrorNote) && step1Done && step2Done) {
+        if (!confirm('⚠️ 오답노트를 아직 제출하지 않았습니다.\n제출해야 100% 인증됩니다.\n\n나가시겠습니까?')) {
+            return;
         }
     }
-    
-    // 해설 화면에서 오답노트 미제출 시 경고
-    // ErrorNote 패널이 존재하고 아직 제출 안 했으면 = 해설 화면에서 나가려는 것
-    var errorNotePanel = document.getElementById('errorNotePanel');
-    if (errorNotePanel && window.ErrorNote && !ErrorNote.isSubmitted()) {
-        if (!confirm('⚠️ 오답노트를 제출하지 않았습니다.\n그래도 나가시겠습니까?')) {
+    // 순서 3: 2차 완료, 해설 안 봄
+    else if (step1Done && step2Done) {
+        if (!confirm('⚠️ 해설 확인과 오답노트 제출까지 완료해야\n100% 인증됩니다.\n\n나가시겠습니까?')) {
+            return;
+        }
+    }
+    // 순서 4: 1차 후 ~ 2차 진행 중
+    else if (step1Done && !step2Done) {
+        if (!confirm('⚠️ 지금 나가면 현재까지의 답안이 그대로 제출됩니다.\n인증률이 낮아질 수 있습니다.\n\n나가시겠습니까?')) {
+            return;
+        }
+    }
+    // 순서 5: 1차 풀이 중
+    else if (!isTaskListScreen) {
+        if (!confirm('⚠️ 지금 나가면 현재까지의 답안이 그대로 제출됩니다.\n인증률이 0%가 될 수 있습니다.\n\n나가시겠습니까?')) {
             return;
         }
     }
