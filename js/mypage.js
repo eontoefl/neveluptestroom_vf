@@ -208,21 +208,25 @@ function renderSummaryCards() {
     let authRateSum = 0;
     mpAuthRecords.forEach(r => { authRateSum += (r.auth_rate || 0); });
 
+    // 분모 결정: 도래일이 0이면 제출 건수를 분모로 사용 (선제출 케이스)
+    const authDenominator = tasksDueToday > 0 ? tasksDueToday : tasksSubmitted;
+
     let authRatePct, authSubText;
-    if (tasksDueToday === 0 && authRateSum > 0) {
-        // 선제출: 인증 합계만 표시
-        authRatePct = 0;
-        authSubText = `인증 합계 ${Math.round(authRateSum)} (시작 전 선제출)`;
-        document.getElementById('authRate').textContent = Math.round(authRateSum);
-        document.getElementById('authRateUnit').textContent = '점';
+    if (authDenominator > 0) {
+        authRatePct = Math.round(authRateSum / authDenominator);
+        if (tasksDueToday === 0) {
+            authSubText = `인증 합계 ${Math.round(authRateSum)} / 제출 ${tasksSubmitted}건 (시작 전)`;
+        } else {
+            authSubText = `인증 합계 ${Math.round(authRateSum)} / 마감 ${tasksDueToday}건`;
+        }
     } else {
-        authRatePct = tasksDueToday > 0 ? Math.round(authRateSum / tasksDueToday) : 0;
-        authSubText = `인증 합계 ${Math.round(authRateSum)} / 마감 ${tasksDueToday}건`;
-        document.getElementById('authRate').textContent = authRatePct;
-        document.getElementById('authRateUnit').textContent = '%';
+        authRatePct = 0;
+        authSubText = '데이터 없음';
     }
 
     // 3칸: 인증률
+    document.getElementById('authRate').textContent = authRatePct;
+    document.getElementById('authRateUnit').textContent = '%';
     document.getElementById('authBar').style.width = `${Math.min(authRatePct, 100)}%`;
     document.getElementById('authSub').textContent = authSubText;
 

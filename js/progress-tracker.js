@@ -294,18 +294,22 @@ var ProgressTracker = {
         var total = 0;
         var completed = 0;
 
+        // 시작 전인지 확인
+        var isBeforeStart = !useAllWeeks && startDate && startDate > effectiveToday;
+
         for (var w = 1; w <= totalWeeks; w++) {
             for (var di = 0; di < days.length; di++) {
                 var dayKr = days[di];
                 var dayEn = dayMapping[dayKr];
                 
-                // 미도래일 제외: 새벽 4시 기준으로 오늘 이하만 포함
-                if (!useAllWeeks && startDate) {
+                if (!useAllWeeks && startDate && !isBeforeStart) {
+                    // 시작 후: 미도래일 제외
                     var taskDate = new Date(startDate);
                     taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + di);
                     taskDate.setHours(0, 0, 0, 0);
-                    if (taskDate > effectiveToday) continue; // 미래 과제 제외
+                    if (taskDate > effectiveToday) continue;
                 }
+                // 시작 전: 전체 과제를 분모로 사용 (선제출 반영을 위해)
 
                 var dayProgress = ProgressTracker.getDayProgress(programType, w, dayEn);
                 total += dayProgress.total;
