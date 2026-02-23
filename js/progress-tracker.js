@@ -266,7 +266,7 @@ var ProgressTracker = {
     },
 
     // ========================================
-    // 전체 진도율 계산
+    // 전체 진도율 계산 (v2 — 오늘까지 할당 과제 기준)
     // ========================================
     getTotalProgress(programType) {
         var totalWeeks = programType === 'standard' ? 8 : 4;
@@ -276,16 +276,40 @@ var ProgressTracker = {
         };
         var days = ['일', '월', '화', '수', '목', '금'];
 
+        // 오늘까지 할당된 과제만 분모로 사용
+        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
+        var useAllWeeks = true; // 폴백: 전체 주차
+        var startDate = null;
+        
+        if (user && user.startDate) {
+            startDate = new Date(user.startDate + 'T00:00:00');
+            if (!isNaN(startDate.getTime())) {
+                useAllWeeks = false;
+            }
+        }
+
+        var todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+
         var total = 0;
         var completed = 0;
 
         for (var w = 1; w <= totalWeeks; w++) {
-            days.forEach(function(dayKr) {
+            for (var di = 0; di < days.length; di++) {
+                var dayKr = days[di];
                 var dayEn = dayMapping[dayKr];
+                
+                // 미도래일 제외: 해당 날짜가 오늘보다 미래면 스킵
+                if (!useAllWeeks && startDate) {
+                    var taskDate = new Date(startDate);
+                    taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + di);
+                    if (taskDate > todayMidnight) continue; // 미래 과제 제외
+                }
+
                 var dayProgress = ProgressTracker.getDayProgress(programType, w, dayEn);
                 total += dayProgress.total;
                 completed += dayProgress.completed;
-            });
+            }
         }
 
         return {
@@ -366,7 +390,7 @@ var ProgressTracker = {
         container.innerHTML = 
             '<div class="total-progress-header">' +
                 '<span class="total-progress-label">전체 진도율</span>' +
-                '<span class="total-progress-count">' + progress.completed + ' / ' + progress.total + ' 과제 완료</span>' +
+                '<span class="total-progress-count">' + progress.completed + ' / ' + progress.total + ' 과제 완료 (오늘까지)</span>' +
             '</div>' +
             '<div class="total-progress-bar-track">' +
                 '<div class="total-progress-bar-fill" style="width: ' + progress.percent + '%"></div>' +

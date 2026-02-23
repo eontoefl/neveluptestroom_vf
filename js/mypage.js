@@ -15,6 +15,7 @@
 let mpUser = null;           // sessionStorage에서 로드한 유저 정보
 let mpStudyRecords = [];     // tr_study_records
 let mpAuthRecords = [];      // tr_auth_records
+let mpGradeRules = [];       // tr_grade_rules (등급/환급 기준표)
 
 // ================================================
 // 스케줄 데이터 (총 과제 수 / 총 일수 계산용)
@@ -91,7 +92,13 @@ async function loadAllData() {
         `user_id=eq.${userId}&order=created_at.desc&select=*`
     ) || [];
 
-    console.log(`📊 [MyPage] 로드 완료 - 학습기록: ${mpStudyRecords.length}건, 인증기록: ${mpAuthRecords.length}건`);
+    // 등급/환급 기준표 로드
+    mpGradeRules = await supabaseSelect(
+        'tr_grade_rules',
+        'order=min_rate.desc'
+    ) || [];
+
+    console.log(`📊 [MyPage] 로드 완료 - 학습기록: ${mpStudyRecords.length}건, 인증기록: ${mpAuthRecords.length}건, 등급규칙: ${mpGradeRules.length}건`);
 }
 
 // ================================================
@@ -141,203 +148,183 @@ function formatStartDate(dateStr) {
 }
 
 // ================================================
-// ① 학습 현황 요약 카드 렌더링
+// ① 학습 현황 요약 카드 렌더링 (v2 — STUDENT_METRICS.md 기준)
 // ================================================
 function renderSummaryCards() {
     const programType = mpUser.programType || 'standard';
-    const meta = getScheduleMeta(programType);
-    const totalDays = meta.totalDays;
-    const totalTasks = meta.totalTasks;
+    const totalWeeks = programType === 'standard' ? 8 : 4;
+    const totalCalendarDays = totalWeeks * 7; // 총 달력 일수
 
     // ★ 시작 전 분기
     if (isBeforeStart()) {
         const daysLeft = getDaysUntilStart();
         const startStr = formatStartDate(mpUser.startDate);
 
-        document.getElementById('studyDays').textContent = 'D-' + daysLeft;
-        document.getElementById('studyDaysTotal').textContent = '';
-        document.getElementById('studyDaysBar').style.width = '0%';
-        document.getElementById('studyDaysPct').textContent = `${startStr} 시작`;
+        // 1칸: 챌린지 현황
+        document.getElementById('challengeStatus').textContent = `D-${daysLeft}`;
+        document.getElementById('challengeBar').style.width = '0%';
+        document.getElementById('challengeSub').textContent = `${startStr} 시작 예정`;
 
-        document.getElementById('tasksDone').textContent = '-';
-        document.getElementById('tasksTotal').textContent = ` / ${totalTasks}개`;
-        document.getElementById('tasksBar').style.width = '0%';
-        document.getElementById('tasksPct').textContent = '시작 전';
+        // 2칸: 제출률
+        document.getElementById('submitRate').textContent = '-';
+        document.getElementById('submitRateUnit').textContent = '';
+        document.getElementById('submitBar').style.width = '0%';
+        document.getElementById('submitSub').textContent = '시작 전';
 
+        // 3칸: 인증률
+        document.getElementById('authRate').textContent = '-';
+        document.getElementById('authRateUnit').textContent = '';
+        document.getElementById('authBar').style.width = '0%';
+        document.getElementById('authSub').textContent = '시작 전';
+
+        // 4칸: 등급 & 환급
         document.getElementById('currentGrade').textContent = '-';
-        const gradeHint = document.getElementById('gradeHint');
-        gradeHint.querySelector('span').textContent = `${startStr}부터 시작됩니다`;
-
-        document.getElementById('refundAmount').textContent = '-';
-        const refundStatus = document.getElementById('refundStatus');
-        refundStatus.className = 'sc-sub refund-tag';
-        refundStatus.innerHTML = '<i class="fa-solid fa-clock"></i><span>챌린지 시작 전</span>';
+        document.getElementById('gradeRefund').textContent = `${startStr}부터 시작됩니다`;
 
         return;
     }
 
-    // --- 총 학습일 ---
-    const uniqueDays = new Set();
-    mpStudyRecords.forEach(r => {
-        if (r.week && r.day) {
-            uniqueDays.add(`${r.week}_${r.day}`);
-        }
-    });
-    const studyDays = uniqueDays.size;
-    const daysPct = totalDays > 0 ? Math.round((studyDays / totalDays) * 100) : 0;
+    // ── 경과일 / 잔여일 / 전체일 계산 ──
+    const startDate = new Date(mpUser.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + totalCalendarDays - 1);
 
-    document.getElementById('studyDays').textContent = studyDays;
-    document.getElementById('studyDaysTotal').textContent = ` / ${totalDays}일`;
-    document.getElementById('studyDaysBar').style.width = `${daysPct}%`;
-    document.getElementById('studyDaysPct').textContent = `${daysPct}% 달성`;
+    const elapsedDays = Math.max(1, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1);
+    const remainingDays = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
+    const elapsedPct = Math.min(100, Math.round((elapsedDays / totalCalendarDays) * 100));
 
-    // --- 완료한 과제 ---
-    const tasksDone = mpStudyRecords.length;
-    const tasksPct = totalTasks > 0 ? Math.round((tasksDone / totalTasks) * 100) : 0;
+    // 1칸: 챌린지 현황
+    document.getElementById('challengeStatus').textContent = `D+${elapsedDays} / ${totalCalendarDays}일`;
+    document.getElementById('challengeBar').style.width = `${elapsedPct}%`;
+    document.getElementById('challengeSub').textContent = `잔여 ${remainingDays}일`;
 
-    document.getElementById('tasksDone').textContent = tasksDone;
-    document.getElementById('tasksTotal').textContent = ` / ${totalTasks}개`;
-    document.getElementById('tasksBar').style.width = `${Math.min(tasksPct, 100)}%`;
-    document.getElementById('tasksPct').textContent = `${tasksPct}% 완료`;
+    // ── 오늘까지 할당된 과제 수 계산 ──
+    const tasksDueToday = countTasksDueToday(programType, totalWeeks);
+    const tasksSubmitted = mpStudyRecords.length;
+    const submitPct = tasksDueToday > 0 ? Math.round((tasksSubmitted / tasksDueToday) * 100) : 0;
 
-    // --- 현재 등급 / 보증금 환급 ---
+    // 2칸: 제출률
+    document.getElementById('submitRate').textContent = submitPct;
+    document.getElementById('submitRateUnit').textContent = '%';
+    document.getElementById('submitBar').style.width = `${Math.min(submitPct, 100)}%`;
+    document.getElementById('submitSub').textContent = `${tasksSubmitted}/${tasksDueToday}개 완료`;
+
+    // ── 인증률 계산 (auth_rate 합계 / 오늘까지 할당 과제 수 × 100) ──
+    let authRateSum = 0;
+    mpAuthRecords.forEach(r => { authRateSum += (r.auth_rate || 0); });
+    const authRatePct = tasksDueToday > 0 ? Math.round(authRateSum / tasksDueToday) : 0;
+
+    // 3칸: 인증률
+    document.getElementById('authRate').textContent = authRatePct;
+    document.getElementById('authRateUnit').textContent = '%';
+    document.getElementById('authBar').style.width = `${Math.min(authRatePct, 100)}%`;
+    document.getElementById('authSub').textContent = `인증 합계 ${Math.round(authRateSum)} / 마감 ${tasksDueToday}건`;
+
+    // ── 등급 & 환급 계산 (tr_grade_rules 테이블 연동) ──
     if (isGradeBeforeStart()) {
-        // 시작일 다음날부터 산정 (관리자 대시보드와 동일)
         document.getElementById('currentGrade').textContent = '-';
-        const gradeHint = document.getElementById('gradeHint');
-        gradeHint.querySelector('span').textContent = '시작일 다음날부터 산정';
-
-        document.getElementById('refundAmount').textContent = '-';
-        const refundStatus = document.getElementById('refundStatus');
-        refundStatus.className = 'sc-sub refund-tag';
-        refundStatus.innerHTML = '<i class="fa-solid fa-clock"></i><span>시작일 다음날부터 산정</span>';
+        document.getElementById('gradeRefund').textContent = '시작일 다음날부터 산정';
     } else {
-        const successDays = countSuccessDays();
-        const grade = calculateGrade(successDays, totalDays);
-
+        const grade = getGradeFromRules(authRatePct);
         document.getElementById('currentGrade').textContent = grade.letter;
-        const gradeHint = document.getElementById('gradeHint');
-        gradeHint.querySelector('span').textContent = grade.hint;
 
-        // --- 보증금 환급 예상 ---
-        const deposit = 100000;
-        const refundRate = grade.refundRate;
-        const refundAmount = Math.round(deposit * refundRate);
+        // 등급 색상 적용
+        const gradeEl = document.getElementById('currentGrade');
+        gradeEl.style.color = grade.color;
 
-        document.getElementById('refundAmount').textContent = refundAmount.toLocaleString();
-        const refundStatus = document.getElementById('refundStatus');
-        if (refundRate >= 0.8) {
-            refundStatus.className = 'sc-sub refund-tag';
-            refundStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>환급 기준 충족 중</span>';
-        } else if (refundRate > 0) {
-            refundStatus.className = 'sc-sub refund-tag warning';
-            refundStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>환급률 낮음 – 더 열심히!</span>';
-        } else {
-            refundStatus.className = 'sc-sub refund-tag warning';
-            refundStatus.innerHTML = '<i class="fa-solid fa-circle-xmark"></i><span>아직 데이터가 없어요</span>';
-        }
+        const refundAmount = Math.round(grade.deposit * grade.refundRate);
+        document.getElementById('gradeRefund').innerHTML = 
+            `환급 ${Math.round(grade.refundRate * 100)}% (${refundAmount.toLocaleString()}원)`;
     }
 }
 
 /**
- * 성공 요일 수 계산
- * 성공 = 해당 요일에 모든 과제 제출 + 인증률 평균 ≥ 50%
+ * 오늘까지 할당된 과제 수 계산
+ * — progress-tracker.js의 _countTasksDueToday와 동일한 로직
+ * — 새벽 4시 기준 마감
  */
-function countSuccessDays() {
-    // 각 (week, day) 별로 제출 과제 수 & 인증률 합산
-    const dayMap = {}; // key: "week_day" → { taskCount, authSum, authCount }
+function countTasksDueToday(programType, totalWeeks) {
+    if (!mpUser.startDate) return 0;
+    if (typeof getDayTasks !== 'function') return 0;
 
-    mpStudyRecords.forEach(r => {
-        const key = `${r.week}_${r.day}`;
-        if (!dayMap[key]) dayMap[key] = { taskCount: 0, authSum: 0, authCount: 0 };
-        dayMap[key].taskCount++;
-    });
+    const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const startDate = new Date(mpUser.startDate + 'T00:00:00');
+    if (isNaN(startDate.getTime())) return 0;
 
-    mpAuthRecords.forEach(r => {
-        // study_record_id로 연결된 study_record의 week+day 찾기
-        const sr = mpStudyRecords.find(s => s.id === r.study_record_id);
-        if (sr) {
-            const key = `${sr.week}_${sr.day}`;
-            if (dayMap[key]) {
-                dayMap[key].authSum += (r.auth_rate || 0);
-                dayMap[key].authCount++;
+    const now = new Date();
+    let totalTasks = 0;
+
+    for (let w = 1; w <= totalWeeks; w++) {
+        for (let d = 0; d < dayOrder.length; d++) {
+            const taskDate = new Date(startDate);
+            taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
+
+            // 마감 = 과제 다음날 04:00
+            const deadline = new Date(taskDate);
+            deadline.setDate(deadline.getDate() + 1);
+            deadline.setHours(4, 0, 0, 0);
+
+            // 오늘 날짜의 과제도 포함 (마감 전이지만 분모에 포함)
+            // 단, 미래 과제는 제외 (과제 날짜가 오늘보다 미래)
+            const todayMidnight = new Date();
+            todayMidnight.setHours(0, 0, 0, 0);
+
+            if (taskDate <= todayMidnight) {
+                const tasks = getDayTasks(programType, w, dayOrder[d]);
+                totalTasks += tasks.length;
             }
         }
-    });
+    }
 
-    let successCount = 0;
-    Object.values(dayMap).forEach(d => {
-        // 최소 1개 과제 + 인증 기록 있으면 확인
-        if (d.taskCount >= 1) {
-            const avgAuth = d.authCount > 0 ? d.authSum / d.authCount : 0;
-            if (avgAuth >= 50) successCount++;
+    return totalTasks;
+}
+
+/**
+ * tr_grade_rules 테이블에서 등급 판정
+ * @param {number} authRatePct - 인증률 (0~100)
+ * @returns {object} { letter, refundRate, deposit, color }
+ */
+function getGradeFromRules(authRatePct) {
+    // tr_grade_rules에서 매칭 (min_rate DESC 정렬되어 있음)
+    if (mpGradeRules && mpGradeRules.length > 0) {
+        for (const rule of mpGradeRules) {
+            if (authRatePct >= rule.min_rate) {
+                return {
+                    letter: rule.grade,
+                    refundRate: rule.refund_rate,
+                    deposit: rule.deposit || 100000,
+                    color: getGradeColor(rule.grade)
+                };
+            }
         }
-    });
+        // 어떤 규칙에도 안 걸리면 F
+        const lastRule = mpGradeRules[mpGradeRules.length - 1];
+        return {
+            letter: lastRule.grade,
+            refundRate: lastRule.refund_rate,
+            deposit: lastRule.deposit || 100000,
+            color: getGradeColor(lastRule.grade)
+        };
+    }
 
-    return successCount;
+    // 폴백: tr_grade_rules 로드 실패 시 하드코딩
+    console.warn('📊 [MyPage] tr_grade_rules 로드 실패, 폴백 사용');
+    if (authRatePct >= 95) return { letter: 'A', refundRate: 1.0, deposit: 100000, color: '#22c55e' };
+    if (authRatePct >= 90) return { letter: 'B', refundRate: 0.9, deposit: 100000, color: '#3b82f6' };
+    if (authRatePct >= 80) return { letter: 'C', refundRate: 0.8, deposit: 100000, color: '#f59e0b' };
+    if (authRatePct >= 70) return { letter: 'D', refundRate: 0.7, deposit: 100000, color: '#f97316' };
+    return { letter: 'F', refundRate: 0, deposit: 100000, color: '#ef4444' };
 }
 
 /**
- * 등급 계산
- * A: 성공률 90%+  → 환급 100%
- * B: 성공률 70%+  → 환급 85%
- * C: 성공률 50%+  → 환급 50%
- * D: 성공률 50% 미만 → 환급 0%
+ * 등급별 색상
  */
-function calculateGrade(successDays, totalDays) {
-    const rate = totalDays > 0 ? successDays / totalDays : 0;
-    const pct = Math.round(rate * 100);
-
-    // 아직 시작 전이면
-    if (successDays === 0) {
-        return { letter: '-', hint: '아직 데이터가 없어요', refundRate: 0 };
-    }
-
-    // 진행 중 - 현재까지 경과된 날 기준으로 비율 계산
-    const elapsedDays = getElapsedDays();
-    const actualRate = elapsedDays > 0 ? successDays / Math.min(elapsedDays, totalDays) : rate;
-
-    if (actualRate >= 0.9) {
-        const need = Math.ceil(totalDays * 0.9) - successDays;
-        return {
-            letter: 'A',
-            hint: need > 0 ? `A등급 유지 중! 🔥` : 'A등급 확정! 🎉',
-            refundRate: 1.0
-        };
-    } else if (actualRate >= 0.7) {
-        const needForA = Math.ceil(totalDays * 0.9) - successDays;
-        return {
-            letter: 'B',
-            hint: `성공요일 ${Math.max(needForA, 1)}번 더 필요!`,
-            refundRate: 0.85
-        };
-    } else if (actualRate >= 0.5) {
-        const needForB = Math.ceil(totalDays * 0.7) - successDays;
-        return {
-            letter: 'C',
-            hint: `B등급까지 성공요일 ${Math.max(needForB, 1)}번 더!`,
-            refundRate: 0.5
-        };
-    } else {
-        const needForC = Math.ceil(totalDays * 0.5) - successDays;
-        return {
-            letter: 'D',
-            hint: `C등급까지 성공요일 ${Math.max(needForC, 1)}번 더!`,
-            refundRate: 0
-        };
-    }
-}
-
-/**
- * 시작일 기준 경과 일수 계산
- */
-function getElapsedDays() {
-    if (!mpUser.startDate) return 0;
-    const start = new Date(mpUser.startDate);
-    const now = new Date();
-    const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-    // 주 6일 과정이므로 토요일 빼기: 대략 diff * 6/7
-    return Math.max(1, Math.round(diff * 6 / 7));
+function getGradeColor(grade) {
+    const colors = { 'A': '#22c55e', 'B': '#3b82f6', 'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444' };
+    return colors[grade] || '#6b7280';
 }
 
 // ================================================
