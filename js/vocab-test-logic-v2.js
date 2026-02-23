@@ -657,6 +657,12 @@ async function saveVocabRecord(correctCount, totalCount, percentage) {
             if (window.ProgressTracker) {
                 ProgressTracker.markCompleted('vocab', 1);
             }
+
+            // 학생 통계 갱신 (tr_student_stats UPSERT)
+            if (window.AuthMonitor && typeof AuthMonitor.updateStudentStats === 'function') {
+                AuthMonitor.updateStudentStats();
+                console.log('📊 [Vocab] 학생 통계 갱신 요청');
+            }
         }
     } catch (e) {
         console.error('📝 [Vocab] 저장 실패:', e);

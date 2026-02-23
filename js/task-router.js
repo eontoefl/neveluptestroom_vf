@@ -145,6 +145,12 @@ async function submitIntroBook() {
             if (window.ProgressTracker) {
                 ProgressTracker.markCompleted('intro-book', 1);
             }
+
+            // 학생 통계 갱신 (tr_student_stats UPSERT)
+            if (window.AuthMonitor && typeof AuthMonitor.updateStudentStats === 'function') {
+                AuthMonitor.updateStudentStats();
+                console.log('📊 [IntroBook] 학생 통계 갱신 요청');
+            }
         }
     } catch (e) {
         console.error('📖 [IntroBook] 저장 실패:', e);
