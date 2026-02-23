@@ -38,8 +38,8 @@ const AutoSave = {
                 console.log('💾 [AutoSave] 개발모드 — 저장 생략');
                 return;
             }
-            if (window._deadlinePassedMode || window._isReplayMode) {
-                console.log('💾 [AutoSave] 마감/리플레이 모드 — 저장 생략');
+            if (window._deadlinePassedMode || window._isReplayMode || window._isPracticeMode) {
+                console.log('💾 [AutoSave] 마감/리플레이/연습 모드 — 저장 생략');
                 return;
             }
 
@@ -111,20 +111,7 @@ const AutoSave = {
     // ========================================
     async checkPendingProgress(userId, taskType, moduleNumber) {
         try {
-            // sessionStorage 먼저 확인 (같은 브라우저에서 재접속한 경우)
-            const local = sessionStorage.getItem('autoSaveProgress');
-            if (local) {
-                const parsed = JSON.parse(local);
-                if (parsed.user_id === userId && 
-                    parsed.task_type === taskType && 
-                    parsed.module_number === moduleNumber &&
-                    parsed.status === 'in_progress') {
-                    console.log('💾 [AutoSave] sessionStorage에서 미완료 기록 발견');
-                    return parsed;
-                }
-            }
-            
-            // Supabase에서 조회
+            // ✅ Supabase를 먼저 확인 (관리자 리셋 반영을 위해 DB가 최우선)
             const query = `user_id=eq.${userId}&task_type=eq.${taskType}&module_number=eq.${moduleNumber}&status=eq.in_progress&order=updated_at.desc&limit=1`;
             const records = await supabaseSelect('tr_progress_save', query);
             
@@ -135,9 +122,28 @@ const AutoSave = {
                 return record;
             }
             
+            // Supabase에 없음 → sessionStorage 잔여 데이터 정리
+            const local = sessionStorage.getItem('autoSaveProgress');
+            if (local) {
+                console.log('💾 [AutoSave] Supabase에 기록 없음 → sessionStorage 자동 정리');
+                sessionStorage.removeItem('autoSaveProgress');
+            }
+            
             return null;
         } catch (e) {
-            console.warn('⚠️ [AutoSave] 조회 실패:', e.message);
+            console.warn('⚠️ [AutoSave] Supabase 조회 실패, sessionStorage 폴백 시도:', e.message);
+            // Supabase 연결 실패 시에만 sessionStorage 폴백
+            const local = sessionStorage.getItem('autoSaveProgress');
+            if (local) {
+                const parsed = JSON.parse(local);
+                if (parsed.user_id === userId && 
+                    parsed.task_type === taskType && 
+                    parsed.module_number === moduleNumber &&
+                    parsed.status === 'in_progress') {
+                    console.log('💾 [AutoSave] sessionStorage 폴백 — 미완료 기록 발견');
+                    return parsed;
+                }
+            }
             return null;
         }
     },
