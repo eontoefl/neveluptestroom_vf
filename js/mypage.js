@@ -312,7 +312,9 @@ function countTasksDueToday(programType, totalWeeks) {
                         );
                         if (found) completedTasks++;
                     } else {
-                        const modNum = parsed.params && parsed.params.module ? parsed.params.module : parsed.moduleNumber;
+                        const modNum = parsed.params && (parsed.params.module || parsed.params.number) 
+                            ? (parsed.params.module || parsed.params.number) 
+                            : parsed.moduleNumber;
                         const found = mpStudyRecords.find(r => 
                             r.task_type === parsed.type && r.module_number == modNum
                         );

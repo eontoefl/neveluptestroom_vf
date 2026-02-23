@@ -766,7 +766,7 @@ var AuthMonitor = {
                                             return r.task_type === parsed.type && r.week == w && r.day === dayKr;
                                         });
                                     } else {
-                                        var modNum = parsed.params && parsed.params.module ? parsed.params.module : parsed.moduleNumber;
+                                        var modNum = parsed.params && (parsed.params.module || parsed.params.number) ? (parsed.params.module || parsed.params.number) : parsed.moduleNumber;
                                         matchedRecord = uniqueRecords.find(function(r) {
                                             return r.task_type === parsed.type && r.module_number == modNum;
                                         });
