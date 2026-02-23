@@ -107,10 +107,10 @@ var ProgressTracker = {
                 var records = await getAuthRecords(userId);
                 this._authRecords = records || [];
                 
-                // 시작 전이면 인증률 계산 안 함
-                if (this._isBeforeStartDate()) {
+                // 시작 전이더라도 제출 기록이 있으면 인증률 계산
+                if (this._isBeforeStartDate() && this._authRecords.length === 0) {
                     this._avgAuthRate = null;
-                    console.log('📊 [ProgressTracker] 시작 전 – 인증률 표시 안 함');
+                    console.log('📊 [ProgressTracker] 시작 전 + 기록 없음 – 인증률 표시 안 함');
                     return;
                 }
 
@@ -152,14 +152,13 @@ var ProgressTracker = {
         var startDate = new Date(user.startDate + 'T00:00:00');
         if (isNaN(startDate.getTime())) return 0;
 
-        // 현재 시간 기준 마감 판단: 새벽 4시 기준
+        // 새벽 4시 기준: 4시 이전이면 "오늘"은 어제
         var now = new Date();
-        var cutoff = new Date(now);
-        cutoff.setHours(4, 0, 0, 0);
-        // 새벽 4시 전이면 어제까지가 마감
-        if (now < cutoff) {
-            cutoff.setDate(cutoff.getDate() - 1);
+        var effectiveToday = new Date(now);
+        if (now.getHours() < 4) {
+            effectiveToday.setDate(effectiveToday.getDate() - 1);
         }
+        effectiveToday.setHours(0, 0, 0, 0);
 
         var totalTasks = 0;
 
@@ -168,14 +167,10 @@ var ProgressTracker = {
                 // 해당 날짜 계산
                 var taskDate = new Date(startDate);
                 taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
+                taskDate.setHours(0, 0, 0, 0);
 
-                // 마감 = 과제 다음날 04:00
-                var deadline = new Date(taskDate);
-                deadline.setDate(deadline.getDate() + 1);
-                deadline.setHours(4, 0, 0, 0);
-
-                // 마감이 지금보다 과거 또는 같으면 = 해야 할 과제
-                if (deadline <= now) {
+                // 과제 날짜가 오늘(effective) 이하면 포함
+                if (taskDate <= effectiveToday) {
                     var tasks = getDayTasks(programType, w, dayOrder[d]);
                     totalTasks += tasks.length;
                 }
@@ -288,8 +283,13 @@ var ProgressTracker = {
             }
         }
 
-        var todayMidnight = new Date();
-        todayMidnight.setHours(0, 0, 0, 0);
+        // 새벽 4시 기준: 4시 이전이면 "오늘"은 어제
+        var now = new Date();
+        var effectiveToday = new Date(now);
+        if (now.getHours() < 4) {
+            effectiveToday.setDate(effectiveToday.getDate() - 1);
+        }
+        effectiveToday.setHours(0, 0, 0, 0);
 
         var total = 0;
         var completed = 0;
@@ -299,11 +299,12 @@ var ProgressTracker = {
                 var dayKr = days[di];
                 var dayEn = dayMapping[dayKr];
                 
-                // 미도래일 제외: 해당 날짜가 오늘보다 미래면 스킵
+                // 미도래일 제외: 새벽 4시 기준으로 오늘 이하만 포함
                 if (!useAllWeeks && startDate) {
                     var taskDate = new Date(startDate);
                     taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + di);
-                    if (taskDate > todayMidnight) continue; // 미래 과제 제외
+                    taskDate.setHours(0, 0, 0, 0);
+                    if (taskDate > effectiveToday) continue; // 미래 과제 제외
                 }
 
                 var dayProgress = ProgressTracker.getDayProgress(programType, w, dayEn);
@@ -366,8 +367,19 @@ var ProgressTracker = {
         var authRateHtml = '';
         var isBeforeStart = this._isBeforeStartDate();
 
-        if (isBeforeStart) {
-            // ★ 시작 전: D-day 표시
+        if (isBeforeStart && this._avgAuthRate !== null) {
+            // ★ 시작 전 + 선제출: D-day와 인증률 둘 다 표시
+            var daysLeft = this._getDaysUntilStart();
+            var startStr = this._formatStartDate();
+            var grade = this.getGrade(this._avgAuthRate);
+            authRateHtml = 
+                '<div class="auth-rate-display">' +
+                    '<span class="auth-rate-label">시작까지 D-' + daysLeft + '</span>' +
+                    '<span class="auth-rate-value" style="color:' + grade.color + '">' + this._avgAuthRate + '%</span>' +
+                    '<span class="auth-rate-grade" style="background:' + grade.color + '">' + grade.letter + '</span>' +
+                '</div>';
+        } else if (isBeforeStart) {
+            // ★ 시작 전: D-day만 표시
             var daysLeft = this._getDaysUntilStart();
             var startStr = this._formatStartDate();
             authRateHtml = 

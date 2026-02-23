@@ -155,35 +155,6 @@ function renderSummaryCards() {
     const totalWeeks = programType === 'standard' ? 8 : 4;
     const totalCalendarDays = totalWeeks * 7; // 총 달력 일수
 
-    // ★ 시작 전 분기
-    if (isBeforeStart()) {
-        const daysLeft = getDaysUntilStart();
-        const startStr = formatStartDate(mpUser.startDate);
-
-        // 1칸: 챌린지 현황
-        document.getElementById('challengeStatus').textContent = `D-${daysLeft}`;
-        document.getElementById('challengeBar').style.width = '0%';
-        document.getElementById('challengeSub').textContent = `${startStr} 시작 예정`;
-
-        // 2칸: 제출률
-        document.getElementById('submitRate').textContent = '-';
-        document.getElementById('submitRateUnit').textContent = '';
-        document.getElementById('submitBar').style.width = '0%';
-        document.getElementById('submitSub').textContent = '시작 전';
-
-        // 3칸: 인증률
-        document.getElementById('authRate').textContent = '-';
-        document.getElementById('authRateUnit').textContent = '';
-        document.getElementById('authBar').style.width = '0%';
-        document.getElementById('authSub').textContent = '시작 전';
-
-        // 4칸: 등급 & 환급
-        document.getElementById('currentGrade').textContent = '-';
-        document.getElementById('gradeRefund').textContent = `${startStr}부터 시작됩니다`;
-
-        return;
-    }
-
     // ── 경과일 / 잔여일 / 전체일 계산 ──
     const startDate = new Date(mpUser.startDate);
     startDate.setHours(0, 0, 0, 0);
@@ -192,39 +163,72 @@ function renderSummaryCards() {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + totalCalendarDays - 1);
 
-    const elapsedDays = Math.max(1, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1);
-    const remainingDays = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
-    const elapsedPct = Math.min(100, Math.round((elapsedDays / totalCalendarDays) * 100));
+    const beforeStart = isBeforeStart();
 
     // 1칸: 챌린지 현황
-    document.getElementById('challengeStatus').textContent = `D+${elapsedDays} / ${totalCalendarDays}일`;
-    document.getElementById('challengeBar').style.width = `${elapsedPct}%`;
-    document.getElementById('challengeSub').textContent = `잔여 ${remainingDays}일`;
+    if (beforeStart) {
+        const daysLeft = getDaysUntilStart();
+        const startStr = formatStartDate(mpUser.startDate);
+        document.getElementById('challengeStatus').textContent = `D-${daysLeft}`;
+        document.getElementById('challengeBar').style.width = '0%';
+        document.getElementById('challengeSub').textContent = `${startStr} 시작 예정`;
+    } else {
+        const elapsedDays = Math.max(1, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1);
+        const remainingDays = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
+        const elapsedPct = Math.min(100, Math.round((elapsedDays / totalCalendarDays) * 100));
+        document.getElementById('challengeStatus').textContent = `D+${elapsedDays} / ${totalCalendarDays}일`;
+        document.getElementById('challengeBar').style.width = `${elapsedPct}%`;
+        document.getElementById('challengeSub').textContent = `잔여 ${remainingDays}일`;
+    }
 
     // ── 오늘까지 할당된 과제 수 계산 ──
     const tasksDueToday = countTasksDueToday(programType, totalWeeks);
     const tasksSubmitted = mpStudyRecords.length;
-    const submitPct = tasksDueToday > 0 ? Math.round((tasksSubmitted / tasksDueToday) * 100) : 0;
+
+    // 시작 전인데 미리 제출한 경우: 분모 0이지만 분자가 있음
+    let submitPct, submitSubText;
+    if (tasksDueToday === 0 && tasksSubmitted > 0) {
+        // 선제출: 퍼센트 대신 건수로 표시
+        submitPct = 0; // 바는 0%
+        submitSubText = `${tasksSubmitted}건 미리 완료 🎉`;
+        document.getElementById('submitRate').textContent = tasksSubmitted;
+        document.getElementById('submitRateUnit').textContent = '건';
+    } else {
+        submitPct = tasksDueToday > 0 ? Math.round((tasksSubmitted / tasksDueToday) * 100) : 0;
+        submitSubText = `${tasksSubmitted}/${tasksDueToday}개 완료`;
+        document.getElementById('submitRate').textContent = submitPct;
+        document.getElementById('submitRateUnit').textContent = '%';
+    }
 
     // 2칸: 제출률
-    document.getElementById('submitRate').textContent = submitPct;
-    document.getElementById('submitRateUnit').textContent = '%';
     document.getElementById('submitBar').style.width = `${Math.min(submitPct, 100)}%`;
-    document.getElementById('submitSub').textContent = `${tasksSubmitted}/${tasksDueToday}개 완료`;
+    document.getElementById('submitSub').textContent = submitSubText;
 
     // ── 인증률 계산 (auth_rate 합계 / 오늘까지 할당 과제 수 × 100) ──
     let authRateSum = 0;
     mpAuthRecords.forEach(r => { authRateSum += (r.auth_rate || 0); });
-    const authRatePct = tasksDueToday > 0 ? Math.round(authRateSum / tasksDueToday) : 0;
+
+    let authRatePct, authSubText;
+    if (tasksDueToday === 0 && authRateSum > 0) {
+        // 선제출: 인증 합계만 표시
+        authRatePct = 0;
+        authSubText = `인증 합계 ${Math.round(authRateSum)} (시작 전 선제출)`;
+        document.getElementById('authRate').textContent = Math.round(authRateSum);
+        document.getElementById('authRateUnit').textContent = '점';
+    } else {
+        authRatePct = tasksDueToday > 0 ? Math.round(authRateSum / tasksDueToday) : 0;
+        authSubText = `인증 합계 ${Math.round(authRateSum)} / 마감 ${tasksDueToday}건`;
+        document.getElementById('authRate').textContent = authRatePct;
+        document.getElementById('authRateUnit').textContent = '%';
+    }
 
     // 3칸: 인증률
-    document.getElementById('authRate').textContent = authRatePct;
-    document.getElementById('authRateUnit').textContent = '%';
     document.getElementById('authBar').style.width = `${Math.min(authRatePct, 100)}%`;
-    document.getElementById('authSub').textContent = `인증 합계 ${Math.round(authRateSum)} / 마감 ${tasksDueToday}건`;
+    document.getElementById('authSub').textContent = authSubText;
 
     // ── 등급 & 환급 계산 (tr_grade_rules 테이블 연동) ──
-    if (isGradeBeforeStart()) {
+    // 시작 전이더라도 제출 기록이 있으면 등급 표시
+    if (isGradeBeforeStart() && tasksSubmitted === 0) {
         document.getElementById('currentGrade').textContent = '-';
         document.getElementById('gradeRefund').textContent = '시작일 다음날부터 산정';
     } else {
@@ -243,8 +247,15 @@ function renderSummaryCards() {
 
 /**
  * 오늘까지 할당된 과제 수 계산
- * — progress-tracker.js의 _countTasksDueToday와 동일한 로직
- * — 새벽 4시 기준 마감
+ * 
+ * 기준 (2/22 예시):
+ * - 오늘의 마감: 2/23 새벽 4시
+ * - 도래일: 마감(다음날 04:00)이 현재보다 과거인 과제
+ * - 오늘: 과제 날짜가 오늘인 것 (마감 전이라도 분모에 포함)
+ * - 미도래일: 과제 날짜가 내일 이후
+ * - 분모 = 도래일 + 오늘
+ * 
+ * ※ 제출된 과제(분자)는 도래/미도래/오늘 상관없이 무조건 반영
  */
 function countTasksDueToday(programType, totalWeeks) {
     if (!mpUser.startDate) return 0;
@@ -255,24 +266,24 @@ function countTasksDueToday(programType, totalWeeks) {
     if (isNaN(startDate.getTime())) return 0;
 
     const now = new Date();
+
+    // 새벽 4시 기준: 4시 이전이면 "오늘"은 어제
+    const effectiveToday = new Date(now);
+    if (now.getHours() < 4) {
+        effectiveToday.setDate(effectiveToday.getDate() - 1);
+    }
+    effectiveToday.setHours(0, 0, 0, 0);
+
     let totalTasks = 0;
 
     for (let w = 1; w <= totalWeeks; w++) {
         for (let d = 0; d < dayOrder.length; d++) {
             const taskDate = new Date(startDate);
             taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
+            taskDate.setHours(0, 0, 0, 0);
 
-            // 마감 = 과제 다음날 04:00
-            const deadline = new Date(taskDate);
-            deadline.setDate(deadline.getDate() + 1);
-            deadline.setHours(4, 0, 0, 0);
-
-            // 오늘 날짜의 과제도 포함 (마감 전이지만 분모에 포함)
-            // 단, 미래 과제는 제외 (과제 날짜가 오늘보다 미래)
-            const todayMidnight = new Date();
-            todayMidnight.setHours(0, 0, 0, 0);
-
-            if (taskDate <= todayMidnight) {
+            // 과제 날짜가 오늘(effective) 이하면 분모에 포함
+            if (taskDate <= effectiveToday) {
                 const tasks = getDayTasks(programType, w, dayOrder[d]);
                 totalTasks += tasks.length;
             }
