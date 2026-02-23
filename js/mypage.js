@@ -243,11 +243,12 @@ function renderSummaryCards() {
         document.getElementById('gradeRefund').textContent = '시작 후 산정';
     } else {
         const grade = getGradeFromRules(authRatePct);
-        document.getElementById('currentGrade').textContent = grade.letter;
-
-        // 등급 색상 적용
         const gradeEl = document.getElementById('currentGrade');
-        gradeEl.style.color = grade.color;
+        gradeEl.textContent = grade.letter;
+
+        // 등급 배경색 적용 (글자는 흰색 유지)
+        gradeEl.style.background = grade.color;
+        gradeEl.style.color = '#fff';
 
         const refundAmount = Math.round(grade.deposit * grade.refundRate);
         document.getElementById('gradeRefund').innerHTML = 
