@@ -405,6 +405,14 @@ const FlowController = {
         // ★ RetakeController의 showSecondResultScreen을 오버라이드
         retakeController.showSecondResultScreen = (secondResults) => {
             console.log('📊 [FlowController] RetakeController → FlowController로 2차 결과 위임');
+            
+            // ✅ 헤더 복원 (원래 showSecondResultScreen에서 수행하던 작업)
+            retakeController.restoreHeaderToFirstMode();
+            
+            // ✅ secondAttemptAnswers를 결과 데이터에 포함 (2차 해설 화면에서 필요)
+            secondResults.secondAttemptAnswers = retakeController.secondAttemptAnswers;
+            console.log('  ✅ secondAttemptAnswers 포함:', Object.keys(retakeController.secondAttemptAnswers).length, '개');
+            
             this.retakeResult = secondResults;
             this.showRetakeResult(secondResults);
         };
