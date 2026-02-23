@@ -94,12 +94,30 @@ const AutoSave = {
             sessionStorage.removeItem('autoSaveProgress');
             
             if (this._currentSaveId) {
+                // ID를 알고 있으면 직접 업데이트
                 await supabaseUpdate('tr_progress_save', 'id=eq.' + this._currentSaveId, {
                     status: 'completed',
                     updated_at: new Date().toISOString()
                 });
-                console.log('💾 [AutoSave] 완료 처리:', this._currentSaveId);
+                console.log('💾 [AutoSave] 완료 처리 (ID):', this._currentSaveId);
                 this._currentSaveId = null;
+            } else {
+                // ✅ ID가 없으면 user + task_type + module_number로 조회 후 정리
+                const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+                const fc = window.FlowController;
+                if (user && user.id && fc && fc.sectionType && fc.moduleNumber) {
+                    const query = `user_id=eq.${user.id}&task_type=eq.${fc.sectionType}&module_number=eq.${fc.moduleNumber}&status=eq.in_progress`;
+                    const records = await supabaseSelect('tr_progress_save', query);
+                    if (records && records.length > 0) {
+                        for (const record of records) {
+                            await supabaseUpdate('tr_progress_save', 'id=eq.' + record.id, {
+                                status: 'completed',
+                                updated_at: new Date().toISOString()
+                            });
+                        }
+                        console.log('💾 [AutoSave] 완료 처리 (조회):', records.length, '건');
+                    }
+                }
             }
         } catch (e) {
             console.warn('⚠️ [AutoSave] 완료 처리 실패:', e.message);
