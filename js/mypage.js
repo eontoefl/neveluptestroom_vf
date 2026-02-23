@@ -219,10 +219,11 @@ function renderSummaryCards() {
     let authRatePct, authSubText;
     if (authDenominator > 0) {
         authRatePct = Math.round(authRateSum / authDenominator);
+        const authCompleted = Math.round(authRateSum / 100);
         if (tasksDueToday === 0) {
-            authSubText = `인증 합계 ${Math.round(authRateSum)} / 제출 ${tasksSubmitted}건 (시작 전)`;
+            authSubText = `인증 ${authCompleted} / ${tasksSubmitted}건 (시작 전)`;
         } else {
-            authSubText = `인증 합계 ${Math.round(authRateSum)} / 마감 ${tasksDueToday}건`;
+            authSubText = `인증 ${authCompleted} / ${tasksDueToday}건`;
         }
     } else {
         authRatePct = 0;
