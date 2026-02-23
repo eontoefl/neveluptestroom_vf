@@ -340,15 +340,14 @@ var ProgressTracker = {
         var isBeforeStart = this._isBeforeStartDate();
 
         if (isBeforeStart && this._avgAuthRate !== null) {
-            // ★ 시작 전 + 선제출: D-day와 인증률 둘 다 표시
+            // ★ 시작 전 + 선제출: D-day와 인증률 표시 (등급은 시작 후 산정)
             var daysLeft = this._getDaysUntilStart();
             var startStr = this._formatStartDate();
-            var grade = this.getGrade(this._avgAuthRate);
             authRateHtml = 
                 '<div class="auth-rate-display">' +
                     '<span class="auth-rate-label">시작까지 D-' + daysLeft + '</span>' +
-                    '<span class="auth-rate-value" style="color:' + grade.color + '">' + this._avgAuthRate + '%</span>' +
-                    '<span class="auth-rate-grade" style="background:' + grade.color + '">' + grade.letter + '</span>' +
+                    '<span class="auth-rate-value" style="color:#9480c5;">' + this._avgAuthRate + '%</span>' +
+                    '<span class="auth-rate-grade" style="background:#9480c5;">시작 후 산정</span>' +
                 '</div>';
         } else if (isBeforeStart) {
             // ★ 시작 전: D-day만 표시
