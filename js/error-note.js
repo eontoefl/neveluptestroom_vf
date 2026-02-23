@@ -624,6 +624,12 @@ var ErrorNote = {
             console.warn('📝 [ErrorNote] studyRecordId 없음 — DB 저장 불가');
         }
 
+        var speakingFileCount = 0;
+        if (this._sectionType === 'speaking') {
+            if (this._uploadedFiles.first) speakingFileCount++;
+            if (this._uploadedFiles.second) speakingFileCount++;
+        }
+
         // 커스텀 이벤트 발생 (auth-monitor 등에서 감지 가능)
         var event = new CustomEvent('errorNoteSubmitted', {
             detail: {
@@ -631,7 +637,8 @@ var ErrorNote = {
                 wordCount: wordCount,
                 isFraud: isFraud,
                 sectionType: this._sectionType,
-                moduleNumber: this._moduleNumber
+                moduleNumber: this._moduleNumber,
+                speakingFileCount: speakingFileCount
             }
         });
         window.dispatchEvent(event);

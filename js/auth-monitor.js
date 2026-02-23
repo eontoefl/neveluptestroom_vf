@@ -7,11 +7,11 @@
  * 체크리스트:
  *   1차 제출 완료 → 30%
  *   2차 제출 완료 → 30%
- *   해설 확인 + 오답노트(20단어↑) → 40%
+ *   Raw Point 제도: 과제당 0 or 100 (오답노트 20단어↑ 기준)
  * 
  * 호출 시점:
  *   FlowController/WritingFlow wrap을 통해 자동 감지
- *   오답노트 제출 이벤트(errorNoteSubmitted)로 해설 단계 감지
+ *   오답노트 제출 이벤트(errorNoteSubmitted)로 최종 인증 판정
  */
 
 var AuthMonitor = {
@@ -30,6 +30,8 @@ var AuthMonitor = {
     _step2Done: false,      // 2차 제출 완료
     _explanationDone: false, // 해설+오답노트 완료
     _fraudFlag: false,      // 부정행위 플래그 (경고 무시 제출)
+    _errorNoteWordCount: 0,  // 오답노트 단어수
+    _speakingFileCount: 0,   // 스피킹 녹음파일 수
     _studyRecordId: null,   // 저장된 study_record ID
     _authRecordCreated: false, // auth_record가 이미 INSERT 되었는지
 
@@ -50,6 +52,8 @@ var AuthMonitor = {
         this._step2Done = false;
         this._explanationDone = false;
         this._fraudFlag = false;
+        this._errorNoteWordCount = 0;    // 오답노트 단어수
+        this._speakingFileCount = 0;     // 스피킹 녹음파일 수
         this._studyRecordId = null;
         this._authRecordCreated = false;
     },
@@ -89,15 +93,26 @@ var AuthMonitor = {
     },
 
     // ========================================
-    // 인증률 계산 (30/30/40)
+    // 인증률 계산 (Raw Point: 0 or 100)
     // ========================================
     calculateAuthRate: function() {
+        var sectionType = this.sectionType || this._lastSectionType;
         var rate = 0;
-        if (this._step1Done) rate += 30;
-        if (this._step2Done) rate += 30;
-        if (this._explanationDone && !this._fraudFlag) rate += 40;
 
-        console.log('🔒 [Auth] 인증률:', rate + '%');
+        if (sectionType === 'reading' || sectionType === 'listening') {
+            // 오답노트 20단어 이상 제출 → 100
+            if (this._errorNoteWordCount >= 20) rate = 100;
+        } else if (sectionType === 'speaking') {
+            // 오답노트 20단어 이상 + 녹음파일 2개 첨부 → 100
+            if (this._errorNoteWordCount >= 20 && this._speakingFileCount >= 2) rate = 100;
+        } else if (sectionType === 'writing') {
+            // 이메일 1차/2차 + 토론 1차/2차 submit + 오답노트 20단어 → 100
+            var wf = window.WritingFlow;
+            var allDone = wf && wf.email1stData && wf.discussion1stData && wf.email2ndData && wf.discussion2ndData;
+            if (allDone && this._errorNoteWordCount >= 20) rate = 100;
+        }
+
+        console.log('🔒 [Auth] 인증률:', rate + '% (type:', sectionType, 'words:', this._errorNoteWordCount, ')');
 
         return rate;
     },
@@ -975,8 +990,13 @@ var AuthMonitor = {
         // ── 오답노트 제출 이벤트 감지 ──
         window.addEventListener('errorNoteSubmitted', function(e) {
             var detail = e.detail || {};
+            // Raw Point용 데이터 저장
+            AuthMonitor._errorNoteWordCount = detail.wordCount || 0;
+            AuthMonitor._speakingFileCount = detail.speakingFileCount || 0;
+            // 기존 호환성 유지
             AuthMonitor.markExplanation(detail.isFraud);
             AuthMonitor.updateExplanationStatus();
+            console.log('📝 [Auth] 오답노트 데이터:', 'words:', AuthMonitor._errorNoteWordCount, 'files:', AuthMonitor._speakingFileCount);
         });
 
         // 오답노트 이벤트 연동 완료

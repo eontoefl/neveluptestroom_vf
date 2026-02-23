@@ -129,17 +129,21 @@ async function submitIntroBook() {
         });
 
         if (studyRecord && studyRecord.id) {
-            // tr_auth_records 저장 (제출 = 100%)
+            // 단어 수 체크 (20단어 이상 → 100, 미만 → 0)
+            var introWordCount = memoText.split(/\s+/).filter(function(w) { return w.length > 0; }).length;
+            var introAuthRate = (introWordCount >= 20) ? 100 : 0;
+
+            // tr_auth_records 저장
             await saveAuthRecord({
                 user_id: user.id,
                 study_record_id: studyRecord.id,
-                auth_rate: 100,
+                auth_rate: introAuthRate,
                 step1_completed: true,
                 step2_completed: false,
                 explanation_completed: false,
-                fraud_flag: false
+                fraud_flag: (introWordCount < 20)
             });
-            console.log('📖 [IntroBook] 기록 저장 완료, 인증률: 100%');
+            console.log('📖 [IntroBook] 기록 저장 완료, 단어수:', introWordCount, '인증률:', introAuthRate + '%');
 
             // ProgressTracker 캐시 갱신
             if (window.ProgressTracker) {
