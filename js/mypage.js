@@ -118,6 +118,7 @@ function isBeforeStart() {
     const start = new Date(mpUser.startDate);
     start.setHours(0, 0, 0, 0);
     const now = new Date();
+    if (now.getHours() < 4) now.setDate(now.getDate() - 1);
     now.setHours(0, 0, 0, 0);
     return now < start;
 }
@@ -128,6 +129,7 @@ function isGradeBeforeStart() {
     const start = new Date(mpUser.startDate);
     start.setHours(0, 0, 0, 0);
     const now = new Date();
+    if (now.getHours() < 4) now.setDate(now.getDate() - 1);
     now.setHours(0, 0, 0, 0);
     return now <= start; // 당일 포함
 }
@@ -137,6 +139,7 @@ function getDaysUntilStart() {
     const start = new Date(mpUser.startDate);
     start.setHours(0, 0, 0, 0);
     const now = new Date();
+    if (now.getHours() < 4) now.setDate(now.getDate() - 1);
     now.setHours(0, 0, 0, 0);
     return Math.ceil((start - now) / (1000 * 60 * 60 * 24));
 }
@@ -159,6 +162,7 @@ function renderSummaryCards() {
     const startDate = new Date(mpUser.startDate);
     startDate.setHours(0, 0, 0, 0);
     const today = new Date();
+    if (today.getHours() < 4) today.setDate(today.getDate() - 1);
     today.setHours(0, 0, 0, 0);
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + totalCalendarDays - 1);
