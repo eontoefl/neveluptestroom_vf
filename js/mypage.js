@@ -231,10 +231,10 @@ function renderSummaryCards() {
     document.getElementById('authSub').textContent = authSubText;
 
     // ── 등급 & 환급 계산 (tr_grade_rules 테이블 연동) ──
-    // 시작 전이더라도 제출 기록이 있으면 등급 표시
-    if (isGradeBeforeStart() && tasksSubmitted === 0) {
+    // 시작 전이면 무조건 등급 미산정
+    if (isGradeBeforeStart()) {
         document.getElementById('currentGrade').textContent = '-';
-        document.getElementById('gradeRefund').textContent = '시작일 다음날부터 산정';
+        document.getElementById('gradeRefund').textContent = '시작 후 산정';
     } else {
         const grade = getGradeFromRules(authRatePct);
         document.getElementById('currentGrade').textContent = grade.letter;
