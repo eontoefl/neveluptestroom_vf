@@ -113,14 +113,11 @@ async function supabaseUpdate(table, query, data) {
  * @returns {Promise<object>} 저장된 데이터
  */
 async function supabaseUpsert(table, data, onConflict) {
-    var endpoint = '/rest/v1/' + table;
+    var endpoint = '/rest/v1/' + table + (onConflict ? '?on_conflict=' + onConflict : '');
     var result = await supabaseRequest(endpoint, {
         method: 'POST',
         body: data,
-        prefer: 'return=representation,resolution=merge-duplicates',
-        headers: {
-            'Prefer': 'return=representation,resolution=merge-duplicates'
-        }
+        prefer: 'return=representation,resolution=merge-duplicates'
     });
     return result ? (Array.isArray(result) ? result[0] : result) : null;
 }
