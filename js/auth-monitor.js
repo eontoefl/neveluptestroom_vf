@@ -670,21 +670,46 @@ var AuthMonitor = {
         if (!user || !user.id || user.id === 'dev-user-001') return;
 
         try {
-            // 1) study_records 건수 (제출 수)
+            // 1) study_records 조회 (과제별 중복 제거용)
             var studyRecords = await supabaseSelect(
                 'tr_study_records',
-                'user_id=eq.' + user.id + '&select=id'
+                'user_id=eq.' + user.id + '&select=id,task_type,module_number,week,day,completed_at'
             );
-            var tasksSubmitted = studyRecords ? studyRecords.length : 0;
 
-            // 2) auth_records에서 auth_rate 합계
+            // 과제별 최신 record만 남기기 (task_type + module_number + week + day 기준)
+            var uniqueMap = {};
+            if (studyRecords) {
+                studyRecords.forEach(function(rec) {
+                    // vocab, intro-book은 week+day 구분, 나머지는 task_type+module_number
+                    var key;
+                    if (rec.task_type === 'vocab' || rec.task_type === 'intro-book') {
+                        key = rec.task_type + '_' + rec.module_number + '_w' + rec.week + '_' + rec.day;
+                    } else {
+                        key = rec.task_type + '_' + rec.module_number;
+                    }
+                    var existing = uniqueMap[key];
+                    if (!existing || new Date(rec.completed_at) > new Date(existing.completed_at)) {
+                        uniqueMap[key] = rec;
+                    }
+                });
+            }
+            var uniqueRecords = Object.values(uniqueMap);
+            var uniqueRecordIds = {};
+            uniqueRecords.forEach(function(r) { uniqueRecordIds[r.id] = true; });
+            var tasksSubmitted = uniqueRecords.length;
+
+            // 2) auth_records에서 auth_rate 합계 (중복 제거된 study_record에 매칭되는 것만)
             var authRecords = await supabaseSelect(
                 'tr_auth_records',
-                'user_id=eq.' + user.id + '&select=auth_rate'
+                'user_id=eq.' + user.id + '&select=auth_rate,study_record_id'
             );
             var authSum = 0;
             if (authRecords) {
-                authRecords.forEach(function(r) { authSum += (r.auth_rate || 0); });
+                authRecords.forEach(function(r) {
+                    if (uniqueRecordIds[r.study_record_id]) {
+                        authSum += (r.auth_rate || 0);
+                    }
+                });
             }
 
             // 3) 오늘까지 할당 과제 수 (분모)
