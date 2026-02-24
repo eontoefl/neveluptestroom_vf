@@ -4,6 +4,15 @@
  * Review 패널 - 리딩/리스닝 1차 풀이 중 문제 목록 확인 + 이동
  * ================================================
  * 
+ * v2 - 2026-02-24 버그 수정
+ * - 🔥 BUG FIX: 리뷰에서 이전 컴포넌트로 이동 시 답안이 사라지는 버그 수정
+ *   기존: navigateToPreviousComponent()가 componentResults/allAnswers를 splice로 삭제 후
+ *         복원을 시도했으나, 이미 삭제된 상태에서 복원이 실패하여 답안 유실
+ *   수정: _reviewBackup에 답안을 먼저 백업한 뒤 splice → 백업에서 복원
+ * - 🔥 NEW: _patchOnComponentComplete() 추가
+ *   뒤로 이동 후 다시 앞으로 진행(Next) 시, 이전에 풀었던 답안을 자동 복원
+ * - 🔥 IMPROVED: restoreFillBlanksUI()에 정확한 input ID 매칭 추가
+ * 
  * 기능:
  * - 전체 문제 목록을 테이블로 표시
  * - 각 문제의 Answered / Not Answered 상태 표시
@@ -549,44 +558,272 @@ const ReviewPanel = {
     },
 
     /**
-     * 이전 컴포넌트로 이동 (재귀적으로 goToPreviousComponent 호출)
+     * 이전 컴포넌트로 이동 (답안 보존 방식 v2)
+     * 
+     * ★ 핵심 변경: componentResults / allAnswers를 삭제하지 않음
+     * 
+     * 기존 버그: splice로 답안을 삭제한 뒤 복원을 시도 → 답안 유실
+     * 수정 방법:
+     *   1) 현재 진행 중 컴포넌트의 답안을 먼저 수집하여 _reviewBackup에 보관
+     *   2) componentResults / allAnswers는 건드리지 않고 그대로 유지
+     *   3) 대상 컴포넌트를 재초기화한 뒤, 백업해둔 답안을 인스턴스에 복원
+     *   4) 학생이 다시 Next로 진행하면 onComponentComplete에서 기존 데이터를 덮어쓰기
+     *      (→ _patchedOnComponentComplete로 자동 처리)
+     * 
+     * 이로써 어느 방향으로 이동해도 답안이 보존됩니다.
      */
     async navigateToPreviousComponent(mc, targetCompIndex, targetQIdx, targetType) {
-        // 현재 컴포넌트에서 타겟까지 뒤로 이동
-        while (mc.currentComponentIndex > targetCompIndex) {
-            // 현재 컴포넌트의 답변을 먼저 저장 (submit 처리)
-            const currentInstance = this.getCurrentComponentInstance(
-                mc.config.components[mc.currentComponentIndex].type
-            );
-            
-            if (currentInstance && typeof currentInstance.submit === 'function') {
-                // submit을 호출하면 onComponentComplete가 트리거되므로, 
-                // 대신 답변만 수집하여 저장
-                const answers = this.collectCurrentAnswers(currentInstance, mc.config.components[mc.currentComponentIndex]);
-                if (answers && answers.length > 0) {
-                    mc.allAnswers.push(...answers);
-                    mc.componentResults.push({
-                        componentType: mc.config.components[mc.currentComponentIndex].type,
-                        setId: mc.config.components[mc.currentComponentIndex].setId,
-                        answers: answers
-                    });
-                }
-            }
+        console.log(`📋 [Review] 이전 컴포넌트 이동: ${mc.currentComponentIndex} → ${targetCompIndex}`);
 
-            mc.goToPreviousComponent();
-            
-            // 비동기 로드 대기
-            await new Promise(resolve => setTimeout(resolve, 200));
+        // ── 1. 현재 진행 중 컴포넌트의 답안 수집 (아직 submit 안 된 상태) ──
+        const currentComp = mc.config.components[mc.currentComponentIndex];
+        const currentInstance = this.getCurrentComponentInstance(currentComp.type);
+        const currentInProgressAnswers = currentInstance 
+            ? this.collectCurrentAnswers(currentInstance, currentComp)
+            : [];
+
+        // ── 2. 모든 컴포넌트의 답안을 _reviewBackup에 통합 보관 ──
+        //    componentResults(완료된 컴포넌트) + 현재 진행 중 답안
+        if (!this._reviewBackup) {
+            this._reviewBackup = {};
+        }
+        // 이미 완료된 컴포넌트들의 답안 백업
+        mc.componentResults.forEach((result, idx) => {
+            if (result && result.answers) {
+                this._reviewBackup[idx] = {
+                    type: result.componentType,
+                    answers: JSON.parse(JSON.stringify(result.answers))
+                };
+            }
+        });
+        // 현재 진행 중 컴포넌트 답안 백업
+        if (currentInProgressAnswers.length > 0) {
+            this._reviewBackup[mc.currentComponentIndex] = {
+                type: currentComp.type,
+                answers: JSON.parse(JSON.stringify(currentInProgressAnswers))
+            };
         }
 
-        // 타겟 컴포넌트 내에서 특정 문제로 이동
-        const instance = this.getCurrentComponentInstance(targetType);
-        if (instance && typeof instance.loadQuestion === 'function' && targetQIdx > 0) {
+        console.log(`📋 [Review] 백업 완료:`, Object.keys(this._reviewBackup).length, '개 컴포넌트');
+
+        // ── 3. 대상 컴포넌트의 답안 추출 (백업에서) ──
+        const targetBackup = this._reviewBackup[targetCompIndex];
+        const savedAnswers = targetBackup ? targetBackup.answers : [];
+        console.log(`📋 [Review] 대상 컴포넌트 백업 답안:`, savedAnswers.length, '개');
+
+        // ── 4. componentResults / allAnswers를 대상 지점으로 되감기 ──
+        //    대상 컴포넌트부터 다시 풀게 되므로, 해당 지점까지만 유지
+        //    (삭제가 아니라, 대상 이후 것들은 _reviewBackup에 이미 보관됨)
+        if (mc.componentResults.length > targetCompIndex) {
+            mc.componentResults.splice(targetCompIndex);
+        }
+        // allAnswers도 대상 컴포넌트 시작 지점까지만 유지
+        let answersBeforeTarget = 0;
+        for (let i = 0; i < targetCompIndex; i++) {
+            answersBeforeTarget += mc.config.components[i].questionsPerSet;
+        }
+        if (mc.allAnswers.length > answersBeforeTarget) {
+            mc.allAnswers.splice(answersBeforeTarget);
+        }
+
+        // ── 5. 컴포넌트 인덱스 되돌리기 ──
+        mc.currentComponentIndex = targetCompIndex;
+        mc.currentQuestionNumber = answersBeforeTarget;
+
+        // ── 6. 대상 컴포넌트 로드 ──
+        const targetComp = mc.config.components[targetCompIndex];
+        mc.updateProgress();
+        mc.updateHeaderTitle(targetComp.type);
+
+        const initOptions = {
+            startQuestionNumber: mc.currentQuestionNumber + 1,
+            totalModuleQuestions: mc.config.totalQuestions
+        };
+
+        switch (targetComp.type) {
+            case 'fillblanks':
+                mc.currentComponentInstance = window.FillBlanksComponent;
+                if (window.initFillBlanksComponent) {
+                    await window.initFillBlanksComponent(targetComp.setId, mc.onComponentComplete.bind(mc), initOptions);
+                }
+                mc.updateNavigationButtons(targetComp.type, 0, targetComp.questionsPerSet);
+                break;
+            case 'daily1':
+                mc.currentComponentInstance = window.Daily1Component;
+                if (window.initDaily1Component) {
+                    await window.initDaily1Component(targetComp.setId, mc.onComponentComplete.bind(mc), initOptions);
+                }
+                break;
+            case 'daily2':
+                mc.currentComponentInstance = window.Daily2Component;
+                if (window.initDaily2Component) {
+                    await window.initDaily2Component(targetComp.setId, mc.onComponentComplete.bind(mc), initOptions);
+                }
+                break;
+            case 'academic':
+                mc.currentComponentInstance = window.AcademicComponent;
+                if (window.initAcademicComponent) {
+                    await window.initAcademicComponent(targetComp.setId, mc.onComponentComplete.bind(mc), initOptions);
+                }
+                break;
+        }
+
+        // 비동기 로드 대기
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // ── 7. 백업한 답안을 새 인스턴스에 복원 ──
+        this.restoreAnswersToInstance(targetComp.type, savedAnswers, targetComp);
+
+        // ── 8. 대상 문제로 이동 (loadQuestion이 UI 복원 포함) ──
+        const instance = this.getCurrentComponentInstance(targetComp.type);
+        if (instance && typeof instance.loadQuestion === 'function') {
             instance.loadQuestion(targetQIdx);
             mc.updateCurrentQuestionInComponent(targetQIdx);
         }
 
+        // ── 9. 이후 컴포넌트 답안 자동 복원 패치 ──
+        //    학생이 Next → onComponentComplete로 다음 컴포넌트에 진입할 때
+        //    _reviewBackup에 보관된 답안을 자동 복원
+        this._patchOnComponentComplete(mc);
+
+        console.log(`📋 [Review] 이동 완료 — 답안 복원됨`);
         this.close();
+    },
+
+    /**
+     * onComponentComplete 패치: 다음 컴포넌트 로드 시 백업 답안 자동 복원
+     * 
+     * 학생이 Review로 뒤로 이동한 뒤 → Next로 다시 앞으로 진행하면
+     * 새로 초기화된 컴포넌트에 _reviewBackup의 답안을 자동으로 넣어줌
+     */
+    _patchOnComponentComplete(mc) {
+        // 이미 패치했으면 스킵
+        if (mc._reviewPatched) return;
+        mc._reviewPatched = true;
+
+        const originalOnComplete = mc.onComponentComplete.bind(mc);
+        const self = this;
+
+        mc.onComponentComplete = function(componentResult) {
+            // 원본 로직 실행 (allAnswers push, componentResults push, 다음 컴포넌트 로드)
+            originalOnComplete(componentResult);
+
+            // 다음 컴포넌트에 백업 답안 복원
+            const nextIndex = mc.currentComponentIndex;
+            if (self._reviewBackup && self._reviewBackup[nextIndex]) {
+                const backup = self._reviewBackup[nextIndex];
+                const nextComp = mc.config.components[nextIndex];
+                if (nextComp) {
+                    console.log(`📋 [Review] 자동 복원: 컴포넌트 ${nextIndex} (${backup.type})`);
+                    // 약간의 딜레이 후 복원 (init 완료 대기)
+                    setTimeout(() => {
+                        self.restoreAnswersToInstance(nextComp.type, backup.answers, nextComp);
+                        // 현재 문제의 UI도 갱신
+                        const inst = self.getCurrentComponentInstance(nextComp.type);
+                        if (inst && typeof inst.loadQuestion === 'function' && inst.currentQuestion !== undefined) {
+                            inst.loadQuestion(inst.currentQuestion);
+                        }
+                    }, 400);
+                }
+            }
+        };
+    },
+
+    /**
+     * 백업한 답안을 새로 생성된 컴포넌트 인스턴스에 복원
+     */
+    restoreAnswersToInstance(type, savedAnswers, comp) {
+        if (!savedAnswers || savedAnswers.length === 0) {
+            console.log(`📋 [Review] 복원할 답안 없음`);
+            return;
+        }
+
+        try {
+            if (type === 'fillblanks') {
+                const instance = window.currentFillBlanksComponent;
+                if (instance && instance.currentSet && instance.currentSet.blanks) {
+                    savedAnswers.forEach((ans, idx) => {
+                        const blank = instance.currentSet.blanks[idx];
+                        if (!blank) return;
+
+                        let userAns = '';
+                        if (ans && typeof ans === 'object') {
+                            userAns = ans.userAnswer || ans.answer || '';
+                        } else if (typeof ans === 'string') {
+                            userAns = ans;
+                        }
+
+                        if (userAns) {
+                            instance.answers[blank.id] = userAns;
+                            this.restoreFillBlanksUI(blank, userAns, instance);
+                        }
+                    });
+                    console.log(`📋 [Review] FillBlanks 답안 복원 완료:`, Object.keys(instance.answers).length, '개');
+                }
+            } else {
+                // daily1, daily2, academic
+                const instanceMap = {
+                    'daily1': window.currentDaily1Component,
+                    'daily2': window.currentDaily2Component,
+                    'academic': window.currentAcademicComponent
+                };
+                const instance = instanceMap[type];
+                if (instance) {
+                    savedAnswers.forEach((ans, idx) => {
+                        const val = (typeof ans === 'object') 
+                            ? (ans.userAnswer || ans.answer || '') 
+                            : ans;
+
+                        if (type === 'academic') {
+                            // academic: answers[idx] = 'A'/'B'/'C'/'D'
+                            if (val !== undefined && val !== null && val !== '') {
+                                instance.answers[idx] = val;
+                            }
+                        } else {
+                            // daily1/daily2: answers['q1'] = 1, answers['q2'] = 3
+                            const key = `q${idx + 1}`;
+                            if (val !== undefined && val !== null && val !== '') {
+                                instance.answers[key] = val;
+                            }
+                        }
+                    });
+                    console.log(`📋 [Review] ${type} 답안 복원 완료:`, instance.answers);
+                }
+            }
+        } catch (e) {
+            console.warn(`⚠️ [Review] 답안 복원 실패:`, e);
+        }
+    },
+
+    /**
+     * FillBlanks UI 복원 (input 필드에 값 채우기)
+     */
+    restoreFillBlanksUI(blank, userAnswer, instance) {
+        try {
+            const chars = userAnswer.split('');
+            const setId = instance && instance.currentSet ? instance.currentSet.id : '';
+            
+            chars.forEach((char, charIdx) => {
+                // 정확한 ID로 먼저 시도: blank_setId_blankId_charIdx
+                let input = null;
+                if (setId) {
+                    input = document.getElementById(`blank_${setId}_${blank.id}_${charIdx}`);
+                }
+                // 폴백: 와일드카드 검색
+                if (!input) {
+                    const inputs = document.querySelectorAll(`input[id*="_${blank.id}_"]`);
+                    input = inputs[charIdx] || null;
+                }
+                
+                if (input) {
+                    input.value = char;
+                    input.classList.add('filled');
+                }
+            });
+        } catch (e) {
+            // UI 복원 실패해도 답안 데이터는 보존됨
+            console.warn(`⚠️ [Review] FillBlanks UI 복원 실패:`, e);
+        }
     },
 
     /**
