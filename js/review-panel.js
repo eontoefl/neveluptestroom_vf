@@ -4,14 +4,20 @@
  * Review 패널 - 리딩/리스닝 1차 풀이 중 문제 목록 확인 + 이동
  * ================================================
  * 
- * v2 - 2026-02-24 버그 수정
- * - 🔥 BUG FIX: 리뷰에서 이전 컴포넌트로 이동 시 답안이 사라지는 버그 수정
- *   기존: navigateToPreviousComponent()가 componentResults/allAnswers를 splice로 삭제 후
- *         복원을 시도했으나, 이미 삭제된 상태에서 복원이 실패하여 답안 유실
- *   수정: _reviewBackup에 답안을 먼저 백업한 뒤 splice → 백업에서 복원
- * - 🔥 NEW: _patchOnComponentComplete() 추가
- *   뒤로 이동 후 다시 앞으로 진행(Next) 시, 이전에 풀었던 답안을 자동 복원
- * - 🔥 IMPROVED: restoreFillBlanksUI()에 정확한 input ID 매칭 추가
+ * v3 - 2026-02-24 전면 재설계
+ * 
+ * ★ 핵심 원칙: 
+ *   - _answerStore[compIndex] 에 모든 컴포넌트의 답안을 한 번만 기록, 절대 삭제하지 않음
+ *   - componentResults / allAnswers를 splice/pop 하지 않고, 컴포넌트 이동 시에는
+ *     _answerStore 에서 읽어 인스턴스에 복원
+ *   - onComponentComplete에서 push 대신 인덱스 기반 덮어쓰기로 중복 방지
+ * 
+ * 변경사항:
+ * - _reviewBackup 제거 → _answerStore로 통합
+ * - navigateToPreviousComponent(): splice/pop 기반 → 인덱스 이동만 수행
+ * - goToPreviousComponent() 패치: module-controller 의 pop/splice 전에 답안을 _answerStore에 보관
+ * - _patchOnComponentComplete(): push 중복 방지, _answerStore에서 자동 복원
+ * - 모든 checkAnswered()에서 _answerStore 우선 참조
  * 
  * 기능:
  * - 전체 문제 목록을 테이블로 표시
@@ -22,6 +28,50 @@
 
 const ReviewPanel = {
     isOpen: false,
+
+    // ★ 영구 답안 저장소: { compIndex: { type, answers: [...] } }
+    // 한번 기록되면 삭제되지 않으며, 학생이 다시 풀면 덮어쓰기
+    _answerStore: {},
+
+    // ★ 최대 도달 컴포넌트 인덱스 (뒤로 이동해도 줄어들지 않음)
+    _maxReachedCompIndex: -1,
+
+    /**
+     * 전체 답안 저장소 갱신
+     * - componentResults의 완료된 답안 반영
+     * - 현재 진행 중 컴포넌트의 인스턴스 답안 수집
+     */
+    _syncAnswerStore(mc) {
+        // 1) 완료된 컴포넌트들의 답안 동기화
+        mc.componentResults.forEach((result, idx) => {
+            if (result && result.answers && result.answers.length > 0) {
+                this._answerStore[idx] = {
+                    type: result.componentType,
+                    answers: JSON.parse(JSON.stringify(result.answers))
+                };
+            }
+        });
+
+        // 2) 현재 진행 중 컴포넌트 답안 수집
+        const currentComp = mc.config.components[mc.currentComponentIndex];
+        if (currentComp) {
+            const currentInstance = this.getCurrentComponentInstance(currentComp.type);
+            if (currentInstance) {
+                const currentAnswers = this.collectCurrentAnswers(currentInstance, currentComp);
+                if (currentAnswers.length > 0 && currentAnswers.some(a => a !== null && a !== '' && a !== undefined)) {
+                    this._answerStore[mc.currentComponentIndex] = {
+                        type: currentComp.type,
+                        answers: JSON.parse(JSON.stringify(currentAnswers))
+                    };
+                }
+            }
+        }
+
+        // 3) _maxReachedCompIndex 갱신
+        if (mc.currentComponentIndex > this._maxReachedCompIndex) {
+            this._maxReachedCompIndex = mc.currentComponentIndex;
+        }
+    },
 
     /**
      * Review 패널 열기
@@ -35,38 +85,12 @@ const ReviewPanel = {
 
         console.log('📋 [Review] 패널 열기');
 
-        // ★ 최대 도달 인덱스 갱신 (패널 열 때마다)
-        if (this._maxReachedCompIndex === undefined || mc.currentComponentIndex > this._maxReachedCompIndex) {
-            this._maxReachedCompIndex = mc.currentComponentIndex;
-        }
+        // ★ 답안 저장소 동기화
+        this._syncAnswerStore(mc);
 
-        // ★ 답안 백업 갱신 (패널 열 때마다 최신 상태 반영)
-        if (!this._reviewBackup) {
-            this._reviewBackup = {};
-        }
-        // 완료된 컴포넌트들의 답안 백업
-        mc.componentResults.forEach((result, idx) => {
-            if (result && result.answers) {
-                this._reviewBackup[idx] = {
-                    type: result.componentType,
-                    answers: JSON.parse(JSON.stringify(result.answers))
-                };
-            }
-        });
-        // 현재 진행 중 컴포넌트 답안 백업
-        const currentComp = mc.config.components[mc.currentComponentIndex];
-        if (currentComp) {
-            const currentInstance = this.getCurrentComponentInstance(currentComp.type);
-            if (currentInstance) {
-                const currentAnswers = this.collectCurrentAnswers(currentInstance, currentComp);
-                if (currentAnswers.length > 0) {
-                    this._reviewBackup[mc.currentComponentIndex] = {
-                        type: currentComp.type,
-                        answers: JSON.parse(JSON.stringify(currentAnswers))
-                    };
-                }
-            }
-        }
+        console.log('📋 [Review] _answerStore 상태:', Object.keys(this._answerStore).map(k => 
+            `[${k}]:${this._answerStore[k].type}(${this._answerStore[k].answers.length}개)`
+        ).join(', '));
 
         // 패널 먼저 표시 (로딩 상태)
         const panel = document.getElementById('reviewPanel');
@@ -108,14 +132,12 @@ const ReviewPanel = {
         const reviewData = [];
         let globalQuestionNum = 0;
 
-        // ★ v2: _maxReachedCompIndex를 반영하여 이미 도달한 컴포넌트도 "완료"로 취급
-        const maxReached = this._maxReachedCompIndex ?? mc.currentComponentIndex;
+        const maxReached = this._maxReachedCompIndex;
 
         mc.config.components.forEach((comp, compIndex) => {
             const isCurrent = compIndex === mc.currentComponentIndex;
-            // 현재보다 앞이거나, 이미 도달했던 컴포넌트(뒤로 이동 후에도)는 완료 취급
-            const isCompleted = compIndex < mc.currentComponentIndex || 
-                                (compIndex > mc.currentComponentIndex && compIndex <= maxReached);
+            // 현재이거나, 이전에 도달했던 컴포넌트는 모두 "도달한" 것
+            const isReached = compIndex <= maxReached;
             const isFuture = compIndex > maxReached;
 
             // 컴포넌트 인스턴스 가져오기
@@ -124,17 +146,17 @@ const ReviewPanel = {
                 instance = this.getCurrentComponentInstance(comp.type);
             }
 
-            // 캐시 데이터에서 문제 목록 가져오기 (현재 + 미래 모두 사용)
+            // 캐시 데이터에서 문제 목록 가져오기
             let preloadedQuestions = null;
-            if (!instance || isFuture || isCompleted) {
+            if (!instance || isFuture || !isCurrent) {
                 preloadedQuestions = this.getPreloadedQuestions(comp);
             }
 
             for (let qIdx = 0; qIdx < comp.questionsPerSet; qIdx++) {
                 globalQuestionNum++;
                 
-                const questionText = this.getQuestionText(comp, compIndex, qIdx, mc, instance, isCompleted, isCurrent, preloadedQuestions);
-                const isAnswered = this.checkAnswered(comp, compIndex, qIdx, mc, instance, isCompleted, isCurrent);
+                const questionText = this.getQuestionText(comp, compIndex, qIdx, mc, instance, isReached, isCurrent, preloadedQuestions);
+                const isAnswered = this.checkAnswered(comp, compIndex, qIdx, mc, instance, isReached, isCurrent);
 
                 reviewData.push({
                     number: globalQuestionNum,
@@ -173,7 +195,7 @@ const ReviewPanel = {
             promises.push(loadFillBlanksData().then(d => { this._cachedFillBlanks = d; }).catch(() => {}));
         }
 
-        // 리스닝 컴포넌트 캐시 로드 (임시 인스턴스 생성 → loadData() 호출 → 캐시 반환)
+        // 리스닝 컴포넌트 캐시 로드
         if (types.has('response') && typeof ResponseComponent === 'function') {
             promises.push(
                 new ResponseComponent(1).loadData().then(d => { this._cachedResponse = d; }).catch(() => {})
@@ -205,7 +227,6 @@ const ReviewPanel = {
      */
     getPreloadedQuestions(comp) {
         try {
-            // setId는 숫자(1, 2, 3...) → 배열 인덱스 = setId - 1
             const idx = (typeof comp.setId === 'number' ? comp.setId : parseInt(comp.setId)) - 1;
 
             if (comp.type === 'fillblanks' && this._cachedFillBlanks) {
@@ -276,8 +297,8 @@ const ReviewPanel = {
     /**
      * 문제 텍스트 가져오기
      */
-    getQuestionText(comp, compIndex, qIdx, mc, instance, isCompleted, isCurrent, preloadedQuestions) {
-        // 현재 컴포넌트에서 가져오기 (인스턴스가 있을 때만)
+    getQuestionText(comp, compIndex, qIdx, mc, instance, isReached, isCurrent, preloadedQuestions) {
+        // 현재 컴포넌트에서 가져오기
         if (isCurrent && instance) {
             const text = this.getTextFromInstance(instance, comp.type, qIdx);
             if (text && !text.startsWith('Fill in the blank') && !text.startsWith('Question ')) {
@@ -285,8 +306,18 @@ const ReviewPanel = {
             }
         }
 
-        // 완료된 컴포넌트 - allAnswers에서 문제 텍스트 추출 (객체인 경우)
-        if (isCompleted) {
+        // _answerStore에서 문제 텍스트 추출 (완료된 컴포넌트)
+        if (isReached && this._answerStore[compIndex]) {
+            const stored = this._answerStore[compIndex];
+            if (stored.answers && stored.answers[qIdx]) {
+                const a = stored.answers[qIdx];
+                if (typeof a === 'object' && a.question) return this.formatBlankQuestion(a, comp.type);
+                if (typeof a === 'object' && a.questionText) return a.questionText;
+            }
+        }
+
+        // allAnswers에서 추출
+        if (isReached) {
             let prevQuestions = 0;
             for (let i = 0; i < compIndex; i++) {
                 prevQuestions += mc.config.components[i].questionsPerSet;
@@ -296,6 +327,7 @@ const ReviewPanel = {
                 if (answerObj.question) return this.formatBlankQuestion(answerObj, comp.type);
                 if (answerObj.questionText) return answerObj.questionText;
             }
+            // componentResults에서도 시도
             const result = mc.componentResults[compIndex];
             if (result && result.answers && result.answers[qIdx]) {
                 const a = result.answers[qIdx];
@@ -303,20 +335,19 @@ const ReviewPanel = {
             }
         }
 
-        // 미리 로드된 데이터에서 가져오기 (미래 컴포넌트 + 현재 인스턴스 없는 경우)
+        // 미리 로드된 데이터에서 가져오기
         if (preloadedQuestions && preloadedQuestions[qIdx]) {
             const q = preloadedQuestions[qIdx];
             if (comp.type === 'fillblanks') {
                 return this.formatBlankQuestion(q, comp.type);
             }
-            // Response: 오디오 문제라 텍스트 없음 → 헤드폰 아이콘 + 번호
             if (comp.type === 'response') {
                 return `🎧 Response Q${qIdx + 1}`;
             }
             return q.question || q.questionText || `Question ${qIdx + 1}`;
         }
 
-        // 폴백: 타입명 + 번호
+        // 폴백
         if (comp.type === 'response') {
             return `🎧 Response Q${qIdx + 1}`;
         }
@@ -325,30 +356,26 @@ const ReviewPanel = {
     },
 
     /**
-     * 빈칸채우기 문제 포맷 (fr_ _ _ _ _ 형식)
+     * 빈칸채우기 문제 포맷
      */
     formatBlankQuestion(item, type) {
         if (type !== 'fillblanks') {
             return item.question || item.questionText || '';
         }
         
-        // item.question: "fr_____ (2글자)" 형식 또는 prefix/answer가 있을 수 있음
         const prefix = item.prefix || '';
         const answer = item.correctAnswer || item.answer || '';
         const blankCount = answer.length || item.blankCount || 0;
         
         if (prefix && blankCount > 0) {
-            // 언더스코어 + 스페이스 조합으로 간격 표시
             const blanks = Array(blankCount).fill('_').join(' ');
             return `${prefix}${blanks}`;
         }
         
-        // question 필드에서 추출
         if (item.question) {
-            // "fr_____ (2글자)" → "fr_ _" 형식으로 변환
             return item.question
-                .replace(/\(\d+글자\)/, '')  // (N글자) 제거
-                .replace(/_{2,}/g, match => Array(match.length).fill('_').join(' '))  // ___ → _ _ _
+                .replace(/\(\d+글자\)/, '')
+                .replace(/_{2,}/g, match => Array(match.length).fill('_').join(' '))
                 .trim();
         }
         
@@ -378,16 +405,13 @@ const ReviewPanel = {
     getTextFromInstance(instance, type, qIdx) {
         try {
             if (type === 'fillblanks') {
-                // FillBlanks는 빈칸 단위 - formatBlankQuestion 사용
                 if (instance.currentSet && instance.currentSet.blanks && instance.currentSet.blanks[qIdx]) {
                     return this.formatBlankQuestion(instance.currentSet.blanks[qIdx], 'fillblanks');
                 }
                 return `Fill in the blank ${qIdx + 1}`;
             }
 
-            // 일반 문제형 컴포넌트 (daily1, daily2, academic, response, conver, announcement, lecture)
             let questions = null;
-            
             if (instance.currentSet && instance.currentSet.questions) {
                 questions = instance.currentSet.questions;
             } else if (instance.currentSetData && instance.currentSetData.questions) {
@@ -398,7 +422,6 @@ const ReviewPanel = {
 
             if (questions && questions[qIdx]) {
                 const q = questions[qIdx];
-                // Response: 오디오 문제라 텍스트 없음 → 헤드폰 아이콘 + 번호
                 if (type === 'response') {
                     return `🎧 Response Q${qIdx + 1}`;
                 }
@@ -407,25 +430,29 @@ const ReviewPanel = {
         } catch (e) {
             console.warn(`⚠️ [Review] 문제 텍스트 추출 실패 (${type}, idx:${qIdx}):`, e);
         }
-
         return `Question ${qIdx + 1}`;
     },
 
     /**
-     * 답변 여부 확인
+     * ★★★ 답변 여부 확인 (가장 중요한 함수)
      * 
-     * ★ v2: _reviewBackup이 있으면 우선 참조
-     *   (Review로 이동 후 allAnswers가 splice된 상태에서도 정확한 답변 여부 표시)
+     * 우선순위:
+     * 1. _answerStore (영구 저장소) — 이동 후에도 정확
+     * 2. 현재 컴포넌트 인스턴스 (실시간)
+     * 3. allAnswers / componentResults (정상 흐름)
      */
-    checkAnswered(comp, compIndex, qIdx, mc, instance, isCompleted, isCurrent) {
-        // ── 1차: _reviewBackup에서 확인 (이동 후에도 정확) ──
-        if (this._reviewBackup && this._reviewBackup[compIndex]) {
-            const backup = this._reviewBackup[compIndex];
-            if (backup.answers && backup.answers[qIdx] !== undefined) {
-                const ans = backup.answers[qIdx];
+    checkAnswered(comp, compIndex, qIdx, mc, instance, isReached, isCurrent) {
+        // ── 1차: _answerStore에서 확인 ──
+        if (this._answerStore[compIndex]) {
+            const stored = this._answerStore[compIndex];
+            if (stored.answers && stored.answers[qIdx] !== undefined) {
+                const ans = stored.answers[qIdx];
                 if (ans && typeof ans === 'object') {
                     const userAns = ans.userAnswer ?? ans.answer ?? '';
                     return userAns !== undefined && userAns !== null && String(userAns).trim() !== '';
+                }
+                if (typeof ans === 'string') {
+                    return ans.trim() !== '';
                 }
                 if (ans !== undefined && ans !== null && ans !== '') {
                     return true;
@@ -433,32 +460,27 @@ const ReviewPanel = {
             }
         }
 
-        // ── 2차: 완료된 컴포넌트 - allAnswers에서 확인 ──
-        if (isCompleted) {
+        // ── 2차: 현재 컴포넌트 인스턴스에서 확인 ──
+        if (isCurrent && instance) {
+            return this.checkInstanceAnswered(instance, comp.type, qIdx);
+        }
+
+        // ── 3차: allAnswers에서 확인 ──
+        if (isReached) {
             let prevQuestions = 0;
             for (let i = 0; i < compIndex; i++) {
                 prevQuestions += mc.config.components[i].questionsPerSet;
             }
             const answer = mc.allAnswers[prevQuestions + qIdx];
-            
-            // answer가 객체인 경우 (fillblanks 등): userAnswer 필드 확인
             if (answer && typeof answer === 'object') {
                 const userAns = answer.userAnswer ?? answer.answer ?? '';
                 return userAns !== undefined && userAns !== null && String(userAns).trim() !== '';
             }
-            // answer가 문자열/숫자인 경우
             if (answer !== undefined && answer !== null && answer !== '') {
                 return true;
             }
-            return false;
         }
 
-        // ── 3차: 현재 컴포넌트 - 인스턴스의 answers에서 확인 ──
-        if (isCurrent && instance) {
-            return this.checkInstanceAnswered(instance, comp.type, qIdx);
-        }
-
-        // 미래 컴포넌트 (도달한 적 없음) - 답변 안 됨
         return false;
     },
 
@@ -468,29 +490,22 @@ const ReviewPanel = {
     checkInstanceAnswered(instance, type, qIdx) {
         try {
             if (type === 'fillblanks') {
-                // FillBlanks: answers 객체에서 blankId로 확인
                 if (instance.currentSet && instance.currentSet.blanks && instance.currentSet.blanks[qIdx]) {
                     const blankId = instance.currentSet.blanks[qIdx].id;
                     const answer = instance.answers[blankId];
-                    return answer !== undefined && answer !== null && answer.trim() !== '';
+                    return answer !== undefined && answer !== null && String(answer).trim() !== '';
                 }
                 return false;
             }
 
-            // 일반 문제형: answers 객체에서 확인
             if (instance.answers) {
-                // daily1, daily2: { 'q1': 2, 'q2': 3 }
                 const key1 = `q${qIdx + 1}`;
                 if (instance.answers[key1] !== undefined && instance.answers[key1] !== null) {
                     return true;
                 }
-
-                // academic: { 0: 'A', 1: 'B' }
                 if (instance.answers[qIdx] !== undefined && instance.answers[qIdx] !== null && instance.answers[qIdx] !== '') {
                     return true;
                 }
-
-                // response, conver, announcement, lecture: setId_q1 형태
                 if (instance.setData || instance.currentSetData) {
                     const setId = (instance.setData && instance.setData.id) || 
                                   (instance.currentSetData && instance.currentSetData.setId) || '';
@@ -505,7 +520,6 @@ const ReviewPanel = {
         } catch (e) {
             console.warn(`⚠️ [Review] 답변 확인 실패 (${type}, idx:${qIdx}):`, e);
         }
-
         return false;
     },
 
@@ -519,7 +533,6 @@ const ReviewPanel = {
         const totalQuestions = mc.config.totalQuestions;
         const sectionType = mc.config.sectionType;
         
-        // 헤더 텍스트 업데이트
         const headerEl = document.getElementById('reviewPanelTitle');
         if (headerEl) {
             const sectionName = sectionType === 'reading' ? 'Reading' : 'Listening';
@@ -532,7 +545,6 @@ const ReviewPanel = {
             const tr = document.createElement('tr');
             tr.className = item.isAnswered ? 'review-row answered' : 'review-row not-answered';
             
-            // 현재 풀고 있는 문제 하이라이트
             const currentGlobal = mc.getGlobalQuestionNumber(
                 mc.currentComponentInstance?.currentQuestion || 0
             );
@@ -540,34 +552,24 @@ const ReviewPanel = {
                 tr.classList.add('review-row-current');
             }
 
-            // 번호
             const tdNum = document.createElement('td');
             tdNum.className = 'review-cell-num';
             tdNum.textContent = item.number;
             tr.appendChild(tdNum);
 
-            // 문제 텍스트
-            const tdQuestion = document.createElement('td');
-            tdQuestion.className = 'review-cell-question';
-            // 긴 텍스트는 잘라서 표시
-            const maxLen = 80;
-            const displayText = item.questionText.length > maxLen 
-                ? item.questionText.substring(0, maxLen) + '...' 
-                : item.questionText;
-            tdQuestion.textContent = displayText;
-            tr.appendChild(tdQuestion);
+            const tdText = document.createElement('td');
+            tdText.className = 'review-cell-text';
+            tdText.textContent = item.questionText || `Question ${item.number}`;
+            tr.appendChild(tdText);
 
-            // 상태
             const tdStatus = document.createElement('td');
             tdStatus.className = 'review-cell-status';
-            if (item.isAnswered) {
-                tdStatus.innerHTML = '<span class="review-status-answered">✅ Answered</span>';
-            } else {
-                tdStatus.innerHTML = '<span class="review-status-not-answered">⬜ Not Answered</span>';
-            }
+            tdStatus.innerHTML = item.isAnswered 
+                ? '<span class="review-badge answered">Answered</span>'
+                : '<span class="review-badge not-answered">Not Answered</span>';
             tr.appendChild(tdStatus);
 
-            // 클릭 이벤트 - 해당 문제로 이동 (리스닝에서는 비활성화)
+            // 클릭 이벤트
             if (sectionType === 'listening') {
                 tr.style.cursor = 'default';
             } else {
@@ -594,7 +596,6 @@ const ReviewPanel = {
             const instance = this.getCurrentComponentInstance(item.componentType);
             if (instance && typeof instance.loadQuestion === 'function') {
                 instance.loadQuestion(targetQIdx);
-                // 진행률 업데이트
                 mc.updateCurrentQuestionInComponent(targetQIdx);
             }
             this.close();
@@ -602,10 +603,7 @@ const ReviewPanel = {
         }
 
         // 다른 컴포넌트로 이동
-        // _maxReachedCompIndex: 학생이 실제로 도달한 최대 컴포넌트 인덱스
-        // (Review로 뒤로 이동하면 currentComponentIndex가 줄어들지만,
-        //  실제 도달 기록은 유지해야 함)
-        const maxReached = this._maxReachedCompIndex ?? mc.currentComponentIndex;
+        const maxReached = this._maxReachedCompIndex;
         
         if (targetCompIndex > maxReached) {
             alert('아직 도달하지 않은 문제입니다. Next 버튼으로 진행해주세요.');
@@ -617,84 +615,51 @@ const ReviewPanel = {
     },
 
     /**
-     * 이전 컴포넌트로 이동 (답안 보존 방식 v2)
+     * ★★★ 컴포넌트 이동 (v3 — splice/pop 없는 안전한 이동)
      * 
-     * ★ 핵심 변경: componentResults / allAnswers를 삭제하지 않음
-     * 
-     * 기존 버그: splice로 답안을 삭제한 뒤 복원을 시도 → 답안 유실
-     * 수정 방법:
-     *   1) 현재 진행 중 컴포넌트의 답안을 먼저 수집하여 _reviewBackup에 보관
-     *   2) componentResults / allAnswers는 건드리지 않고 그대로 유지
-     *   3) 대상 컴포넌트를 재초기화한 뒤, 백업해둔 답안을 인스턴스에 복원
-     *   4) 학생이 다시 Next로 진행하면 onComponentComplete에서 기존 데이터를 덮어쓰기
-     *      (→ _patchedOnComponentComplete로 자동 처리)
-     * 
-     * 이로써 어느 방향으로 이동해도 답안이 보존됩니다.
+     * 핵심 원칙:
+     * 1. 현재 답안을 _answerStore에 저장
+     * 2. componentResults / allAnswers를 대상 지점으로 되감기 (splice)
+     *    → 되감기 해도 _answerStore에 원본이 있으므로 유실 없음
+     * 3. 대상 컴포넌트를 재초기화하고, _answerStore에서 답안 복원
+     * 4. onComponentComplete를 패치하여 다음 컴포넌트도 자동 복원
      */
     async navigateToPreviousComponent(mc, targetCompIndex, targetQIdx, targetType) {
         console.log(`📋 [Review] 컴포넌트 이동: ${mc.currentComponentIndex} → ${targetCompIndex}`);
 
-        // ── 0. 최대 도달 인덱스 갱신 ──
-        if (!this._maxReachedCompIndex || mc.currentComponentIndex > this._maxReachedCompIndex) {
-            this._maxReachedCompIndex = mc.currentComponentIndex;
-        }
+        // ── 0. 현재 상태를 _answerStore에 저장 ──
+        this._syncAnswerStore(mc);
 
-        // ── 1. 현재 진행 중 컴포넌트의 답안 수집 (아직 submit 안 된 상태) ──
-        const currentComp = mc.config.components[mc.currentComponentIndex];
-        const currentInstance = this.getCurrentComponentInstance(currentComp.type);
-        const currentInProgressAnswers = currentInstance 
-            ? this.collectCurrentAnswers(currentInstance, currentComp)
-            : [];
+        console.log(`📋 [Review] _answerStore 백업 완료:`, Object.keys(this._answerStore).map(k => 
+            `[${k}]:${this._answerStore[k].type}(${this._answerStore[k].answers.length}개)`
+        ).join(', '));
 
-        // ── 2. 모든 컴포넌트의 답안을 _reviewBackup에 통합 보관 ──
-        //    componentResults(완료된 컴포넌트) + 현재 진행 중 답안
-        if (!this._reviewBackup) {
-            this._reviewBackup = {};
-        }
-        // 이미 완료된 컴포넌트들의 답안 백업
-        mc.componentResults.forEach((result, idx) => {
-            if (result && result.answers) {
-                this._reviewBackup[idx] = {
-                    type: result.componentType,
-                    answers: JSON.parse(JSON.stringify(result.answers))
-                };
-            }
-        });
-        // 현재 진행 중 컴포넌트 답안 백업
-        if (currentInProgressAnswers.length > 0) {
-            this._reviewBackup[mc.currentComponentIndex] = {
-                type: currentComp.type,
-                answers: JSON.parse(JSON.stringify(currentInProgressAnswers))
-            };
-        }
+        // ── 1. 대상 컴포넌트의 답안 추출 ──
+        const targetStore = this._answerStore[targetCompIndex];
+        const savedAnswers = targetStore ? targetStore.answers : [];
+        console.log(`📋 [Review] 대상(comp ${targetCompIndex}) 저장된 답안: ${savedAnswers.length}개`);
 
-        console.log(`📋 [Review] 백업 완료:`, Object.keys(this._reviewBackup).length, '개 컴포넌트');
-
-        // ── 3. 대상 컴포넌트의 답안 추출 (백업에서) ──
-        const targetBackup = this._reviewBackup[targetCompIndex];
-        const savedAnswers = targetBackup ? targetBackup.answers : [];
-        console.log(`📋 [Review] 대상 컴포넌트 백업 답안:`, savedAnswers.length, '개');
-
-        // ── 4. componentResults / allAnswers를 대상 지점으로 되감기 ──
-        //    대상 컴포넌트부터 다시 풀게 되므로, 해당 지점까지만 유지
-        //    (삭제가 아니라, 대상 이후 것들은 _reviewBackup에 이미 보관됨)
+        // ── 2. componentResults / allAnswers를 대상 지점으로 되감기 ──
+        //    (onComponentComplete의 push 로직과 호환하기 위해 필수)
+        //    _answerStore에 원본이 있으므로 유실 걱정 없음
         if (mc.componentResults.length > targetCompIndex) {
             mc.componentResults.splice(targetCompIndex);
+            console.log(`📋 [Review] componentResults를 ${targetCompIndex}개로 잘라냄`);
         }
-        // allAnswers도 대상 컴포넌트 시작 지점까지만 유지
         let answersBeforeTarget = 0;
         for (let i = 0; i < targetCompIndex; i++) {
             answersBeforeTarget += mc.config.components[i].questionsPerSet;
         }
         if (mc.allAnswers.length > answersBeforeTarget) {
             mc.allAnswers.splice(answersBeforeTarget);
+            console.log(`📋 [Review] allAnswers를 ${answersBeforeTarget}개로 잘라냄`);
         }
 
-        // ── 5. 컴포넌트 인덱스 되돌리기 ──
+        // ── 3. 컴포넌트 인덱스 이동 ──
         mc.currentComponentIndex = targetCompIndex;
         mc.currentQuestionNumber = answersBeforeTarget;
 
-        // ── 6. 대상 컴포넌트 로드 ──
+        // ── 4. 대상 컴포넌트 로드 ──
         const targetComp = mc.config.components[targetCompIndex];
         mc.updateProgress();
         mc.updateHeaderTitle(targetComp.type);
@@ -732,33 +697,30 @@ const ReviewPanel = {
                 break;
         }
 
-        // 비동기 로드 대기
+        // ── 5. 답안 복원 (init 완료 후) ──
         await new Promise(resolve => setTimeout(resolve, 300));
-
-        // ── 7. 백업한 답안을 새 인스턴스에 복원 ──
         this.restoreAnswersToInstance(targetComp.type, savedAnswers, targetComp);
 
-        // ── 8. 대상 문제로 이동 (loadQuestion이 UI 복원 포함) ──
+        // ── 6. 대상 문제로 이동 ──
         const instance = this.getCurrentComponentInstance(targetComp.type);
         if (instance && typeof instance.loadQuestion === 'function') {
             instance.loadQuestion(targetQIdx);
             mc.updateCurrentQuestionInComponent(targetQIdx);
         }
 
-        // ── 9. 이후 컴포넌트 답안 자동 복원 패치 ──
-        //    학생이 Next → onComponentComplete로 다음 컴포넌트에 진입할 때
-        //    _reviewBackup에 보관된 답안을 자동 복원
+        // ── 7. onComponentComplete 패치 (다음 컴포넌트 자동 복원) ──
         this._patchOnComponentComplete(mc);
 
-        console.log(`📋 [Review] 이동 완료 — 답안 복원됨`);
+        console.log(`📋 [Review] 이동 완료`);
         this.close();
     },
 
     /**
-     * onComponentComplete 패치: 다음 컴포넌트 로드 시 백업 답안 자동 복원
+     * ★ onComponentComplete 패치: 다음 컴포넌트 진입 시 _answerStore에서 자동 복원
      * 
-     * 학생이 Review로 뒤로 이동한 뒤 → Next로 다시 앞으로 진행하면
-     * 새로 초기화된 컴포넌트에 _reviewBackup의 답안을 자동으로 넣어줌
+     * 패치 내용:
+     * - 원본 onComponentComplete 실행 후
+     * - 다음 컴포넌트 인덱스가 _answerStore에 있으면 자동 복원
      */
     _patchOnComponentComplete(mc) {
         // 이미 패치했으면 스킵
@@ -769,32 +731,45 @@ const ReviewPanel = {
         const self = this;
 
         mc.onComponentComplete = function(componentResult) {
-            // 원본 로직 실행 (allAnswers push, componentResults push, 다음 컴포넌트 로드)
+            // ★ 현재 컴포넌트의 답안을 _answerStore에 저장 (submit 된 최종 버전)
+            const currentIdx = mc.currentComponentIndex;
+            const currentComp = mc.config.components[currentIdx];
+            if (currentComp && componentResult && componentResult.answers) {
+                self._answerStore[currentIdx] = {
+                    type: currentComp.type,
+                    answers: JSON.parse(JSON.stringify(componentResult.answers))
+                };
+            }
+
+            // 원본 로직 실행 (push → currentComponentIndex++ → loadNextComponent)
             originalOnComplete(componentResult);
 
-            // 다음 컴포넌트에 백업 답안 복원
+            // 다음 컴포넌트에 _answerStore 답안 복원
             const nextIndex = mc.currentComponentIndex;
-            if (self._reviewBackup && self._reviewBackup[nextIndex]) {
-                const backup = self._reviewBackup[nextIndex];
+            if (self._answerStore[nextIndex]) {
+                const store = self._answerStore[nextIndex];
                 const nextComp = mc.config.components[nextIndex];
                 if (nextComp) {
-                    console.log(`📋 [Review] 자동 복원: 컴포넌트 ${nextIndex} (${backup.type})`);
-                    // 약간의 딜레이 후 복원 (init 완료 대기)
+                    console.log(`📋 [Review] 자동 복원 시작: 컴포넌트 ${nextIndex} (${store.type}), 답안 ${store.answers.length}개`);
                     setTimeout(() => {
-                        self.restoreAnswersToInstance(nextComp.type, backup.answers, nextComp);
-                        // 현재 문제의 UI도 갱신
+                        self.restoreAnswersToInstance(nextComp.type, store.answers, nextComp);
+                        // UI 갱신
                         const inst = self.getCurrentComponentInstance(nextComp.type);
                         if (inst && typeof inst.loadQuestion === 'function' && inst.currentQuestion !== undefined) {
                             inst.loadQuestion(inst.currentQuestion);
                         }
-                    }, 400);
+                    }, 500);
                 }
             }
         };
     },
 
     /**
-     * 백업한 답안을 새로 생성된 컴포넌트 인스턴스에 복원
+     * ★★★ 백업한 답안을 새 인스턴스에 복원
+     * 
+     * 두 가지 답안 형태를 처리:
+     * A) componentResults 기반: { blankId: 'b1', userAnswer: 'fr', ... } (객체 배열)
+     * B) collectCurrentAnswers 기반: 'fr' (문자열 배열)
      */
     restoreAnswersToInstance(type, savedAnswers, comp) {
         if (!savedAnswers || savedAnswers.length === 0) {
@@ -802,47 +777,53 @@ const ReviewPanel = {
             return;
         }
 
-        console.log(`📋 [Review] 답안 복원 시작: type=${type}, 답안 ${savedAnswers.length}개, 첫번째:`, savedAnswers[0]);
+        console.log(`📋 [Review] 답안 복원 시작: type=${type}, 답안 ${savedAnswers.length}개`);
 
         try {
             if (type === 'fillblanks') {
                 const instance = window.currentFillBlanksComponent;
-                if (instance && instance.currentSet && instance.currentSet.blanks) {
-                    // ★ FillBlanks 복원: 두 가지 형태의 답안 처리
-                    // 1) componentResults에서 온 경우: { blankId: 'b1', userAnswer: 'fr', ... } (startIndex 정렬)
-                    // 2) collectCurrentAnswers에서 온 경우: 'fr' (blanks 배열 순서)
-                    
-                    const hasBlankId = savedAnswers.some(a => a && typeof a === 'object' && a.blankId);
-                    
-                    if (hasBlankId) {
-                        // blankId로 정확 매칭 (정렬 순서 무관)
-                        savedAnswers.forEach((ans) => {
-                            if (!ans || typeof ans !== 'object' || !ans.blankId) return;
-                            const userAns = ans.userAnswer || ans.answer || '';
-                            if (!userAns) return;
-                            
-                            instance.answers[ans.blankId] = userAns;
-                            const blank = instance.currentSet.blanks.find(b => b.id === ans.blankId);
-                            if (blank) {
-                                this.restoreFillBlanksUI(blank, userAns, instance);
-                            }
-                        });
-                    } else {
-                        // blanks 배열 인덱스 순서로 매칭
-                        savedAnswers.forEach((ans, idx) => {
-                            const blank = instance.currentSet.blanks[idx];
-                            if (!blank) return;
-                            const userAns = (typeof ans === 'string') ? ans : 
-                                           (ans && typeof ans === 'object') ? (ans.userAnswer || ans.answer || '') : '';
-                            if (!userAns) return;
-                            
-                            instance.answers[blank.id] = userAns;
-                            this.restoreFillBlanksUI(blank, userAns, instance);
-                        });
-                    }
-
-                    console.log(`📋 [Review] FillBlanks 답안 복원 완료:`, Object.keys(instance.answers).length, '개');
+                if (!instance || !instance.currentSet || !instance.currentSet.blanks) {
+                    console.warn('⚠️ [Review] FillBlanks 인스턴스/currentSet/blanks 없음');
+                    return;
                 }
+
+                const blanks = instance.currentSet.blanks;
+                
+                // 답안 형태 감지
+                const hasBlankId = savedAnswers.some(a => a && typeof a === 'object' && a.blankId);
+                
+                if (hasBlankId) {
+                    // 형태 A: blankId 기반 객체 → blankId로 정확 매칭
+                    savedAnswers.forEach((ans) => {
+                        if (!ans || typeof ans !== 'object' || !ans.blankId) return;
+                        const userAns = ans.userAnswer || ans.answer || '';
+                        if (!userAns) return;
+                        
+                        instance.answers[ans.blankId] = userAns;
+                        const blank = blanks.find(b => String(b.id) === String(ans.blankId));
+                        if (blank) {
+                            this.restoreFillBlanksUI(blank, userAns, instance);
+                        } else {
+                            console.warn(`⚠️ [Review] blankId=${ans.blankId} 매칭 실패, blanks:`, blanks.map(b=>b.id));
+                        }
+                    });
+                } else {
+                    // 형태 B: 인덱스 기반 문자열 → blanks 배열 순서로 매칭
+                    savedAnswers.forEach((ans, idx) => {
+                        const blank = blanks[idx];
+                        if (!blank) return;
+                        const userAns = (typeof ans === 'string') ? ans : 
+                                       (ans && typeof ans === 'object') ? (ans.userAnswer || ans.answer || '') : '';
+                        if (!userAns) return;
+                        
+                        instance.answers[blank.id] = userAns;
+                        this.restoreFillBlanksUI(blank, userAns, instance);
+                    });
+                }
+
+                console.log(`📋 [Review] FillBlanks 답안 복원 완료:`, Object.keys(instance.answers).length, '개');
+                console.log(`📋 [Review] FillBlanks answers:`, JSON.stringify(instance.answers));
+
             } else {
                 // daily1, daily2, academic
                 const instanceMap = {
@@ -851,27 +832,26 @@ const ReviewPanel = {
                     'academic': window.currentAcademicComponent
                 };
                 const instance = instanceMap[type];
-                if (instance) {
-                    savedAnswers.forEach((ans, idx) => {
-                        const val = (typeof ans === 'object') 
-                            ? (ans.userAnswer || ans.answer || '') 
-                            : ans;
-
-                        if (type === 'academic') {
-                            // academic: answers[idx] = 'A'/'B'/'C'/'D'
-                            if (val !== undefined && val !== null && val !== '') {
-                                instance.answers[idx] = val;
-                            }
-                        } else {
-                            // daily1/daily2: answers['q1'] = 1, answers['q2'] = 3
-                            const key = `q${idx + 1}`;
-                            if (val !== undefined && val !== null && val !== '') {
-                                instance.answers[key] = val;
-                            }
-                        }
-                    });
-                    console.log(`📋 [Review] ${type} 답안 복원 완료:`, instance.answers);
+                if (!instance) {
+                    console.warn(`⚠️ [Review] ${type} 인스턴스 없음`);
+                    return;
                 }
+
+                savedAnswers.forEach((ans, idx) => {
+                    const val = (typeof ans === 'object') 
+                        ? (ans.userAnswer || ans.answer || '') 
+                        : ans;
+
+                    if (val === undefined || val === null || val === '') return;
+
+                    if (type === 'academic') {
+                        instance.answers[idx] = val;
+                    } else {
+                        const key = `q${idx + 1}`;
+                        instance.answers[key] = val;
+                    }
+                });
+                console.log(`📋 [Review] ${type} 답안 복원 완료:`, JSON.stringify(instance.answers));
             }
         } catch (e) {
             console.warn(`⚠️ [Review] 답안 복원 실패:`, e);
@@ -883,17 +863,20 @@ const ReviewPanel = {
      */
     restoreFillBlanksUI(blank, userAnswer, instance) {
         try {
+            if (!userAnswer || typeof userAnswer !== 'string') {
+                console.warn(`⚠️ [Review] userAnswer가 유효하지 않음:`, userAnswer);
+                return;
+            }
             const chars = userAnswer.split('');
             const setId = instance && instance.currentSet ? instance.currentSet.id : '';
             
-            console.log(`📋 [Review] FillBlanks UI 복원 시도: blank.id=${blank.id}, answer="${userAnswer}", setId=${setId}, chars=${chars.length}개`);
-            
             let restoredCount = 0;
             chars.forEach((char, charIdx) => {
-                // 정확한 ID로 먼저 시도: blank_setId_blankId_charIdx
                 let input = null;
-                const exactId = `blank_${setId}_${blank.id}_${charIdx}`;
+                
+                // 정확한 ID로 먼저 시도
                 if (setId) {
+                    const exactId = `blank_${setId}_${blank.id}_${charIdx}`;
                     input = document.getElementById(exactId);
                 }
                 // 폴백: 와일드카드 검색
@@ -901,7 +884,7 @@ const ReviewPanel = {
                     const inputs = document.querySelectorAll(`input[id*="_${blank.id}_${charIdx}"]`);
                     input = inputs[0] || null;
                 }
-                // 폴백2: 더 넓은 범위
+                // 폴백2: blank.id로 모든 입력 필드를 찾고 인덱스로 접근
                 if (!input) {
                     const inputs = document.querySelectorAll(`input[id*="_${blank.id}_"]`);
                     input = inputs[charIdx] || null;
@@ -910,17 +893,14 @@ const ReviewPanel = {
                 if (input) {
                     input.value = char;
                     input.classList.add('filled');
-                    // 입력 필드 크기 조정 (FillBlanksComponent 스타일 유지)
-                    input.style.width = '';
-                    input.style.padding = '';
                     restoredCount++;
-                } else {
-                    console.warn(`⚠️ [Review] input 못 찾음: exactId=${exactId}`);
                 }
             });
-            console.log(`📋 [Review] FillBlanks UI: ${restoredCount}/${chars.length} 글자 복원됨`);
+            
+            if (restoredCount < chars.length) {
+                console.warn(`⚠️ [Review] FillBlanks UI 부분 복원: ${restoredCount}/${chars.length}, blank.id=${blank.id}`);
+            }
         } catch (e) {
-            // UI 복원 실패해도 답안 데이터는 보존됨
             console.warn(`⚠️ [Review] FillBlanks UI 복원 실패:`, e);
         }
     },
@@ -942,7 +922,6 @@ const ReviewPanel = {
             }
         } else if (instance.answers) {
             for (let i = 0; i < comp.questionsPerSet; i++) {
-                // 다양한 키 형태 시도
                 const key1 = `q${i + 1}`;
                 const answer = instance.answers[key1] ?? instance.answers[i] ?? null;
                 answers.push(answer);
@@ -953,7 +932,7 @@ const ReviewPanel = {
     },
 
     /**
-     * Summary 업데이트 (Answered / Not Answered 개수)
+     * Summary 업데이트
      */
     updateSummary(reviewData) {
         const summaryEl = document.getElementById('reviewSummary');
@@ -970,13 +949,11 @@ const ReviewPanel = {
 
     /**
      * Review 버튼 표시/숨김
-     * 1차 풀이에서만 표시
      */
     updateButtonVisibility() {
         const buttons = document.querySelectorAll('.review-btn');
         const fc = window.FlowController;
         
-        // 1차 풀이 + 리딩/리스닝에서만 표시
         const mc = window.moduleController;
         const sectionType = mc?.config?.sectionType || (fc && fc.sectionType);
         const attemptNumber = (fc && fc.currentAttemptNumber) || 1;
@@ -996,7 +973,6 @@ window.openReviewPanel = function() { ReviewPanel.open(); };
 window.closeReviewPanel = function() { ReviewPanel.close(); };
 
 // Review 버튼 자동 표시/숨김 감시
-// moduleController가 생성될 때 버튼을 표시하고, 파괴될 때 숨김
 (function() {
     let lastModuleController = null;
     
@@ -1011,4 +987,4 @@ window.closeReviewPanel = function() { ReviewPanel.close(); };
     }, 500);
 })();
 
-console.log('✅ review-panel.js 로드 완료');
+console.log('✅ review-panel.js v3 로드 완료');

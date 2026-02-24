@@ -579,6 +579,12 @@ class ModuleController {
     
     /**
      * 이전 컴포넌트로 이동 (Back 시 현재 컴포넌트 첫 문제에서 호출)
+     * 
+     * ★ v3: ReviewPanel._answerStore 활용
+     *   1) 현재 컴포넌트의 답안을 _answerStore에 저장
+     *   2) 이전 컴포넌트 결과를 _answerStore에 저장 (pop 전)
+     *   3) componentResults/allAnswers를 prevIndex 지점까지 잘라내기
+     *   4) 이전 컴포넌트 재초기화 → _answerStore에서 복원
      */
     goToPreviousComponent() {
         if (this.currentComponentIndex <= 0) {
@@ -591,38 +597,43 @@ class ModuleController {
         
         console.log(`⬅️ [Nav] 이전 컴포넌트로 이동: ${prevComponent.type} (Set ${prevComponent.setId})`);
         
-        // ★ 이전 컴포넌트의 답안을 백업 (삭제 전!)
+        // ★ ReviewPanel._answerStore에 현재 + 이전 컴포넌트 답안 저장
+        const rp = typeof ReviewPanel !== 'undefined' ? ReviewPanel : null;
+        if (rp) {
+            rp._syncAnswerStore(this);
+        }
+        
+        // ★ 이전 컴포넌트의 답안을 _answerStore에서 가져오기 (복원용)
         let backedUpAnswers = null;
-        if (this.componentResults.length > prevIndex) {
-            const result = this.componentResults[this.componentResults.length - 1];
+        if (rp && rp._answerStore[prevIndex]) {
+            backedUpAnswers = JSON.parse(JSON.stringify(rp._answerStore[prevIndex].answers));
+            console.log(`💾 [Nav] _answerStore에서 답안 가져옴: ${backedUpAnswers.length}개`);
+        } else if (this.componentResults.length > prevIndex) {
+            // 폴백: componentResults에서 가져오기
+            const result = this.componentResults[prevIndex];
             if (result && result.answers) {
                 backedUpAnswers = JSON.parse(JSON.stringify(result.answers));
-                console.log(`💾 [Nav] 답안 백업: ${backedUpAnswers.length}개`);
+                console.log(`💾 [Nav] componentResults에서 답안 가져옴: ${backedUpAnswers.length}개`);
             }
         }
         
-        // 이전 컴포넌트의 결과를 componentResults와 allAnswers에서 제거
-        // (이전 컴포넌트가 submit되어 onComponentComplete로 추가된 데이터)
+        // componentResults / allAnswers를 prevIndex 지점까지 잘라내기
         if (this.componentResults.length > prevIndex) {
-            const removedResult = this.componentResults.pop();
-            console.log(`🗑️ 이전 컴포넌트 결과 제거:`, removedResult?.componentType);
-            
-            // allAnswers에서 해당 컴포넌트의 답변 수만큼 제거
-            if (removedResult?.answers) {
-                this.allAnswers.splice(-removedResult.answers.length);
-                console.log(`🗑️ allAnswers에서 ${removedResult.answers.length}개 제거`);
-            }
+            this.componentResults.splice(prevIndex);
+            console.log(`🗑️ [Nav] componentResults를 ${prevIndex}개로 잘라냄`);
+        }
+        let answersBeforePrev = 0;
+        for (let i = 0; i < prevIndex; i++) {
+            answersBeforePrev += this.config.components[i].questionsPerSet;
+        }
+        if (this.allAnswers.length > answersBeforePrev) {
+            this.allAnswers.splice(answersBeforePrev);
+            console.log(`🗑️ [Nav] allAnswers를 ${answersBeforePrev}개로 잘라냄`);
         }
         
         // 컴포넌트 인덱스 되돌리기
         this.currentComponentIndex = prevIndex;
-        
-        // 완료된 문제 수 재계산
-        let completedQuestions = 0;
-        for (let i = 0; i < prevIndex; i++) {
-            completedQuestions += this.config.components[i].questionsPerSet;
-        }
-        this.currentQuestionNumber = completedQuestions;
+        this.currentQuestionNumber = answersBeforePrev;
         
         // 이전 컴포넌트의 마지막 문제로 로드
         this.loadPreviousComponentAtLastQuestion(prevComponent, backedUpAnswers);
@@ -630,6 +641,9 @@ class ModuleController {
     
     /**
      * 이전 컴포넌트를 마지막 문제에서 시작하도록 로드
+     * 
+     * ★ v3: ReviewPanel.restoreAnswersToInstance() 사용
+     *   - FillBlanks / Daily1 / Daily2 / Academic 모두 동일한 복원 로직
      */
     async loadPreviousComponentAtLastQuestion(prevComponent, backedUpAnswers = null) {
         const { type, setId, questionsPerSet } = prevComponent;
@@ -655,34 +669,6 @@ class ModuleController {
                 if (window.initFillBlanksComponent) {
                     await window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 }
-                // ★ FillBlanks 답안 복원: 재초기화로 answers={}가 된 후 백업에서 복원
-                if (backedUpAnswers && window.currentFillBlanksComponent) {
-                    const fb = window.currentFillBlanksComponent;
-                    const hasBlankId = backedUpAnswers.some(a => a && typeof a === 'object' && a.blankId);
-                    if (hasBlankId && fb.currentSet && fb.currentSet.blanks) {
-                        backedUpAnswers.forEach(ans => {
-                            if (!ans || !ans.blankId) return;
-                            const userAns = ans.userAnswer || ans.answer || '';
-                            if (!userAns) return;
-                            fb.answers[ans.blankId] = userAns;
-                            // UI 복원: input 필드에 값 채우기
-                            const blank = fb.currentSet.blanks.find(b => b.id === ans.blankId);
-                            if (blank) {
-                                const chars = userAns.split('');
-                                chars.forEach((char, ci) => {
-                                    const inputId = `blank_${fb.currentSet.id}_${blank.id}_${ci}`;
-                                    const input = document.getElementById(inputId);
-                                    if (input) {
-                                        input.value = char;
-                                        input.classList.add('filled');
-                                    }
-                                });
-                            }
-                        });
-                        console.log(`✅ [Nav] FillBlanks 답안 복원 완료:`, Object.keys(fb.answers).length, '개');
-                    }
-                }
-                // fillblanks는 세트 전체가 한 화면이므로 마지막 문제 이동 불필요
                 this.updateNavigationButtons(type, 0, questionsPerSet);
                 break;
             case 'daily1':
@@ -690,19 +676,11 @@ class ModuleController {
                 if (window.initDaily1Component) {
                     await window.initDaily1Component(setId, this.onComponentComplete.bind(this), initOptions);
                 }
-                if (window.currentDaily1Component && lastQuestionIndex > 0) {
-                    console.log(`⬅️ Daily1 마지막 문제로 이동: index ${lastQuestionIndex}`);
-                    window.currentDaily1Component.loadQuestion(lastQuestionIndex);
-                }
                 break;
             case 'daily2':
                 this.currentComponentInstance = window.Daily2Component;
                 if (window.initDaily2Component) {
                     await window.initDaily2Component(setId, this.onComponentComplete.bind(this), initOptions);
-                }
-                if (window.currentDaily2Component && lastQuestionIndex > 0) {
-                    console.log(`⬅️ Daily2 마지막 문제로 이동: index ${lastQuestionIndex}`);
-                    window.currentDaily2Component.loadQuestion(lastQuestionIndex);
                 }
                 break;
             case 'academic':
@@ -710,11 +688,38 @@ class ModuleController {
                 if (window.initAcademicComponent) {
                     await window.initAcademicComponent(setId, this.onComponentComplete.bind(this), initOptions);
                 }
-                if (window.currentAcademicComponent && lastQuestionIndex > 0) {
-                    console.log(`⬅️ Academic 마지막 문제로 이동: index ${lastQuestionIndex}`);
-                    window.currentAcademicComponent.loadQuestion(lastQuestionIndex);
-                }
                 break;
+        }
+        
+        // ★ 답안 복원: ReviewPanel.restoreAnswersToInstance() 사용
+        if (backedUpAnswers && backedUpAnswers.length > 0) {
+            const rp = typeof ReviewPanel !== 'undefined' ? ReviewPanel : null;
+            if (rp) {
+                // 약간의 딜레이로 init 완료 대기
+                await new Promise(resolve => setTimeout(resolve, 200));
+                rp.restoreAnswersToInstance(type, backedUpAnswers, prevComponent);
+                console.log(`✅ [Nav] ${type} 답안 복원 완료 (ReviewPanel.restoreAnswersToInstance 사용)`);
+            }
+        }
+        
+        // Daily/Academic: 마지막 문제로 이동
+        if (type !== 'fillblanks') {
+            const instanceMap = {
+                'daily1': window.currentDaily1Component,
+                'daily2': window.currentDaily2Component,
+                'academic': window.currentAcademicComponent
+            };
+            const inst = instanceMap[type];
+            if (inst && lastQuestionIndex > 0 && typeof inst.loadQuestion === 'function') {
+                console.log(`⬅️ ${type} 마지막 문제로 이동: index ${lastQuestionIndex}`);
+                inst.loadQuestion(lastQuestionIndex);
+            }
+        }
+        
+        // ★ onComponentComplete 패치 (다음 컴포넌트 자동 복원)
+        const rp2 = typeof ReviewPanel !== 'undefined' ? ReviewPanel : null;
+        if (rp2) {
+            rp2._patchOnComponentComplete(this);
         }
     }
     
