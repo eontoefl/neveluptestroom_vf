@@ -2,10 +2,41 @@
  * 입문서 정독 PDF 모달 관련 함수
  */
 
+// ── 데드라인 연장 캐시 (페이지 로드 시 Supabase에서 가져옴) ──
+window._deadlineExtensions = [];
+
+/**
+ * 데드라인 연장 데이터 로드 (페이지 로드 시 1회 호출)
+ * tr_deadline_extensions 테이블에서 현재 사용자의 연장 기록을 캐시
+ */
+async function loadDeadlineExtensions() {
+    try {
+        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+        if (!user || !user.id) {
+            console.log('📅 [연장] 사용자 정보 없음 — 로드 생략');
+            return;
+        }
+        if (typeof supabaseSelect !== 'function') {
+            console.log('📅 [연장] supabaseSelect 없음 — 로드 생략');
+            return;
+        }
+        var rows = await supabaseSelect(
+            'tr_deadline_extensions',
+            'user_id=eq.' + user.id + '&select=original_date,extra_days'
+        );
+        window._deadlineExtensions = rows || [];
+        console.log('📅 [연장] 로드 완료:', window._deadlineExtensions.length + '건');
+    } catch (e) {
+        console.warn('📅 [연장] 로드 실패:', e);
+        window._deadlineExtensions = [];
+    }
+}
+
 /**
  * 4시 마감 체크 (데드라인 방식)
  * N일 과제 → N+1일 04:00 KST 마감
  * 미리 하는 건 OK, 지난 과제만 차단
+ * ★ tr_deadline_extensions에 연장 기록이 있으면 extra_days만큼 마감 연장
  * 
  * @returns {boolean} true면 마감 지남 (과제 시작 불가)
  */
@@ -48,6 +79,18 @@ function isTaskDeadlinePassed() {
     var ty = taskDate.getFullYear();
     if (ty === 2026 && tm === 1 && td === 22) {
         deadline = new Date(2026, 1, 24, 4, 0, 0, 0);
+    }
+
+    // ★ tr_deadline_extensions 연장 체크
+    var taskDateStr = taskDate.getFullYear() + '-' +
+        String(taskDate.getMonth() + 1).padStart(2, '0') + '-' +
+        String(taskDate.getDate()).padStart(2, '0');
+    var extensions = window._deadlineExtensions || [];
+    var ext = extensions.find(function(e) { return e.original_date === taskDateStr; });
+    if (ext) {
+        var extraDays = ext.extra_days || 1;
+        deadline.setDate(deadline.getDate() + extraDays);
+        console.log('📅 [연장] ' + taskDateStr + ' → +' + extraDays + '일 → 새 마감:', deadline.toLocaleString());
     }
 
     var now = new Date();
@@ -164,7 +207,7 @@ async function submitIntroBook() {
     closeIntroBookModal();
 }
 
-// 모달 외부 클릭 시 닫기
+// 모달 외부 클릭 시 닫기 + 데드라인 연장 데이터 로드
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('introBookModal');
     if (modal) {
@@ -174,6 +217,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ★ 데드라인 연장 데이터 미리 로드 (캐시)
+    setTimeout(function() {
+        if (typeof loadDeadlineExtensions === 'function') {
+            loadDeadlineExtensions();
+        }
+    }, 500);
 });
 
 /**
