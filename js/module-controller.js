@@ -591,6 +591,16 @@ class ModuleController {
         
         console.log(`⬅️ [Nav] 이전 컴포넌트로 이동: ${prevComponent.type} (Set ${prevComponent.setId})`);
         
+        // ★ 이전 컴포넌트의 답안을 백업 (삭제 전!)
+        let backedUpAnswers = null;
+        if (this.componentResults.length > prevIndex) {
+            const result = this.componentResults[this.componentResults.length - 1];
+            if (result && result.answers) {
+                backedUpAnswers = JSON.parse(JSON.stringify(result.answers));
+                console.log(`💾 [Nav] 답안 백업: ${backedUpAnswers.length}개`);
+            }
+        }
+        
         // 이전 컴포넌트의 결과를 componentResults와 allAnswers에서 제거
         // (이전 컴포넌트가 submit되어 onComponentComplete로 추가된 데이터)
         if (this.componentResults.length > prevIndex) {
@@ -615,13 +625,13 @@ class ModuleController {
         this.currentQuestionNumber = completedQuestions;
         
         // 이전 컴포넌트의 마지막 문제로 로드
-        this.loadPreviousComponentAtLastQuestion(prevComponent);
+        this.loadPreviousComponentAtLastQuestion(prevComponent, backedUpAnswers);
     }
     
     /**
      * 이전 컴포넌트를 마지막 문제에서 시작하도록 로드
      */
-    async loadPreviousComponentAtLastQuestion(prevComponent) {
+    async loadPreviousComponentAtLastQuestion(prevComponent, backedUpAnswers = null) {
         const { type, setId, questionsPerSet } = prevComponent;
         const lastQuestionIndex = questionsPerSet - 1;
         
@@ -644,6 +654,33 @@ class ModuleController {
                 this.currentComponentInstance = window.FillBlanksComponent;
                 if (window.initFillBlanksComponent) {
                     await window.initFillBlanksComponent(setId, this.onComponentComplete.bind(this), initOptions);
+                }
+                // ★ FillBlanks 답안 복원: 재초기화로 answers={}가 된 후 백업에서 복원
+                if (backedUpAnswers && window.currentFillBlanksComponent) {
+                    const fb = window.currentFillBlanksComponent;
+                    const hasBlankId = backedUpAnswers.some(a => a && typeof a === 'object' && a.blankId);
+                    if (hasBlankId && fb.currentSet && fb.currentSet.blanks) {
+                        backedUpAnswers.forEach(ans => {
+                            if (!ans || !ans.blankId) return;
+                            const userAns = ans.userAnswer || ans.answer || '';
+                            if (!userAns) return;
+                            fb.answers[ans.blankId] = userAns;
+                            // UI 복원: input 필드에 값 채우기
+                            const blank = fb.currentSet.blanks.find(b => b.id === ans.blankId);
+                            if (blank) {
+                                const chars = userAns.split('');
+                                chars.forEach((char, ci) => {
+                                    const inputId = `blank_${fb.currentSet.id}_${blank.id}_${ci}`;
+                                    const input = document.getElementById(inputId);
+                                    if (input) {
+                                        input.value = char;
+                                        input.classList.add('filled');
+                                    }
+                                });
+                            }
+                        });
+                        console.log(`✅ [Nav] FillBlanks 답안 복원 완료:`, Object.keys(fb.answers).length, '개');
+                    }
                 }
                 // fillblanks는 세트 전체가 한 화면이므로 마지막 문제 이동 불필요
                 this.updateNavigationButtons(type, 0, questionsPerSet);

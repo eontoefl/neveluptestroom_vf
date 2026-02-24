@@ -798,30 +798,49 @@ const ReviewPanel = {
      */
     restoreAnswersToInstance(type, savedAnswers, comp) {
         if (!savedAnswers || savedAnswers.length === 0) {
-            console.log(`📋 [Review] 복원할 답안 없음`);
+            console.log(`📋 [Review] 복원할 답안 없음 (type: ${type})`);
             return;
         }
+
+        console.log(`📋 [Review] 답안 복원 시작: type=${type}, 답안 ${savedAnswers.length}개, 첫번째:`, savedAnswers[0]);
 
         try {
             if (type === 'fillblanks') {
                 const instance = window.currentFillBlanksComponent;
                 if (instance && instance.currentSet && instance.currentSet.blanks) {
-                    savedAnswers.forEach((ans, idx) => {
-                        const blank = instance.currentSet.blanks[idx];
-                        if (!blank) return;
-
-                        let userAns = '';
-                        if (ans && typeof ans === 'object') {
-                            userAns = ans.userAnswer || ans.answer || '';
-                        } else if (typeof ans === 'string') {
-                            userAns = ans;
-                        }
-
-                        if (userAns) {
+                    // ★ FillBlanks 복원: 두 가지 형태의 답안 처리
+                    // 1) componentResults에서 온 경우: { blankId: 'b1', userAnswer: 'fr', ... } (startIndex 정렬)
+                    // 2) collectCurrentAnswers에서 온 경우: 'fr' (blanks 배열 순서)
+                    
+                    const hasBlankId = savedAnswers.some(a => a && typeof a === 'object' && a.blankId);
+                    
+                    if (hasBlankId) {
+                        // blankId로 정확 매칭 (정렬 순서 무관)
+                        savedAnswers.forEach((ans) => {
+                            if (!ans || typeof ans !== 'object' || !ans.blankId) return;
+                            const userAns = ans.userAnswer || ans.answer || '';
+                            if (!userAns) return;
+                            
+                            instance.answers[ans.blankId] = userAns;
+                            const blank = instance.currentSet.blanks.find(b => b.id === ans.blankId);
+                            if (blank) {
+                                this.restoreFillBlanksUI(blank, userAns, instance);
+                            }
+                        });
+                    } else {
+                        // blanks 배열 인덱스 순서로 매칭
+                        savedAnswers.forEach((ans, idx) => {
+                            const blank = instance.currentSet.blanks[idx];
+                            if (!blank) return;
+                            const userAns = (typeof ans === 'string') ? ans : 
+                                           (ans && typeof ans === 'object') ? (ans.userAnswer || ans.answer || '') : '';
+                            if (!userAns) return;
+                            
                             instance.answers[blank.id] = userAns;
                             this.restoreFillBlanksUI(blank, userAns, instance);
-                        }
-                    });
+                        });
+                    }
+
                     console.log(`📋 [Review] FillBlanks 답안 복원 완료:`, Object.keys(instance.answers).length, '개');
                 }
             } else {
@@ -867,13 +886,22 @@ const ReviewPanel = {
             const chars = userAnswer.split('');
             const setId = instance && instance.currentSet ? instance.currentSet.id : '';
             
+            console.log(`📋 [Review] FillBlanks UI 복원 시도: blank.id=${blank.id}, answer="${userAnswer}", setId=${setId}, chars=${chars.length}개`);
+            
+            let restoredCount = 0;
             chars.forEach((char, charIdx) => {
                 // 정확한 ID로 먼저 시도: blank_setId_blankId_charIdx
                 let input = null;
+                const exactId = `blank_${setId}_${blank.id}_${charIdx}`;
                 if (setId) {
-                    input = document.getElementById(`blank_${setId}_${blank.id}_${charIdx}`);
+                    input = document.getElementById(exactId);
                 }
                 // 폴백: 와일드카드 검색
+                if (!input) {
+                    const inputs = document.querySelectorAll(`input[id*="_${blank.id}_${charIdx}"]`);
+                    input = inputs[0] || null;
+                }
+                // 폴백2: 더 넓은 범위
                 if (!input) {
                     const inputs = document.querySelectorAll(`input[id*="_${blank.id}_"]`);
                     input = inputs[charIdx] || null;
@@ -882,8 +910,15 @@ const ReviewPanel = {
                 if (input) {
                     input.value = char;
                     input.classList.add('filled');
+                    // 입력 필드 크기 조정 (FillBlanksComponent 스타일 유지)
+                    input.style.width = '';
+                    input.style.padding = '';
+                    restoredCount++;
+                } else {
+                    console.warn(`⚠️ [Review] input 못 찾음: exactId=${exactId}`);
                 }
             });
+            console.log(`📋 [Review] FillBlanks UI: ${restoredCount}/${chars.length} 글자 복원됨`);
         } catch (e) {
             // UI 복원 실패해도 답안 데이터는 보존됨
             console.warn(`⚠️ [Review] FillBlanks UI 복원 실패:`, e);
