@@ -41,6 +41,9 @@ async function initFillBlanksComponent(setId, onCompleteCallback, initOptions = 
     
     // 초기화
     await currentFillBlanksComponent.init();
+    
+    // ★ window에 노출 (module-controller, review-panel에서 참조)
+    window.currentFillBlanksComponent = currentFillBlanksComponent;
 }
 
 /**
@@ -78,6 +81,9 @@ async function initReadingFillBlanks(setNumber) {
     
     // 초기화
     await currentFillBlanksComponent.init();
+    
+    // ★ window에 노출
+    window.currentFillBlanksComponent = currentFillBlanksComponent;
 }
 
 /**
