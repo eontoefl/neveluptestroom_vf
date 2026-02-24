@@ -35,6 +35,39 @@ const ReviewPanel = {
 
         console.log('📋 [Review] 패널 열기');
 
+        // ★ 최대 도달 인덱스 갱신 (패널 열 때마다)
+        if (this._maxReachedCompIndex === undefined || mc.currentComponentIndex > this._maxReachedCompIndex) {
+            this._maxReachedCompIndex = mc.currentComponentIndex;
+        }
+
+        // ★ 답안 백업 갱신 (패널 열 때마다 최신 상태 반영)
+        if (!this._reviewBackup) {
+            this._reviewBackup = {};
+        }
+        // 완료된 컴포넌트들의 답안 백업
+        mc.componentResults.forEach((result, idx) => {
+            if (result && result.answers) {
+                this._reviewBackup[idx] = {
+                    type: result.componentType,
+                    answers: JSON.parse(JSON.stringify(result.answers))
+                };
+            }
+        });
+        // 현재 진행 중 컴포넌트 답안 백업
+        const currentComp = mc.config.components[mc.currentComponentIndex];
+        if (currentComp) {
+            const currentInstance = this.getCurrentComponentInstance(currentComp.type);
+            if (currentInstance) {
+                const currentAnswers = this.collectCurrentAnswers(currentInstance, currentComp);
+                if (currentAnswers.length > 0) {
+                    this._reviewBackup[mc.currentComponentIndex] = {
+                        type: currentComp.type,
+                        answers: JSON.parse(JSON.stringify(currentAnswers))
+                    };
+                }
+            }
+        }
+
         // 패널 먼저 표시 (로딩 상태)
         const panel = document.getElementById('reviewPanel');
         if (panel) {
@@ -75,10 +108,15 @@ const ReviewPanel = {
         const reviewData = [];
         let globalQuestionNum = 0;
 
+        // ★ v2: _maxReachedCompIndex를 반영하여 이미 도달한 컴포넌트도 "완료"로 취급
+        const maxReached = this._maxReachedCompIndex ?? mc.currentComponentIndex;
+
         mc.config.components.forEach((comp, compIndex) => {
-            const isCompleted = compIndex < mc.currentComponentIndex;
             const isCurrent = compIndex === mc.currentComponentIndex;
-            const isFuture = compIndex > mc.currentComponentIndex;
+            // 현재보다 앞이거나, 이미 도달했던 컴포넌트(뒤로 이동 후에도)는 완료 취급
+            const isCompleted = compIndex < mc.currentComponentIndex || 
+                                (compIndex > mc.currentComponentIndex && compIndex <= maxReached);
+            const isFuture = compIndex > maxReached;
 
             // 컴포넌트 인스턴스 가져오기
             let instance = null;
@@ -375,9 +413,27 @@ const ReviewPanel = {
 
     /**
      * 답변 여부 확인
+     * 
+     * ★ v2: _reviewBackup이 있으면 우선 참조
+     *   (Review로 이동 후 allAnswers가 splice된 상태에서도 정확한 답변 여부 표시)
      */
     checkAnswered(comp, compIndex, qIdx, mc, instance, isCompleted, isCurrent) {
-        // 완료된 컴포넌트 - allAnswers에서 확인
+        // ── 1차: _reviewBackup에서 확인 (이동 후에도 정확) ──
+        if (this._reviewBackup && this._reviewBackup[compIndex]) {
+            const backup = this._reviewBackup[compIndex];
+            if (backup.answers && backup.answers[qIdx] !== undefined) {
+                const ans = backup.answers[qIdx];
+                if (ans && typeof ans === 'object') {
+                    const userAns = ans.userAnswer ?? ans.answer ?? '';
+                    return userAns !== undefined && userAns !== null && String(userAns).trim() !== '';
+                }
+                if (ans !== undefined && ans !== null && ans !== '') {
+                    return true;
+                }
+            }
+        }
+
+        // ── 2차: 완료된 컴포넌트 - allAnswers에서 확인 ──
         if (isCompleted) {
             let prevQuestions = 0;
             for (let i = 0; i < compIndex; i++) {
@@ -397,12 +453,12 @@ const ReviewPanel = {
             return false;
         }
 
-        // 현재 컴포넌트 - 인스턴스의 answers에서 확인
+        // ── 3차: 현재 컴포넌트 - 인스턴스의 answers에서 확인 ──
         if (isCurrent && instance) {
             return this.checkInstanceAnswered(instance, comp.type, qIdx);
         }
 
-        // 미래 컴포넌트 - 답변 안 됨
+        // 미래 컴포넌트 (도달한 적 없음) - 답변 안 됨
         return false;
     },
 
