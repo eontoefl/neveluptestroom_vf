@@ -545,15 +545,18 @@ const ReviewPanel = {
             return;
         }
 
-        // 다른 컴포넌트로 이동 - 현재 컴포넌트의 답변을 저장하고 대상 컴포넌트로 전환
-        // 현재는 이미 완료된(뒤로 갈 수 있는) 컴포넌트로의 이동만 지원
-        // 미래 컴포넌트로는 이동 불가 (아직 로드 안 됨)
-        if (targetCompIndex > mc.currentComponentIndex) {
+        // 다른 컴포넌트로 이동
+        // _maxReachedCompIndex: 학생이 실제로 도달한 최대 컴포넌트 인덱스
+        // (Review로 뒤로 이동하면 currentComponentIndex가 줄어들지만,
+        //  실제 도달 기록은 유지해야 함)
+        const maxReached = this._maxReachedCompIndex ?? mc.currentComponentIndex;
+        
+        if (targetCompIndex > maxReached) {
             alert('아직 도달하지 않은 문제입니다. Next 버튼으로 진행해주세요.');
             return;
         }
 
-        // 이전 컴포넌트로 이동: goToPreviousComponent를 반복 호출
+        // 이전 또는 이미 도달한 컴포넌트로 이동
         this.navigateToPreviousComponent(mc, targetCompIndex, targetQIdx, item.componentType);
     },
 
@@ -573,7 +576,12 @@ const ReviewPanel = {
      * 이로써 어느 방향으로 이동해도 답안이 보존됩니다.
      */
     async navigateToPreviousComponent(mc, targetCompIndex, targetQIdx, targetType) {
-        console.log(`📋 [Review] 이전 컴포넌트 이동: ${mc.currentComponentIndex} → ${targetCompIndex}`);
+        console.log(`📋 [Review] 컴포넌트 이동: ${mc.currentComponentIndex} → ${targetCompIndex}`);
+
+        // ── 0. 최대 도달 인덱스 갱신 ──
+        if (!this._maxReachedCompIndex || mc.currentComponentIndex > this._maxReachedCompIndex) {
+            this._maxReachedCompIndex = mc.currentComponentIndex;
+        }
 
         // ── 1. 현재 진행 중 컴포넌트의 답안 수집 (아직 submit 안 된 상태) ──
         const currentComp = mc.config.components[mc.currentComponentIndex];
