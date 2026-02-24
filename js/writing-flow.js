@@ -60,6 +60,11 @@ const WritingFlow = {
         this.moduleConfig = moduleConfig;
         this.currentStep = 1;
         
+        // ★ AutoSave 라이팅 통합 세션 시작 (레코드 1개만 생성)
+        if (window.AutoSave) {
+            await window.AutoSave.initWritingSession(moduleNumber);
+        }
+        
         // 한글 번역 데이터 미리 로드
         try {
             if (window.WritingKoData) {
@@ -132,6 +137,10 @@ const WritingFlow = {
         controller.setOnComplete((result) => {
             console.log('✅ [WritingFlow] Step 1 완료: arrange 1차');
             this.arrange1stResult = JSON.parse(sessionStorage.getItem('arrangeResults') || 'null');
+            // ★ 라이팅 통합 저장
+            if (window.AutoSave) {
+                window.AutoSave.updateWritingStep({ currentStep: 1, totalSteps: 12, stepName: 'arrange_1st', componentType: 'arrange', attempt: 1 });
+            }
             this.runStep2();
         });
         
@@ -167,6 +176,10 @@ const WritingFlow = {
                     console.log('📧 [WritingFlow] email1stData 저장:', !!this.email1stData, 'text길이:', this.email1stText.length);
                 }
             }
+            // ★ 라이팅 통합 저장
+            if (window.AutoSave) {
+                window.AutoSave.updateWritingStep({ currentStep: 2, totalSteps: 12, stepName: 'email_1st', componentType: 'email', attempt: 1 });
+            }
             this.runStep3();
         });
         
@@ -201,6 +214,10 @@ const WritingFlow = {
                     this.discussion1stText = discResult.userAnswer || discResult.responseText || '';
                     console.log('💬 [WritingFlow] discussion1stData 저장:', !!this.discussion1stData, 'text길이:', this.discussion1stText.length);
                 }
+            }
+            // ★ 라이팅 통합 저장
+            if (window.AutoSave) {
+                window.AutoSave.updateWritingStep({ currentStep: 3, totalSteps: 12, stepName: 'discussion_1st', componentType: 'discussion', attempt: 1 });
             }
             this.runStep4();
         });
@@ -339,6 +356,10 @@ const WritingFlow = {
             if (floatingUI) floatingUI.remove();
             
             this.arrange2ndResult = JSON.parse(sessionStorage.getItem('arrangeResults') || 'null');
+            // ★ 라이팅 통합 저장
+            if (window.AutoSave) {
+                window.AutoSave.updateWritingStep({ currentStep: 5, totalSteps: 12, stepName: 'arrange_2nd', componentType: 'arrange', attempt: 2 });
+            }
             this.runStep6();
         });
         
@@ -615,6 +636,10 @@ const WritingFlow = {
                     this.email2ndText = emailResult.userAnswer || emailResult.responseText || '';
                 }
             }
+            // ★ 라이팅 통합 저장
+            if (window.AutoSave) {
+                window.AutoSave.updateWritingStep({ currentStep: 8, totalSteps: 12, stepName: 'email_2nd', componentType: 'email', attempt: 2 });
+            }
             this.runStep9();
         });
         
@@ -749,6 +774,10 @@ const WritingFlow = {
                     this.discussion2ndData = discResult;
                     this.discussion2ndText = discResult.userAnswer || discResult.responseText || '';
                 }
+            }
+            // ★ 라이팅 통합 저장
+            if (window.AutoSave) {
+                window.AutoSave.updateWritingStep({ currentStep: 10, totalSteps: 12, stepName: 'discussion_2nd', componentType: 'discussion', attempt: 2 });
             }
             // ★ Step 11-A 제거됨 → 단어배열 해설은 Step 6에서 완결
             // 바로 이메일 해설로 이동
@@ -932,6 +961,11 @@ const WritingFlow = {
             ErrorNote.hide();
         }
         
+        // ★ 라이팅 통합 세션 완료 (status: completed)
+        if (window.AutoSave) {
+            window.AutoSave.updateWritingStep({ currentStep: 12, totalSteps: 12, stepName: 'completed', componentType: 'all', attempt: 1, isComplete: true });
+        }
+        
         this.cleanup();
         
         if (typeof backToSchedule === 'function') {
@@ -947,6 +981,11 @@ const WritingFlow = {
         
         if (this.activeController && this.activeController.cleanup) {
             this.activeController.cleanup();
+        }
+        
+        // ★ 라이팅 통합 세션 해제
+        if (window.AutoSave) {
+            window.AutoSave.endWritingSession();
         }
         
         this.currentStep = 0;

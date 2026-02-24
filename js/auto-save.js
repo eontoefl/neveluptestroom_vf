@@ -27,6 +27,8 @@ const AutoSave = {
     // 현재 세션 정보
     _currentSaveId: null,  // Supabase 레코드 ID
     _isResuming: false,    // 복원 중 플래그
+    _writingSessionActive: false,  // 라이팅 통합 세션 활성 여부
+    _writingStepResults: {},       // 라이팅 Step별 결과 저장 { step1: {type, result}, ... }
     
     // ========================================
     // 1. 컴포넌트 완료 시 자동저장
@@ -79,6 +81,12 @@ const AutoSave = {
                 sessionStorage.setItem('autoSaveProgress', JSON.stringify(saveData));
             }
             
+            // ★ 라이팅 통합 세션 활성 시: WritingFlow가 관리하므로 개별 저장 스킵
+            if (this._writingSessionActive && data.sectionType === 'writing') {
+                console.log('💾 [AutoSave] 라이팅 통합 세션 활성 — 개별 저장 스킵 (WritingFlow가 관리)');
+                return;
+            }
+
             // Supabase 저장 (기존 레코드 있으면 UPDATE, 없으면 INSERT)
             if (this._currentSaveId) {
                 await supabaseUpdate('tr_progress_save', 'id=eq.' + this._currentSaveId, saveData);
@@ -96,6 +104,104 @@ const AutoSave = {
         }
     },
     
+    // ========================================
+    // 1-B. 라이팅 전용: 통합 세션 시작
+    // WritingFlow.start() 에서 호출 → 레코드 1개 생성
+    // 이후 각 Step의 ModuleController가 saveProgress() 호출 시 이 레코드를 UPDATE
+    // ========================================
+    async initWritingSession(moduleNumber) {
+        try {
+            const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+            if (!user || !user.id || user.id === 'dev-user-001') return;
+            if (window._deadlinePassedMode || window._isReplayMode || window._isPracticeMode) return;
+
+            this._writingSessionActive = true;
+            this._writingStepResults = {};
+
+            const ct = window.currentTest;
+            const saveData = {
+                user_id: user.id,
+                task_type: 'writing',
+                module_number: moduleNumber,
+                week: ct ? ct.currentWeek : 1,
+                day: ct ? ct.currentDay : '일',
+                attempt: 1,
+                current_component_index: 0,
+                total_components: null,  // WritingFlow의 총 Step 수 (나중에 갱신)
+                completed_components: [],
+                all_answers: [],
+                timer_remaining: null,
+                first_attempt_result: null,
+                status: 'in_progress',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            // 기존 in_progress 레코드가 있으면 재활용
+            const query = `user_id=eq.${user.id}&task_type=eq.writing&module_number=eq.${moduleNumber}&status=eq.in_progress&order=updated_at.desc&limit=1`;
+            const existing = await supabaseSelect('tr_progress_save', query);
+            if (existing && existing.length > 0) {
+                this._currentSaveId = existing[0].id;
+                console.log('💾 [AutoSave] 라이팅 세션: 기존 레코드 재활용:', this._currentSaveId);
+            } else {
+                const result = await supabaseInsert('tr_progress_save', saveData);
+                if (result && result.id) {
+                    this._currentSaveId = result.id;
+                    console.log('💾 [AutoSave] 라이팅 세션: 새 레코드 생성:', this._currentSaveId);
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ [AutoSave] 라이팅 세션 초기화 실패:', e.message);
+        }
+    },
+
+    /**
+     * 라이팅 전용: Step 결과 업데이트
+     * WritingFlow의 각 Step 완료 시 호출
+     */
+    async updateWritingStep(stepInfo) {
+        if (!this._writingSessionActive || !this._currentSaveId) return;
+
+        try {
+            // Step 결과 누적
+            this._writingStepResults[stepInfo.stepName] = {
+                type: stepInfo.componentType,
+                completed: true,
+                attempt: stepInfo.attempt || 1
+            };
+
+            const completedSteps = Object.keys(this._writingStepResults);
+
+            await supabaseUpdate('tr_progress_save', 'id=eq.' + this._currentSaveId, {
+                current_component_index: stepInfo.currentStep,
+                total_components: stepInfo.totalSteps || 12,
+                completed_components: Object.values(this._writingStepResults),
+                attempt: stepInfo.attempt || 1,
+                status: stepInfo.isComplete ? 'completed' : 'in_progress',
+                updated_at: new Date().toISOString()
+            });
+
+            console.log(`💾 [AutoSave] 라이팅 Step ${stepInfo.currentStep} 업데이트 (${completedSteps.length}개 완료)`);
+
+            if (stepInfo.isComplete) {
+                this._writingSessionActive = false;
+                sessionStorage.removeItem('autoSaveProgress');
+                console.log('💾 [AutoSave] 라이팅 세션 완료');
+            }
+        } catch (e) {
+            console.warn('⚠️ [AutoSave] 라이팅 Step 업데이트 실패:', e.message);
+        }
+    },
+
+    /**
+     * 라이팅 세션 종료
+     */
+    endWritingSession() {
+        this._writingSessionActive = false;
+        this._writingStepResults = {};
+        console.log('💾 [AutoSave] 라이팅 세션 해제');
+    },
+
     // ========================================
     // 2. 과제 완료 시 중간저장 정리
     // ========================================
@@ -261,6 +367,8 @@ const AutoSave = {
     reset() {
         this._currentSaveId = null;
         this._isResuming = false;
+        this._writingSessionActive = false;
+        this._writingStepResults = {};
         sessionStorage.removeItem('autoSaveProgress');
     }
 };
