@@ -54,6 +54,10 @@ if (typeof RepeatComponent !== 'undefined') {
     RepeatComponent.prototype.completeSpeakingRepeat = function() {
         console.log('🔧 [ComponentPatch] completeSpeakingRepeat 패치 실행');
         
+        // ★ cleanup 전에 해설 화면용 데이터 캐시
+        const setIndex = (this.setId || 1) - 1;
+        this._cachedSet = this.speakingRepeatData?.sets?.[setIndex] || null;
+        
         // 원래 함수 실행
         const result = originalCompleteSpeakingRepeat.call(this);
         

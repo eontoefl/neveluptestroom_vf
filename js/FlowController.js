@@ -624,7 +624,8 @@ const FlowController = {
             repeatResultScreen.style.display = 'block';
             
             // RepeatComponent의 showRepeatResult 호출
-            const set = window.currentRepeatComponent.speakingRepeatData?.sets?.[0];
+            const repeatSetIndex = (window.currentRepeatComponent.setId || 1) - 1;
+            const set = window.currentRepeatComponent.speakingRepeatData?.sets?.[repeatSetIndex] || window.currentRepeatComponent._cachedSet;
             if (set) {
                 window.currentRepeatComponent.showRepeatResult({ set: set });
             }
