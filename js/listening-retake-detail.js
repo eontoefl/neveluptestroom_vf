@@ -1961,6 +1961,33 @@ function showLectureDetailInFinalExplain() {
         console.error('❌ [렉쳐 해설] showLectureResults 함수 없음');
         alert('Lecture 해설 화면을 표시할 수 없습니다.');
     }
+    
+    // ★ 상단 통계를 1차/2차 비교 형식으로 업데이트
+    const totalQuestions = firstAttempt.length;
+    const firstCorrect = firstAttempt.filter(a => a.isCorrect).length;
+    const secondCorrect = secondAttempt.filter(a => a.isCorrect).length;
+    const improvement = secondCorrect - firstCorrect;
+    const firstPercent = totalQuestions > 0 ? Math.round((firstCorrect / totalQuestions) * 100) : 0;
+    const secondPercent = totalQuestions > 0 ? Math.round((secondCorrect / totalQuestions) * 100) : 0;
+    const improvementPercent = secondPercent - firstPercent;
+    
+    const totalEl = document.getElementById('lectureResultTotalCount');
+    if (totalEl) totalEl.textContent = totalQuestions;
+    
+    const firstEl = document.getElementById('lectureResultFirstCount');
+    if (firstEl) firstEl.textContent = `${firstCorrect}/${totalQuestions} (${firstPercent}%)`;
+    
+    const secondEl = document.getElementById('lectureResultSecondCount');
+    if (secondEl) secondEl.textContent = `${secondCorrect}/${totalQuestions} (${secondPercent}%)`;
+    
+    const improvementEl = document.getElementById('lectureResultImprovement');
+    if (improvementEl) {
+        improvementEl.textContent = improvement >= 0 
+            ? `+${improvement}문제 (+${improvementPercent}%)` 
+            : `${improvement}문제 (${improvementPercent}%)`;
+    }
+    
+    console.log(`📊 [렉쳐 해설] 통계 업데이트 - 1차: ${firstCorrect}/${totalQuestions}, 2차: ${secondCorrect}/${totalQuestions}`);
 }
 
 console.log('✅ listening-retake-detail.js v20260215_010 로드 완료');
