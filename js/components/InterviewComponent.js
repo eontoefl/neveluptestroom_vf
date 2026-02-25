@@ -378,7 +378,7 @@ class InterviewComponent {
                 // 2초 대기 후 상황 화면으로 이동
                 setTimeout(() => {
                     document.getElementById('interviewIntroScreen').style.display = 'none';
-                    this.startInterviewSequence(0);
+                    this.startInterviewSequence((this.setId || 1) - 1);
                 }, 2000);
             });
         }, 1000);
