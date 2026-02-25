@@ -7,7 +7,7 @@
 console.log('✅ writing-ko-data.js 로드 완료');
 
 const WritingKoData = {
-    CACHE_VERSION: 'v003',  // 캐시 버전 (변경 시 자동 무효화)
+    CACHE_VERSION: 'v004',  // 캐시 버전 (변경 시 자동 무효화)
     
     SHEET_CONFIG: {
         spreadsheetId: '1Na3AmaqNeE2a3gcq7koj0TF2jGZhS7m8PFuk2S8rRfo',
@@ -38,6 +38,16 @@ const WritingKoData = {
             }
         }
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.cache = supabaseResult;
+            sessionStorage.setItem(cacheKey, JSON.stringify(this.cache));
+            return this.cache;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [KoData] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.gid}`;
         console.log('📥 [KoData] CSV 다운로드:', csvUrl);
         
@@ -56,12 +66,63 @@ const WritingKoData = {
                 console.log(`💬 [KoData] discussion[${key}] 길이: ${val.length}, 줄바꿈수: ${(val.match(/\n/g) || []).length}`);
             }
             
-            sessionStorage.setItem(`writing_ko_cache_${this.CACHE_VERSION}`, JSON.stringify(this.cache));
+            sessionStorage.setItem(cacheKey, JSON.stringify(this.cache));
             
             return this.cache;
         } catch (error) {
             console.error('❌ [KoData] 로드 실패:', error);
             return { email: {}, discussion: {} };
+        }
+    },
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        
+        // supabaseSelect가 아직 로드되지 않았으면 최대 2초 대기
+        if (typeof supabaseSelect !== 'function') {
+            console.log('⏳ [KoData] supabaseSelect 대기 중...');
+            for (let i = 0; i < 20; i++) {
+                await new Promise(r => setTimeout(r, 100));
+                if (typeof supabaseSelect === 'function') break;
+            }
+        }
+        if (typeof supabaseSelect !== 'function') {
+            console.warn('⚠️ [KoData] supabaseSelect 함수 없음 → Google Sheets 폴백');
+            return null;
+        }
+        
+        try {
+            console.log('📥 [KoData] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_writing_ko_data', 'select=*&order=id.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [KoData] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [KoData] Supabase에서 ${rows.length}개 행 로드 성공`);
+            
+            const result = { email: {}, discussion: {} };
+            rows.forEach(row => {
+                const type = (row.type || '').trim();
+                const setId = (row.set_id || '').trim();
+                const koText = (row.ko_text || '').trim();
+                if (!koText) return;
+                
+                if (type === 'email') {
+                    result.email[setId] = koText;
+                } else if (type === 'discussion') {
+                    result.discussion[setId] = koText;
+                }
+            });
+            
+            console.log(`✅ [KoData] Supabase 파싱 완료 - email: ${Object.keys(result.email).length}개, discussion: ${Object.keys(result.discussion).length}개`);
+            return result;
+            
+        } catch (error) {
+            console.error('❌ [KoData] Supabase 로드 실패:', error);
+            return null;
         }
     },
     
