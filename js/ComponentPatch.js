@@ -26,6 +26,7 @@ if (typeof RepeatComponent !== 'undefined') {
         
         this.setId = setId || 1;
         this.currentRepeatSet = (this.setId - 1);
+        this._destroyed = false;
         
         // 1. 데이터 로드
         await this.loadRepeatData();
@@ -101,6 +102,7 @@ if (typeof InterviewComponent !== 'undefined') {
         console.log(`🔧 [ComponentPatch] InterviewComponent.init(${setId}) 호출`);
         
         this.setId = setId || 1;
+        this._destroyed = false;
         
         // 1. 데이터 로드
         await this.loadInterviewData();

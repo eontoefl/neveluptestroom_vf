@@ -229,16 +229,39 @@ const FlowController = {
         this.currentAttemptNumber = 1;
         console.log('📝 [FlowController] 1차 풀이 시작');
         
-        // ★ 가이드 팝업: 1차 풀이 안내
+        // ★ 가이드 팝업: 1차 풀이 안내 (과제별 분기)
         if (typeof showGuidePopup === 'function' && !window._isReplayMode && !window._isPracticeMode) {
-            await showGuidePopup({
-                icon: '📖',
-                title: '1차 풀이를 시작합니다',
-                desc: '제한시간 <b>20분</b> 안에 모든 문제를 풀어주세요.',
-                notice: '시간이 초과되면 풀던 곳까지 자동 제출됩니다.',
-                btn: '시작하기',
-                theme: 'theme-purple'
-            });
+            let guideConfig;
+            if (this.sectionType === 'listening') {
+                guideConfig = {
+                    icon: '🎧',
+                    title: '1차 풀이를 시작합니다',
+                    desc: '오디오 재생 후 <b>문제당 20초</b>, Lecture는 <b>30초</b> 안에 풀어주세요.',
+                    notice: '오디오 시간은 제외한 순수 풀이 시간입니다.',
+                    btn: '시작하기',
+                    theme: 'theme-purple'
+                };
+            } else if (this.sectionType === 'speaking') {
+                guideConfig = {
+                    icon: '🎤',
+                    title: '1차 답변을 시작합니다',
+                    desc: '휴대폰 <b>녹음 기능을 켠 채로</b> 시작해주세요.',
+                    notice: '녹음 파일은 오답노트 제출 시 첨부해야 합니다.',
+                    btn: '시작하기',
+                    theme: 'theme-purple'
+                };
+            } else {
+                // Reading 및 기타: 기존 그대로
+                guideConfig = {
+                    icon: '📖',
+                    title: '1차 풀이를 시작합니다',
+                    desc: '제한시간 <b>20분</b> 안에 모든 문제를 풀어주세요.',
+                    notice: '시간이 초과되면 풀던 곳까지 자동 제출됩니다.',
+                    btn: '시작하기',
+                    theme: 'theme-purple'
+                };
+            }
+            await showGuidePopup(guideConfig);
         }
         
         // 기존 ModuleController 사용 (모든 섹션 공통)
@@ -262,7 +285,7 @@ const FlowController = {
     /**
      * 1차 완료 후 다음 단계 분기
      */
-    afterFirstAttempt() {
+    async afterFirstAttempt() {
         const flowType = this.getFlowType();
         
         switch (flowType) {
@@ -281,8 +304,18 @@ const FlowController = {
                 break;
                 
             case 'speak':
-                // 스피킹: 결과 없이 바로 2차 답변
-                console.log('🔄 [FlowController] speak 플로우 → 바로 2차 답변');
+                // 스피킹: 결과 없이 바로 2차 답변 (가이드 팝업 후)
+                console.log('🔄 [FlowController] speak 플로우 → 2차 안내 팝업 후 시작');
+                if (typeof showGuidePopup === 'function' && !window._isReplayMode && !window._isPracticeMode) {
+                    await showGuidePopup({
+                        icon: '🔄',
+                        title: '2차 답변을 시작합니다',
+                        desc: '1차에서 답변한 내용을 다시 한번 답변해보세요.<br>1차와 <b>완벽하게 동일한</b> 화면이 나옵니다.',
+                        notice: '자신의 <b>휴대폰 녹음기</b>를 준비해주세요.',
+                        btn: '시작하기',
+                        theme: 'theme-blue'
+                    });
+                }
                 this.startSecondAttempt();
                 break;
                 

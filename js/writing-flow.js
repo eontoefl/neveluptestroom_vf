@@ -553,9 +553,14 @@ const WritingFlow = {
                 <h2 style="text-align:center; margin-bottom:8px; color:#333;">
                     <i class="fas fa-envelope"></i> 이메일 작성 - 모범답안 번역
                 </h2>
-                <p style="text-align:center; color:#888; font-size:14px; margin-bottom:24px;">
+                <p style="text-align:center; color:#888; font-size:14px; margin-bottom:12px;">
                     아래 한글 번역을 참고하여 2차 작성에서 영작해보세요
                 </p>
+                <div style="background:#e8f4fd; border-radius:8px; padding:14px 16px; margin-bottom:24px; font-size:13px; color:#1565c0; line-height:1.7;">
+                    <i class="fas fa-info-circle"></i>
+                    직접 작성한 모범답안을 <b>한글로 번역</b>했습니다.
+                    영어로 그대로 보여주면 따라하게 될 수 있어서, 머릿속에서 영작하고 프로세싱할 수 있도록 일부러 한국어로 준비했습니다.
+                </div>
                 
                 ${question.scenario ? `
                 <div style="background:#f0f4ff; border-radius:8px; padding:16px; margin-bottom:16px;">
@@ -599,9 +604,21 @@ const WritingFlow = {
     // ========================================
     // Step 8: email 2차 작성 (시간제한 없음)
     // ========================================
-    runStep8() {
+    async runStep8() {
         this.currentStep = 8;
         console.log('📧 [WritingFlow] Step 8: email 2차 시작 (시간제한 없음)');
+        
+        // ★ 가이드 팝업: 이메일 2차 작성 안내
+        if (typeof showGuidePopup === 'function' && !window._isReplayMode && !window._isPracticeMode) {
+            await showGuidePopup({
+                icon: '✍️',
+                title: '이메일 2차 작성',
+                desc: '지금부터 실전 풀이 때 봤던 <b>동일한 화면</b>이 나옵니다.<br>시간제한은 없습니다.',
+                notice: '방금 읽은 모범답안은 참고만 하세요.<br>일부러 돌아갈 수 없게 해두었습니다.<br>보고 따라쓰는 것이 아닌, <b>자신의 말과 내용</b>으로 다시 써보세요.',
+                btn: '시작하기',
+                theme: 'theme-blue'
+            });
+        }
         
         window.isSecondAttempt = true;
         window.currentAttemptNumber = 2;
