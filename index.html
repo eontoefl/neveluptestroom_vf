@@ -1906,9 +1906,12 @@
         </div>
 
         <!-- 네비게이션 -->
-        <div class="academic-navigation">
-            <button class="btn btn-primary" onclick="FlowController.finish()">
-                <i class="fas fa-calendar"></i> 학습 일정으로 돌아가기
+        <div class="academic-navigation" id="lectureNavigation">
+            <button class="btn btn-secondary" id="lecturePrevBtn" onclick="showListeningRetakeDetailPage(3)">
+                <i class="fas fa-arrow-left"></i> Announcement 해설
+            </button>
+            <button class="btn btn-primary" id="lectureFinishBtn" onclick="FlowController.finish()">
+                학습일정으로 돌아가기 <i class="fas fa-arrow-right"></i>
             </button>
         </div>
     </div>
