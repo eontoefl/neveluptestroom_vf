@@ -319,11 +319,14 @@ class RepeatComponent {
         document.getElementById('repeatNarrationScreen').style.display = 'none';
         
         setTimeout(() => {
+            if (this._destroyed) return;
             const introNarration = 'https://eontoefl.github.io/toefl-audio/speaking/repeat/narration/listen_and_repeat_narration.mp3';
             
             this.playAudio(introNarration, () => {
+                if (this._destroyed) return;
                 console.log('✅ 인트로 나레이션 종료');
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     document.getElementById('repeatIntroScreen').style.display = 'none';
                     this.showContextNarration(this.speakingRepeatData.sets[this.currentRepeatSet]);
                 }, 2000);
@@ -359,10 +362,13 @@ class RepeatComponent {
         // 1초 대기 후 나레이션 오디오 재생
         console.log('⏳ 화면 표시 후 1초 대기...');
         setTimeout(() => {
+            if (this._destroyed) return;
             console.log('🎵 상황 나레이션 오디오 재생 시작');
             this.playAudio(set.narration.audio, () => {
+                if (this._destroyed) return;
                 console.log('✅ 상황 나레이션 종료 → 1초 후 첫 번째 오디오 시작');
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     this.playAudioSequence(set, 0);
                 }, 1000);
             });
@@ -419,11 +425,14 @@ class RepeatComponent {
         // 1초 대기 후 오디오 재생
         console.log('⏳ 화면 표시 후 1초 대기...');
         setTimeout(() => {
+            if (this._destroyed) return;
             console.log(`🎵 오디오 ${audioIndex + 1}/7 재생 시작`);
             this.playAudio(audio.audio, () => {
+                if (this._destroyed) return;
                 console.log(`✅ 오디오 ${audioIndex + 1} 종료 → 3초 후 녹음 시작`);
                 
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     console.log('🎬 3초 대기 완료 → 녹음 시작');
                     this.startRepeatRecording(set, audioIndex, audio.responseTime);
                 }, 3000);
@@ -580,6 +589,7 @@ class RepeatComponent {
         document.getElementById('repeatSavingPopup').style.display = 'flex';
         
         setTimeout(() => {
+            if (this._destroyed) return;
             document.getElementById('repeatSavingPopup').style.display = 'none';
             
             // 로딩 화면 표시
@@ -587,6 +597,7 @@ class RepeatComponent {
             
             // 1초 후 다음 문제로 이동
             setTimeout(() => {
+                if (this._destroyed) return;
                 this.hideLoadingScreen();
                 this.playAudioSequence(set, audioIndex + 1);
             }, 1000);
@@ -657,6 +668,8 @@ class RepeatComponent {
      */
     cleanup() {
         console.log('🧹 [Cleanup] 스피킹-따라말하기 정리 시작');
+        
+        this._destroyed = true;
         
         if (this.repeatTimer) {
             clearInterval(this.repeatTimer);

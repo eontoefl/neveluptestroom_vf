@@ -35,6 +35,7 @@ class InterviewComponent {
         
         // 데이터 저장
         this.speakingInterviewData = null;
+        this._destroyed = false; // cleanup 호출 시 true로 설정
         
         // ============================================
         // 2. 녹음 기능 (7개 중 1개)
@@ -370,13 +371,16 @@ class InterviewComponent {
         
         // 1초 대기 후 인트로 나레이션 재생
         setTimeout(() => {
+            if (this._destroyed) return;
             const introNarration = 'https://eontoefl.github.io/toefl-audio/speaking/interview/narration/interview_narration.mp3';
             
             this.playInterviewAudio(introNarration, () => {
+                if (this._destroyed) return;
                 console.log('✅ 인트로 나레이션 종료');
                 
                 // 2초 대기 후 상황 화면으로 이동
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     document.getElementById('interviewIntroScreen').style.display = 'none';
                     this.startInterviewSequence((this.setId || 1) - 1);
                 }, 2000);
@@ -431,9 +435,11 @@ class InterviewComponent {
         // 1초 대기 후 contextAudio 재생
         console.log('⏳ 화면 표시 후 1초 대기...');
         setTimeout(() => {
+            if (this._destroyed) return;
             if (set.contextAudio && set.contextAudio !== 'PLACEHOLDER') {
                 console.log('🎵 시나리오 오디오 재생');
                 this.playInterviewAudio(set.contextAudio, () => {
+                    if (this._destroyed) return;
                     console.log('✅ 시나리오 오디오 종료 → 문제 1로 이동');
                     // 오디오 종료 후 바로 문제 1로 이동
                     this.showInterviewQuestionScreen(set);
@@ -441,6 +447,7 @@ class InterviewComponent {
             } else {
                 // 오디오 없으면 2초 후 문제 1로 이동
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     this.showInterviewQuestionScreen(set);
                 }, 2000);
             }
@@ -490,12 +497,15 @@ class InterviewComponent {
         // 1초 대기 후 interviewer 영상 재생
         console.log('⏳ 화면 표시 후 1초 대기...');
         setTimeout(() => {
+            if (this._destroyed) return;
             console.log(`🎵 질문 ${questionIndex + 1}/4 영상 재생 시작`);
             this.playInterviewVideo(videoData.video, () => {
+                if (this._destroyed) return;
                 console.log(`✅ 질문 ${questionIndex + 1} 영상 종료 → 0.7초 대기`);
                 
                 // 0.7초 대기 + base image 표시
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     console.log('🎬 0.7초 대기 완료 → nodding video 재생 + 녹음 시작');
                     // Nodding video 재생 + 녹음
                     this.startInterviewRecording(set, questionIndex);
@@ -519,6 +529,7 @@ class InterviewComponent {
             
             if (onEnded) {
                 setTimeout(() => {
+                    if (this._destroyed) return;
                     if (videoPlaceholder) videoPlaceholder.style.display = 'none';
                     onEnded();
                 }, 2000); // 2초 표시
@@ -544,7 +555,7 @@ class InterviewComponent {
         videoElement.addEventListener('error', (e) => {
             console.error('❌ 영상 로드 실패:', videoUrl, e);
             if (onEnded) {
-                setTimeout(onEnded, 1000);
+                setTimeout(() => { if (!this._destroyed) onEnded(); }, 1000);
             }
         }, { once: true });
         
@@ -553,7 +564,7 @@ class InterviewComponent {
         }).catch(err => {
             console.error('❌ 영상 재생 실패:', err);
             if (onEnded) {
-                setTimeout(onEnded, 1000);
+                setTimeout(() => { if (!this._destroyed) onEnded(); }, 1000);
             }
         });
     }
@@ -669,6 +680,7 @@ class InterviewComponent {
         
         // 5초 후 로딩 화면 표시
         setTimeout(() => {
+            if (this._destroyed) return;
             if (savingPopup) {
                 savingPopup.style.display = 'none';
             }
@@ -678,6 +690,7 @@ class InterviewComponent {
             
             // 1초 후 다음 질문
             setTimeout(() => {
+                if (this._destroyed) return;
                 this.hideInterviewLoadingScreen();
                 this.playInterviewQuestion(set, questionIndex + 1);
             }, 1000);
@@ -887,11 +900,23 @@ class InterviewComponent {
     cleanup() {
         console.log('🧹 [Cleanup] 스피킹-인터뷰 정리 시작');
         
+        // ★ 파괴 플래그 — setTimeout 콜백에서 체크
+        this._destroyed = true;
+        
         // 타이머 정지
         if (this.interviewTimer) {
             clearInterval(this.interviewTimer);
             this.interviewTimer = null;
             console.log('✅ 타이머 정지');
+        }
+        
+        // nodding video 정지
+        const noddingVideo = document.getElementById('interviewNoddingVideo');
+        if (noddingVideo) {
+            noddingVideo.pause();
+            noddingVideo.removeAttribute('src');
+            noddingVideo.load();
+            console.log('✅ Nodding video 정지');
         }
         
         // 비디오 정지
