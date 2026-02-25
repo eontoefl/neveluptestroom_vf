@@ -73,8 +73,8 @@ class EmailComponent {
             this.currentSetData = this.data.sets[setIndex];
             console.log('[EmailComponent] 세트 데이터 로드 완료:', this.currentSetData);
             
-            // 3. 첫 번째 문제 로드
-            this.loadQuestion(0);
+            // 3. 해당 세트 문제 로드 (setIndex 기준)
+            this.loadQuestion(setIndex);
             
             // 4. 화면 표시
             if (typeof window.showScreen === 'function') {
