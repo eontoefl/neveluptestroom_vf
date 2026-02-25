@@ -288,7 +288,7 @@
     </div>
 
     <!-- 학습 일정 선택 화면 -->
-    <div id="scheduleScreen" class="screen">
+    <div id="scheduleScreen" class="screen" style="position:relative;">
         <!-- 상단 네비게이션 바 (container 밖) -->
         <div class="top-nav-bar">
             <div class="top-nav-left">
@@ -310,13 +310,99 @@
             </div>
         </div>
         
-        <div class="container" style="position: relative;">
-            <!-- 공지 배너 -->
-            <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:10px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:13px;color:#4338ca;line-height:1.5;">
-                <span style="font-size:18px;flex-shrink:0;">💡</span>
-                <span>새로운 날 접속 시 <b>Ctrl+Shift+R</b>(Mac: ⌘+Shift+R) <b>강력 새로고침 필수!</b> 매일 오류 수정이 반영됩니다.</span>
+        <!-- 📢 공지사항 (top-nav-bar 왼쪽 면에 정렬, Supabase에서 동적 로드) -->
+        <div id="noticeContainer" style="
+            position: absolute;
+            left: 30px;
+            top: 80px;
+            width: 240px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            overflow: hidden;
+            z-index: 10;
+        ">
+            <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); padding:16px 20px; display:flex; align-items:center; gap:9px;">
+                <span style="font-size:20px;">📢</span>
+                <span style="font-size:16px; font-weight:700; color:#fff;">공지사항</span>
             </div>
+            <div id="noticeList" style="padding:16px 18px; display:flex; flex-direction:column; gap:12px;">
+                <!-- Supabase에서 동적으로 로드됩니다 -->
+                <div style="text-align:center; padding:20px 0; color:#999; font-size:13px;">불러오는 중...</div>
+            </div>
+        </div>
+        <style>
+            @media (max-width: 1400px) {
+                #noticeContainer { display: none !important; }
+            }
+        </style>
+        <script>
+        // 공지사항 너비를 user-info에 맞춤
+        function alignNoticeToUserInfo() {
+            const userInfo = document.querySelector('#scheduleScreen .top-nav-bar .user-info');
+            const notice = document.getElementById('noticeContainer');
+            if (userInfo && notice) {
+                notice.style.width = userInfo.offsetWidth + 'px';
+            }
+        }
+        window.addEventListener('load', () => setTimeout(alignNoticeToUserInfo, 300));
+        window.addEventListener('resize', alignNoticeToUserInfo);
 
+        // 공지 타입 → 스타일 매핑
+        const NOTICE_STYLES = {
+            urgent:   { emoji: '🚨', bg: '#fef2f2', titleColor: '#dc2626', textColor: '#991b1b', glow: true },
+            notice:   { emoji: '📢', bg: '#eff6ff', titleColor: '#1d4ed8', textColor: '#1e3a5f', glow: false },
+            deadline: { emoji: '⏰', bg: '#fff7ed', titleColor: '#c2410c', textColor: '#9a3412', glow: false },
+            tip:      { emoji: '💡', bg: '#f0fdf4', titleColor: '#16a34a', textColor: '#14532d', glow: false },
+            update:   { emoji: '🔄', bg: '#fefce8', titleColor: '#a16207', textColor: '#78350f', glow: false },
+            event:    { emoji: '🎉', bg: '#faf5ff', titleColor: '#7c3aed', textColor: '#5b21b6', glow: false },
+            warning:  { emoji: '⚠️', bg: '#fff7ed', titleColor: '#ea580c', textColor: '#9a3412', glow: false },
+            check:    { emoji: '✅', bg: '#f0fdf4', titleColor: '#16a34a', textColor: '#166534', glow: false }
+        };
+
+        // Supabase에서 공지사항 로드
+        async function loadNotices() {
+            const listEl = document.getElementById('noticeList');
+            if (!listEl) return;
+
+            try {
+                if (typeof supabaseSelect !== 'function') {
+                    console.warn('⚠️ supabaseSelect 미정의 — 공지사항 로드 생략');
+                    listEl.innerHTML = '';
+                    return;
+                }
+
+                const notices = await supabaseSelect('tr_notices', 'is_active=eq.true&order=sort_order.asc');
+
+                if (!notices || notices.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; padding:16px 0; color:#999; font-size:13px;">등록된 공지가 없습니다.</div>';
+                    return;
+                }
+
+                listEl.innerHTML = notices.map(n => {
+                    const s = NOTICE_STYLES[n.type] || NOTICE_STYLES.notice;
+                    const glowStyle = s.glow ? 'animation:noticeGlow 2s ease-in-out infinite;' : '';
+                    return `
+                        <div style="background:${s.bg}; border-radius:8px; padding:12px 14px; ${glowStyle}">
+                            <div style="font-size:14px; font-weight:700; color:${s.titleColor}; margin-bottom:5px;">${s.emoji} ${n.title}</div>
+                            <div style="font-size:13px; color:${s.textColor}; line-height:1.6;">${n.content}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                console.log(`📢 공지사항 ${notices.length}개 로드 완료`);
+            } catch (e) {
+                console.warn('⚠️ 공지사항 로드 실패:', e.message);
+                listEl.innerHTML = '';
+            }
+        }
+
+        // 페이지 로드 시 공지사항 불러오기
+        window.addEventListener('load', () => setTimeout(loadNotices, 500));
+        </script>
+
+        <div class="container" style="position: relative;">
             <div class="schedule-header">
                 <i class="fas fa-calendar-alt"></i>
                 <h1>학습 일정</h1>
@@ -3215,84 +3301,11 @@
         </table>
     </div>
 </div>
-<!-- ========== 팝업 공지 ========== -->
-<div id="systemNoticeOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:16px;max-width:780px;width:94%;padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;animation:noticeSlideUp 0.3s ease;">
-        <!-- 헤더 -->
-        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:14px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <span style="font-size:22px;">🔧</span>
-                <div>
-                    <span style="font-size:15px;font-weight:700;">시스템 공지</span>
-                    <span style="font-size:12px;opacity:0.85;margin-left:8px;">원활한 학습을 위해 꼭 읽어주세요</span>
-                </div>
-            </div>
-        </div>
-        <!-- 본문 — 3열 가로 배치 -->
-        <div style="padding:18px 20px 14px;display:flex;gap:12px;">
-            <div style="flex:1;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:8px;padding:12px 14px;">
-                <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:6px;">⏰ 오류 수정 시간</div>
-                <div style="font-size:12px;color:#78350f;line-height:1.6;">매일 <b>오전 2시 ~ 8시</b><br>오류 수정이 진행됩니다.</div>
-            </div>
-            <div style="flex:1;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:8px;padding:12px 14px;">
-                <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:6px;">🔄 강력 새로고침 필수</div>
-                <div style="font-size:12px;color:#1e3a5f;line-height:1.6;">새 날 접속 시 <b>캐시 삭제 새로고침</b><br>Win: <b>Ctrl+Shift+R</b><br>Mac: <b>⌘+Shift+R</b></div>
-            </div>
-            <div style="flex:1;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:8px;padding:12px 14px;">
-                <div style="font-size:13px;font-weight:700;color:#166534;margin-bottom:6px;">🛡️ 오류 시 대처법</div>
-                <div style="font-size:12px;color:#14532d;line-height:1.6;">진행 내용 <b>자동 저장</b> 중!<br>종료→새로고침→재로그인<br>→과제 재진입 = <b>이어풀기</b> 😊</div>
-            </div>
-        </div>
-        <!-- 하단 버튼 -->
-        <div style="padding:4px 20px 16px;display:flex;align-items:center;gap:10px;">
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;cursor:pointer;flex:1;">
-                <input type="checkbox" id="noticeHideToday" style="width:15px;height:15px;accent-color:#6366f1;cursor:pointer;">
-                오늘 하루 안 보기
-            </label>
-            <button onclick="closeSystemNotice()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:9px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:transform 0.15s;"
-                onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">확인했어요</button>
-        </div>
-    </div>
-</div>
-
 <style>
-@keyframes noticeSlideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@media (max-width: 640px) {
-    #systemNoticeOverlay > div { max-width: 95% !important; }
-    #systemNoticeOverlay > div > div:nth-child(2) { flex-direction: column !important; }
+@keyframes noticeGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
 }
 </style>
-
-<script>
-function showSystemNotice() {
-    var today = new Date().toISOString().slice(0, 10);
-    var hideDate = localStorage.getItem('systemNoticeHideDate');
-    if (hideDate === today) return;
-    var overlay = document.getElementById('systemNoticeOverlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-    }
-}
-
-function closeSystemNotice() {
-    var checkbox = document.getElementById('noticeHideToday');
-    if (checkbox && checkbox.checked) {
-        var today = new Date().toISOString().slice(0, 10);
-        localStorage.setItem('systemNoticeHideDate', today);
-    }
-    var overlay = document.getElementById('systemNoticeOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-}
-
-// 페이지 로드 후 0.5초 뒤 팝업 표시
-setTimeout(function() {
-    showSystemNotice();
-}, 500);
-</script>
 </body>
 </html>
