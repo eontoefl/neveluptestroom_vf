@@ -983,6 +983,19 @@ const FlowController = {
     finish() {
         console.log('🏠 [FlowController] 종료 → 스케줄 화면으로');
         
+        // ★ 오답노트 미제출 경고 (마감/연습 모드 제외)
+        if (!window._isPracticeMode && !window._deadlinePassedMode) {
+            var errorNotePanel = document.getElementById('errorNotePanel');
+            var hasErrorNote = errorNotePanel && typeof ErrorNote !== 'undefined';
+            var errorNoteSubmitted = hasErrorNote && ErrorNote.isSubmitted();
+            
+            if (hasErrorNote && !errorNoteSubmitted) {
+                if (!confirm('⚠️ 오답노트를 아직 제출하지 않았습니다.\n제출해야 100% 인증됩니다.\n\n나가시겠습니까?')) {
+                    return;
+                }
+            }
+        }
+        
         // ★ 오답노트 패널 정리
         if (typeof ErrorNote !== 'undefined') {
             ErrorNote.hide();
