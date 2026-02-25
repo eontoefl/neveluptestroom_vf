@@ -7,7 +7,7 @@
 console.log('✅ writing-ko-data.js 로드 완료');
 
 const WritingKoData = {
-    CACHE_VERSION: 'v004',  // 캐시 버전 (변경 시 자동 무효화)
+    CACHE_VERSION: 'v005',  // 캐시 버전 (변경 시 자동 무효화)
     
     SHEET_CONFIG: {
         spreadsheetId: '1Na3AmaqNeE2a3gcq7koj0TF2jGZhS7m8PFuk2S8rRfo',
@@ -77,18 +77,20 @@ const WritingKoData = {
     
     // --- Supabase에서 로드 ---
     async _loadFromSupabase() {
-        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
-        
-        // supabaseSelect가 아직 로드되지 않았으면 최대 2초 대기
+        // USE_SUPABASE 체크 제거 - supabase-data-config.js 로드 순서 무관하게 동작
+        // supabaseSelect가 로드될 때까지 최대 5초 대기 (supabase-client.js가 뒤에 로드될 수 있음)
         if (typeof supabaseSelect !== 'function') {
-            console.log('⏳ [KoData] supabaseSelect 대기 중...');
-            for (let i = 0; i < 20; i++) {
+            console.log('⏳ [KoData] supabaseSelect 대기 중... (최대 5초)');
+            for (let i = 0; i < 50; i++) {
                 await new Promise(r => setTimeout(r, 100));
-                if (typeof supabaseSelect === 'function') break;
+                if (typeof supabaseSelect === 'function') {
+                    console.log(`✅ [KoData] supabaseSelect 로드 감지 (${(i+1)*100}ms)`);
+                    break;
+                }
             }
         }
         if (typeof supabaseSelect !== 'function') {
-            console.warn('⚠️ [KoData] supabaseSelect 함수 없음 → Google Sheets 폴백');
+            console.warn('⚠️ [KoData] supabaseSelect 함수 없음 (5초 대기 후) → Google Sheets 폴백');
             return null;
         }
         
