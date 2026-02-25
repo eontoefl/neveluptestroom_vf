@@ -3307,5 +3307,152 @@
     50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
 }
 </style>
+
+<!-- ========== 과제 안내 가이드 팝업 ========== -->
+<div class="guide-popup-overlay" id="guidePopupOverlay">
+    <div class="guide-popup" id="guidePopup">
+        <div class="guide-popup-icon"><span id="gpIcon"></span></div>
+        <div class="guide-popup-body">
+            <div class="guide-popup-title" id="gpTitle"></div>
+            <div class="guide-popup-desc" id="gpDesc"></div>
+            <div class="guide-popup-notice" id="gpNotice" style="display:none;">
+                <span>⚠️</span>
+                <div id="gpNoticeText"></div>
+            </div>
+        </div>
+        <div class="guide-popup-btn-wrap">
+            <button class="guide-popup-btn" id="gpBtn">시작하기</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 가이드 팝업 */
+.guide-popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: gpFadeIn 0.2s ease;
+}
+.guide-popup-overlay.active { display: flex; }
+@keyframes gpFadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes gpSlideUp { from { opacity:0; transform:translateY(24px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes gpBounce { 0% { transform:scale(0.3); opacity:0; } 50% { transform:scale(1.15); } 100% { transform:scale(1); opacity:1; } }
+
+.guide-popup {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 420px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+    animation: gpSlideUp 0.3s ease;
+}
+.guide-popup-icon {
+    padding: 32px 24px 16px;
+    text-align: center;
+}
+.guide-popup-icon span {
+    font-size: 52px;
+    display: inline-block;
+    animation: gpBounce 0.5s ease 0.2s both;
+}
+.guide-popup-body {
+    padding: 0 28px 24px;
+    text-align: center;
+}
+.guide-popup-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+.guide-popup-desc {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.7;
+}
+.guide-popup-desc b { color: #1a1a1a; }
+.guide-popup-notice {
+    margin: 16px 0 0;
+    background: #fef3c7;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.6;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.guide-popup-notice span { flex-shrink:0; font-size:16px; }
+.guide-popup-btn-wrap { padding: 0 28px 28px; }
+.guide-popup-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    color: #fff;
+    transition: transform 0.15s;
+}
+.guide-popup-btn:active { transform: scale(0.97); }
+.theme-purple .guide-popup-btn { background: linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow: 0 4px 16px rgba(99,102,241,0.35); }
+.theme-blue .guide-popup-btn { background: linear-gradient(135deg,#3b82f6,#60a5fa); box-shadow: 0 4px 16px rgba(59,130,246,0.35); }
+.theme-green .guide-popup-btn { background: linear-gradient(135deg,#22c55e,#4ade80); box-shadow: 0 4px 16px rgba(34,197,94,0.35); }
+</style>
+
+<script>
+/**
+ * 과제 안내 가이드 팝업
+ * showGuidePopup(config) → Promise (버튼 클릭 시 resolve)
+ */
+function showGuidePopup(config) {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('guidePopupOverlay');
+        const popup = document.getElementById('guidePopup');
+        if (!overlay || !popup) { resolve(); return; }
+
+        document.getElementById('gpIcon').textContent = config.icon || '📖';
+        document.getElementById('gpTitle').textContent = config.title || '';
+        document.getElementById('gpDesc').innerHTML = config.desc || '';
+
+        const noticeEl = document.getElementById('gpNotice');
+        if (config.notice) {
+            document.getElementById('gpNoticeText').innerHTML = config.notice;
+            noticeEl.style.display = 'flex';
+        } else {
+            noticeEl.style.display = 'none';
+        }
+
+        const btn = document.getElementById('gpBtn');
+        btn.textContent = config.btn || '확인';
+        popup.className = 'guide-popup ' + (config.theme || 'theme-purple');
+
+        // 아이콘 애니메이션 리트리거
+        const iconEl = document.getElementById('gpIcon');
+        iconEl.style.animation = 'none';
+        iconEl.offsetHeight;
+        iconEl.style.animation = '';
+
+        btn.onclick = () => {
+            overlay.classList.remove('active');
+            resolve();
+        };
+
+        overlay.classList.add('active');
+    });
+}
+</script>
 </body>
 </html>
