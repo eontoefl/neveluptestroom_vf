@@ -72,6 +72,14 @@ class ModuleController {
         window.isModuleMode = true;
         window.moduleController = this;
         
+        // ★ 브라우저 이탈 경고 활성화 (뒤로가기/탭닫기/새로고침)
+        window._beforeUnloadHandler = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+        window.addEventListener('beforeunload', window._beforeUnloadHandler);
+        console.log('🚪 beforeunload 경고 활성화');
+        
         // ★ 복원 모드: 이전 진행 데이터 로드
         if (resumeData) {
             console.log('🔄 [Resume] 복원 모드 — 컴포넌트', resumeData.nextComponentIndex, '부터 시작');
@@ -1049,6 +1057,13 @@ class ModuleController {
         
         console.log('📊 모듈 결과:', moduleResult);
         
+        // ★ 브라우저 이탈 경고 해제
+        if (window._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', window._beforeUnloadHandler);
+            window._beforeUnloadHandler = null;
+            console.log('🚪 beforeunload 경고 해제 (모듈 완료)');
+        }
+        
         // 완료 콜백 호출
         if (this.onModuleCompleteCallback) {
             this.onModuleCompleteCallback(moduleResult);
@@ -1075,6 +1090,13 @@ class ModuleController {
         this._stopAllMediaElements();
         
         this.currentComponentInstance = null;
+        
+        // ★ 브라우저 이탈 경고 해제
+        if (window._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', window._beforeUnloadHandler);
+            window._beforeUnloadHandler = null;
+            console.log('🚪 beforeunload 경고 해제 (cleanup)');
+        }
         
         // 모듈 모드 플래그 해제
         window.isModuleMode = false;
