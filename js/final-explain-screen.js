@@ -60,10 +60,52 @@ function showFinalExplainScreen(data) {
     const improvementText = improvement >= 0 ? `+${improvement}문제 (+${improvementPercent}%)` : `${improvement}문제 (${improvementPercent}%)`;
     document.getElementById('finalImprovement').textContent = improvementText;
     
+    // 하단 네비게이션 버튼 업데이트
+    updateFinalNavButtons(data.pageIndex);
+    
     // 화면 표시
     document.getElementById('finalExplainScreen').style.display = 'block';
     
     console.log('✅ 최종 해설 화면 표시 완료');
+}
+
+/**
+ * 하단 네비게이션 버튼 업데이트 (페이지별)
+ */
+function updateFinalNavButtons(pageIndex) {
+    const sectionNames = { 1: 'Response', 2: 'Conversation', 3: 'Announcement', 4: 'Lecture' };
+    
+    const leftBtn = document.querySelector('.final-navigation .btn-secondary');
+    const rightBtn = document.getElementById('finalNextBtn');
+    
+    if (!leftBtn || !rightBtn) return;
+    
+    // 왼쪽 버튼 설정
+    if (pageIndex === 1) {
+        leftBtn.innerHTML = '<i class="fas fa-arrow-left"></i> 2차 결과로 돌아가기';
+        leftBtn.onclick = function() { backToListeningRetakeResult(); };
+    } else {
+        const prevName = sectionNames[pageIndex - 1];
+        leftBtn.innerHTML = '<i class="fas fa-arrow-left"></i> ' + prevName + ' 해설';
+        leftBtn.onclick = function() { showListeningRetakeDetailPage(pageIndex - 1); };
+    }
+    
+    // 오른쪽 버튼 설정
+    if (pageIndex === 3) {
+        // Announce 다음은 Lecture (별도 화면)
+        const nextName = sectionNames[pageIndex + 1];
+        rightBtn.innerHTML = nextName + ' 해설 <i class="fas fa-arrow-right"></i>';
+        rightBtn.onclick = function() { showListeningRetakeDetailPage(pageIndex + 1); };
+    } else if (pageIndex >= 4) {
+        rightBtn.innerHTML = '학습일정으로 돌아가기 <i class="fas fa-arrow-right"></i>';
+        rightBtn.onclick = function() { backToSchedule(); };
+    } else {
+        const nextName = sectionNames[pageIndex + 1];
+        rightBtn.innerHTML = nextName + ' 해설 <i class="fas fa-arrow-right"></i>';
+        rightBtn.onclick = function() { showListeningRetakeDetailPage(pageIndex + 1); };
+    }
+    
+    console.log(`✅ 네비게이션 버튼 업데이트 - 페이지 ${pageIndex}`);
 }
 
 /**
@@ -134,3 +176,4 @@ function testFinalExplainScreen() {
 window.showFinalExplainScreen = showFinalExplainScreen;
 window.testFinalExplainScreen = testFinalExplainScreen;
 window.goToNextFinalExplainPage = goToNextFinalExplainPage;
+window.updateFinalNavButtons = updateFinalNavButtons;
