@@ -13,6 +13,8 @@ function showScreen(screenId) {
     // scheduleScreen으로 전환 시 학습 일정 초기화
     if (screenId === 'scheduleScreen' && currentUser) {
         initScheduleScreen();
+        // 공지사항 로드
+        if (typeof loadNotices === 'function') loadNotices();
     }
     
     // welcomeScreen으로 전환 시 사용자 이름 표시
