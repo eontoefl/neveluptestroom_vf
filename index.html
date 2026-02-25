@@ -367,8 +367,15 @@
             if (!listEl) return;
 
             try {
+                // supabaseSelect 준비될 때까지 최대 5초 대기
                 if (typeof supabaseSelect !== 'function') {
-                    console.warn('⚠️ supabaseSelect 미정의 — 공지사항 로드 생략');
+                    for (let i = 0; i < 50; i++) {
+                        await new Promise(r => setTimeout(r, 100));
+                        if (typeof supabaseSelect === 'function') break;
+                    }
+                }
+                if (typeof supabaseSelect !== 'function') {
+                    console.warn('⚠️ supabaseSelect 미정의 (5초 대기 후) — 공지사항 로드 생략');
                     listEl.innerHTML = '';
                     return;
                 }
@@ -399,7 +406,7 @@
         }
 
         // 페이지 로드 시 공지사항 불러오기
-        window.addEventListener('load', () => setTimeout(loadNotices, 500));
+        window.addEventListener('load', () => loadNotices());
         </script>
 
         <div class="container" style="position: relative;">
