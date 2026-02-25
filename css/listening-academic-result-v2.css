@@ -108,6 +108,10 @@
 #listeningLectureResultScreen .academic-stat-value.second {
     color: #9480c5;
 }
+#listeningAcademicExplainScreen .academic-stat-box.improvement .academic-stat-value,
+#listeningLectureResultScreen .academic-stat-box.improvement .academic-stat-value {
+    color: #5ea065;
+}
 
 /* ── 세트 카드 ── */
 #listeningAcademicExplainScreen .academic-content,
