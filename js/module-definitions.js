@@ -235,19 +235,15 @@ const MODULE_DEFINITIONS = {
         ],
         
         generateModule(moduleNumber) {
-            const baseSetId = (moduleNumber - 1) * this.setsPerModule + 1;
+            // 스피킹 N → repeat 세트 N, interview 세트 N (단순 1:1 매핑)
             const components = [];
-            let currentSetOffset = 0;
             
             this.componentStructure.forEach(structure => {
-                for (let i = 0; i < structure.count; i++) {
-                    components.push({
-                        type: structure.type,
-                        setId: baseSetId + currentSetOffset,
-                        questionsPerSet: structure.questionsPerSet
-                    });
-                    currentSetOffset++;
-                }
+                components.push({
+                    type: structure.type,
+                    setId: moduleNumber,
+                    questionsPerSet: structure.questionsPerSet
+                });
             });
             
             return {
