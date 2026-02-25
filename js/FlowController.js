@@ -224,10 +224,22 @@ const FlowController = {
     // ========================================
     // 1단계: 1차 풀이/작성/답변
     // ========================================
-    startFirstAttempt() {
+    async startFirstAttempt() {
         this.state = 'FIRST_ATTEMPT';
         this.currentAttemptNumber = 1;
         console.log('📝 [FlowController] 1차 풀이 시작');
+        
+        // ★ 가이드 팝업: 1차 풀이 안내
+        if (typeof showGuidePopup === 'function' && !window._isReplayMode && !window._isPracticeMode) {
+            await showGuidePopup({
+                icon: '📖',
+                title: '1차 풀이를 시작합니다',
+                desc: '제한시간 <b>20분</b> 안에 모든 문제를 풀어주세요.',
+                notice: '시간이 초과되면 풀던 곳까지 자동 제출됩니다.',
+                btn: '시작하기',
+                theme: 'theme-purple'
+            });
+        }
         
         // 기존 ModuleController 사용 (모든 섹션 공통)
         const controller = new ModuleController(this.moduleConfig);
@@ -394,9 +406,21 @@ const FlowController = {
     // ========================================
     // 3a단계: 2차 풀이 - 리딩/리스닝 (틀린 문제 다시 풀기)
     // ========================================
-    startRetake() {
+    async startRetake() {
         this.state = 'RETAKE';
         console.log('🔄 [FlowController] 2차 풀이 시작 (Retake)');
+        
+        // ★ 가이드 팝업: 2차 풀이 안내
+        if (typeof showGuidePopup === 'function' && !window._isReplayMode && !window._isPracticeMode) {
+            await showGuidePopup({
+                icon: '🔄',
+                title: '2차 풀이를 시작합니다',
+                desc: '1차에서 <b>틀린 문제</b>만 다시 풀 수 있습니다.',
+                notice: '시간제한은 없으니 천천히 다시 생각해보세요.',
+                btn: '시작하기',
+                theme: 'theme-blue'
+            });
+        }
         
         // 기존 RetakeController 사용
         const retakeController = new RetakeController(this.sectionType, this.firstAttemptResult);
@@ -488,9 +512,21 @@ const FlowController = {
     // ========================================
     // 4단계: 2차 결과 화면 (리딩/리스닝 전용, 1차 vs 2차 비교)
     // ========================================
-    showRetakeResult(secondResults) {
+    async showRetakeResult(secondResults) {
         this.state = 'RETAKE_RESULT';
         console.log('📊 [FlowController] 2차 결과 화면 표시');
+        
+        // ★ 가이드 팝업: 해설 + 오답노트 안내
+        if (typeof showGuidePopup === 'function' && !window._isReplayMode && !window._isPracticeMode) {
+            await showGuidePopup({
+                icon: '📝',
+                title: '해설 및 오답노트',
+                desc: '해설을 꼼꼼히 읽고,<br><b>오답노트</b>까지 제출해주세요.',
+                notice: '오답노트까지 제출해야 <b>100% 인증</b>됩니다!<br>중간에 나가면 인증률이 낮아집니다.',
+                btn: '확인했어요',
+                theme: 'theme-green'
+            });
+        }
         
         // ★ 리딩/리스닝: 2차 결과 = 해설이 합쳐진 구조이므로 여기서 오답노트 표시
         if (typeof ErrorNote !== 'undefined') {
