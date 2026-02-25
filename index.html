@@ -346,7 +346,7 @@
                 notice.style.width = userInfo.offsetWidth + 'px';
             }
         }
-        window.addEventListener('load', () => setTimeout(alignNoticeToUserInfo, 300));
+        // alignNoticeToUserInfo는 main.js의 showScreen에서 호출됨
         window.addEventListener('resize', alignNoticeToUserInfo);
 
         // 공지 타입 → 스타일 매핑
