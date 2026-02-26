@@ -1,5 +1,5 @@
 /**
- * ConverComponent.js v=002
+ * ConverComponent.js v=003_cleanup_fix
  * 
  * Listening - 컨버(Conversation) 컴포넌트
  * - 세트당 2문제
@@ -22,6 +22,7 @@ class ConverComponent {
   constructor(setNumber, config = {}) {
     console.log(`[ConverComponent] 생성 - setNumber: ${setNumber}`);
     
+    this._destroyed = false;              // cleanup 호출 여부 플래그
     this.setNumber = setNumber;           // 현재 세트 번호
     this.currentQuestion = 0;             // 현재 문제 인덱스 (0-based)
     this.answers = {};                    // 답안 저장
@@ -464,11 +465,17 @@ class ConverComponent {
   playAudioSequence() {
     console.log('[ConverComponent] 오디오 시퀀스 시작');
     
-    setTimeout(() => {
+    // 이전 타이머 정리
+    if (this._seqTimer1) { clearTimeout(this._seqTimer1); this._seqTimer1 = null; }
+    if (this._seqTimer2) { clearTimeout(this._seqTimer2); this._seqTimer2 = null; }
+    
+    this._seqTimer1 = setTimeout(() => {
+      this._seqTimer1 = null;
       console.log('[ConverComponent] 나레이션 재생 시작');
       this.playNarration(() => {
         console.log('[ConverComponent] 나레이션 완료, 2초 대기');
-        setTimeout(() => {
+        this._seqTimer2 = setTimeout(() => {
+          this._seqTimer2 = null;
           console.log('[ConverComponent] 대화 오디오 재생 시작');
           this.playMainAudio(this.setData.audioUrl, () => {
             console.log('[ConverComponent] 대화 오디오 완료, 문제 화면으로 전환');
@@ -493,28 +500,28 @@ class ConverComponent {
     
     this.audioPlayer = new Audio(this.NARRATION_URL);
     this.isAudioPlaying = true;
+    let _callbackFired = false; // 🔒 중복 콜백 방지 플래그
+    
+    const fireCallback = (source) => {
+      if (_callbackFired) { console.log(`[ConverComponent] 나레이션 콜백 중복 차단 (${source})`); return; }
+      _callbackFired = true;
+      this.isAudioPlaying = false;
+      if (!this._destroyed && onEnded) onEnded();
+    };
     
     this.audioPlayer.addEventListener('ended', () => {
       console.log('[ConverComponent] 나레이션 재생 완료');
-      this.isAudioPlaying = false;
-      if (onEnded) onEnded();
+      fireCallback('ended');
     });
     
     this.audioPlayer.addEventListener('error', (e) => {
       console.error('[ConverComponent] 나레이션 재생 실패:', e);
-      this.isAudioPlaying = false;
-      // 에러 발생해도 계속 진행
-      setTimeout(() => {
-        if (onEnded) onEnded();
-      }, 1000);
+      fireCallback('error');
     });
     
     this.audioPlayer.play().catch(err => {
       console.error('[ConverComponent] 나레이션 play() 실패:', err);
-      this.isAudioPlaying = false;
-      setTimeout(() => {
-        if (onEnded) onEnded();
-      }, 1000);
+      fireCallback('catch');
     });
   }
 
@@ -527,9 +534,10 @@ class ConverComponent {
     if (!audioUrl || audioUrl === 'PLACEHOLDER') {
       console.warn('[ConverComponent] 오디오 URL 없음, 5초 후 진행');
       this.isAudioPlaying = true;
-      setTimeout(() => {
+      this._seqTimer2 = setTimeout(() => {
+        this._seqTimer2 = null;
         this.isAudioPlaying = false;
-        if (onEnded) onEnded();
+        if (!this._destroyed && onEnded) onEnded();
       }, 5000);
       return;
     }
@@ -542,27 +550,28 @@ class ConverComponent {
     
     this.audioPlayer = new Audio(audioUrl);
     this.isAudioPlaying = true;
+    let _callbackFired = false; // 🔒 중복 콜백 방지 플래그
+    
+    const fireCallback = (source) => {
+      if (_callbackFired) { console.log(`[ConverComponent] 대화오디오 콜백 중복 차단 (${source})`); return; }
+      _callbackFired = true;
+      this.isAudioPlaying = false;
+      if (!this._destroyed && onEnded) onEnded();
+    };
     
     this.audioPlayer.addEventListener('ended', () => {
       console.log('[ConverComponent] 대화 오디오 재생 완료');
-      this.isAudioPlaying = false;
-      if (onEnded) onEnded();
+      fireCallback('ended');
     });
     
     this.audioPlayer.addEventListener('error', (e) => {
       console.error('[ConverComponent] 대화 오디오 재생 실패:', e);
-      this.isAudioPlaying = false;
-      setTimeout(() => {
-        if (onEnded) onEnded();
-      }, 3000);
+      fireCallback('error');
     });
     
     this.audioPlayer.play().catch(err => {
       console.error('[ConverComponent] 대화 오디오 play() 실패:', err);
-      this.isAudioPlaying = false;
-      setTimeout(() => {
-        if (onEnded) onEnded();
-      }, 3000);
+      fireCallback('catch');
     });
   }
 
@@ -1030,9 +1039,25 @@ class ConverComponent {
   cleanup() {
     console.log('[ConverComponent] Cleanup 시작');
     
+    // 🔴 모든 대기 타이머 취소 (오디오 겹침 원천 차단)
+    if (this._seqTimer1) { clearTimeout(this._seqTimer1); this._seqTimer1 = null; }
+    if (this._seqTimer2) { clearTimeout(this._seqTimer2); this._seqTimer2 = null; }
+    
+    // 🔴 에러 핸들러 내 setTimeout 방지용 플래그
+    this._destroyed = true;
+    
+    // 오디오 플레이어 정리
     if (this.audioPlayer) {
+      this.audioPlayer.onended = null;
+      this.audioPlayer.onerror = null;
       this.audioPlayer.pause();
       this.audioPlayer = null;
+    }
+    
+    // 2차 풀이 AudioPlayer 정리
+    if (this.retakeAudioPlayer && typeof this.retakeAudioPlayer.destroy === 'function') {
+      this.retakeAudioPlayer.destroy();
+      this.retakeAudioPlayer = null;
     }
     
     this.isAudioPlaying = false;
