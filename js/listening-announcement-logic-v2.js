@@ -77,10 +77,8 @@ function nextAnnouncementQuestion() {
     if (currentAnnouncementComponent) {
         const hasNext = currentAnnouncementComponent.nextQuestion();
         if (hasNext) {
-            // 다음 문제 → 타이머 리셋 (20초)
-            if (window.moduleController && window.moduleController.startQuestionTimer) {
-                window.moduleController.startQuestionTimer(20);
-            }
+            // 타이머는 컴포넌트 내부 loadQuestion()에서 시작됨 (중복 방지)
+            console.log('⏰ [어댑터] Announcement 다음 문제 → 타이머는 컴포넌트에서 관리');
         } else {
             // 마지막 문제면 자동 제출
             submitListeningAnnouncement();
