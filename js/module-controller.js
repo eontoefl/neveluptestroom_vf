@@ -252,7 +252,7 @@ class ModuleController {
     }
     
     handleQuestionTimeout() {
-        console.log('⏰ [타이머] 시간 초과 (0초 도달) - 자동 다음 문제');
+        console.log('⏰ [타이머] 시간 초과 (0초 도달) - 보기 선택 막기');
         
         // 타이머 정리
         if (this.questionTimer) {
@@ -261,49 +261,41 @@ class ModuleController {
             console.log('✅ [타이머] 정리 완료');
         }
         
-        // 실제 컴포넌트 인스턴스 찾기 (전역 변수에서)
+        // v007: 자동 넘김/자동 제출 대신 보기 선택만 막기
         const componentInstance = this.getCurrentComponentInstance();
         
         if (!componentInstance) {
-            console.error('❌ [자동진행] 컴포넌트 인스턴스를 찾을 수 없음');
+            console.error('❌ [타임아웃] 컴포넌트 인스턴스를 찾을 수 없음');
             return;
         }
         
-        console.log('🔍 [자동진행] 컴포넌트 인스턴스 확인:', typeof componentInstance.nextQuestion);
-        
-        // 현재 컴포넌트의 현재 문제 제한시간 가져오기 (다음 문제 타이머용)
-        const currentComponent = this.config.components[this.currentComponentIndex];
-        const componentType = currentComponent ? currentComponent.type : null;
-        
-        // 컴포넌트 타입별 제한시간 (초)
-        const timeLimitMap = {
-            response: 20,
-            conver: 20,
-            announcement: 20,
-            lecture: 30
-        };
-        const timeLimit = timeLimitMap[componentType] || 20;
-        
-        // 현재 컴포넌트의 nextQuestion() 호출
-        if (componentInstance.nextQuestion) {
-            const hasNext = componentInstance.nextQuestion();
-            console.log(`🔄 [자동진행] nextQuestion() 결과: ${hasNext ? '다음 문제 있음' : '마지막 문제 - submit 호출'}`);
-            if (hasNext) {
-                // ⚠️ 다음 문제 타이머는 여기서 시작하지 않음!
-                // loadQuestion() 내부에서 오디오 재생 완료 후 onTimerStart() 콜백으로 시작됨
-                // 여기서 중복 시작하면 오디오 재생 중에 타이머가 만료되어 오디오 겹침 발생
-                console.log(`⏰ [자동진행] 다음 문제 타이머는 오디오 완료 후 onTimerStart()에서 시작`);
-            } else {
-                // 마지막 문제면 submit
-                if (componentInstance.submit) {
-                    componentInstance.submit();
-                } else {
-                    console.error('❌ [자동진행] submit() 메서드 없음');
-                }
-            }
+        // 컴포넌트에 타임아웃 상태 전달 (보기 막기용)
+        if (typeof componentInstance.onQuestionTimeout === 'function') {
+            componentInstance.onQuestionTimeout();
         } else {
-            console.error('❌ [자동진행] nextQuestion() 메서드 없음');
+            // onQuestionTimeout이 없는 컴포넌트는 직접 보기 막기
+            this._disableOptions();
         }
+        
+        console.log('🚫 [타임아웃] 보기 선택 차단됨 - Next 버튼으로 다음 문제 이동 가능');
+    }
+    
+    /**
+     * v007: 보기 선택지 비활성화 (타임아웃 시)
+     */
+    _disableOptions() {
+        const optionSelectors = [
+            '.response-option',
+            '.conver-option',
+            '.announcement-option',
+            '.lecture-option'
+        ];
+        optionSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.5';
+            });
+        });
     }
     
     /**
