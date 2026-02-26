@@ -414,8 +414,22 @@ class DiscussionComponent {
         this.currentDiscussionSet = setIndex;
         this.currentDiscussionQuestion = 0; // Discussion은 세트당 1문제
         
-        // 프로필 랜덤 선택
-        this.currentDiscussionProfiles = this.getRandomProfiles();
+        // 프로필 선택: 2차 풀이면 1차에서 저장한 프로필 재사용, 아니면 랜덤 생성
+        const savedProfiles = sessionStorage.getItem('discussionProfiles');
+        if (window.isSecondAttempt && savedProfiles) {
+            try {
+                this.currentDiscussionProfiles = JSON.parse(savedProfiles);
+                console.log('♻️ [Discussion] 1차 프로필 재사용:', this.currentDiscussionProfiles.student1.name, this.currentDiscussionProfiles.student2.name);
+            } catch (e) {
+                console.warn('⚠️ [Discussion] 프로필 복원 실패, 랜덤 생성');
+                this.currentDiscussionProfiles = this.getRandomProfiles();
+            }
+        } else {
+            this.currentDiscussionProfiles = this.getRandomProfiles();
+            // 1차 풀이: sessionStorage에 저장 (ko-모범답안 & 2차 풀이에서 재사용)
+            sessionStorage.setItem('discussionProfiles', JSON.stringify(this.currentDiscussionProfiles));
+            console.log('💾 [Discussion] 프로필 저장:', this.currentDiscussionProfiles.student1.name, this.currentDiscussionProfiles.student2.name);
+        }
         
         // 전역 저장 (결과 화면에서 재사용)
         window.currentDiscussionProfiles = this.currentDiscussionProfiles;
@@ -428,10 +442,18 @@ class DiscussionComponent {
      */
     renderDiscussionQuestion() {
         const setData = this.writingDiscussionData[this.currentDiscussionSet];
-        const profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles || {
-            student1: { name: 'Student 1' },
-            student2: { name: 'Student 2' }
-        };
+        // sessionStorage 우선 → 인스턴스 → window → 기본값
+        let profiles = null;
+        const _renderSavedProfiles = sessionStorage.getItem('discussionProfiles');
+        if (_renderSavedProfiles) {
+            try { profiles = JSON.parse(_renderSavedProfiles); } catch(e) {}
+        }
+        if (!profiles) {
+            profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles;
+        }
+        if (!profiles) {
+            profiles = { student1: { name: 'Student 1' }, student2: { name: 'Student 2' } };
+        }
         
         console.log('🎨 [Discussion] 문제 렌더링:', setData);
         
@@ -731,11 +753,16 @@ class DiscussionComponent {
         // TXT 파일 다운로드
         this.downloadDiscussion(setData, userAnswer, wordCount);
         
-        // 결과 데이터 생성
+        // 결과 데이터 생성 (프로필 포함 - 리플레이 시 이름 일관성 보장)
+        const profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles || {
+            student1: { name: 'Student 1' },
+            student2: { name: 'Student 2' }
+        };
         const resultData = {
             weekDay: setData.weekDay || 'Week 1, 월요일',
             wordCount: wordCount,
             userAnswer: userAnswer,
+            profiles: profiles,
             question: {
                 classContext: setData.classContext || '',
                 topic: setData.topic || '',
@@ -770,10 +797,18 @@ class DiscussionComponent {
         
         const filename = `Writing_Discussion_${window.currentAttemptNumber === 2 ? '2차' : '1차'}_${dateStr}.txt`;
         
-        const profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles || {
-            student1: { name: 'Student 1' },
-            student2: { name: 'Student 2' }
-        };
+        // sessionStorage 우선 → 인스턴스 → window → 기본값
+        let profiles = null;
+        const _dlSavedProfiles = sessionStorage.getItem('discussionProfiles');
+        if (_dlSavedProfiles) {
+            try { profiles = JSON.parse(_dlSavedProfiles); } catch(e) {}
+        }
+        if (!profiles) {
+            profiles = this.currentDiscussionProfiles || window.currentDiscussionProfiles;
+        }
+        if (!profiles) {
+            profiles = { student1: { name: 'Student 1' }, student2: { name: 'Student 2' } };
+        }
         
         let content = '='.repeat(60) + '\n';
         content += `토론형 글쓰기 답안 (${window.currentAttemptNumber === 2 ? '2차 작성' : '1차 작성'})\n`;
@@ -824,10 +859,23 @@ class DiscussionComponent {
             return;
         }
         
-        const profiles = window.currentDiscussionProfiles || {
-            student1: { name: 'Student 1' },
-            student2: { name: 'Student 2' }
-        };
+        // data.profiles → sessionStorage → window → 기본값
+        let profiles = null;
+        if (data.profiles && data.profiles.student1 && data.profiles.student2) {
+            profiles = data.profiles;
+        }
+        if (!profiles) {
+            const _savedProfiles = sessionStorage.getItem('discussionProfiles');
+            if (_savedProfiles) {
+                try { profiles = JSON.parse(_savedProfiles); } catch(e) {}
+            }
+        }
+        if (!profiles) {
+            profiles = window.currentDiscussionProfiles;
+        }
+        if (!profiles) {
+            profiles = { student1: { name: 'Student 1' }, student2: { name: 'Student 2' } };
+        }
         
         // 제목 업데이트
         const titleElement = document.getElementById('discussionResultTitle');
