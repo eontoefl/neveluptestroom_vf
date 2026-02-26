@@ -1,7 +1,7 @@
 /**
  * AnnouncementComponent.js
  * 듣기 - 공지사항 듣고 응답 고르기 컴포넌트
- * v=003_fix
+ * v=004_cleanup_fix
  * - scriptHighlight → scriptTrans 수정 (CSV columns[5]는 scriptTrans)
  * - scriptHighlights 추가 (CSV 마지막 컬럼)
  * - submit()에 scriptTrans, scriptHighlights, questionTextTrans 포함
@@ -35,6 +35,7 @@ class AnnouncementComponent {
         // 오디오 플레이어
         this.audioPlayer = null;
         this.isAudioPlaying = false;
+        this._destroyed = false;           // cleanup 호출 여부 플래그
         
         // 구글 시트 설정
         this.SHEET_CONFIG = {
@@ -439,12 +440,16 @@ class AnnouncementComponent {
         
         // 2초 대기
         setTimeout(() => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.log('[AnnouncementComponent] 나레이션 재생 시작');
             this.playNarration(() => {
+                if (this._destroyed) return; // 🚪 문지기 가드
                 // 나레이션 끝난 후 2초 대기
                 setTimeout(() => {
+                    if (this._destroyed) return; // 🚪 문지기 가드
                     console.log('[AnnouncementComponent] 공지사항 오디오 재생 시작');
                     this.playMainAudio(() => {
+                        if (this._destroyed) return; // 🚪 문지기 가드
                         console.log('[AnnouncementComponent] 오디오 시퀀스 완료, 문제 화면으로 전환');
                         this.showQuestions();
                     });
@@ -468,14 +473,17 @@ class AnnouncementComponent {
         
         this.audioPlayer = new Audio(narrationUrl);
         this.audioPlayer.onended = () => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.log('[AnnouncementComponent] 나레이션 재생 완료');
             if (onEnded) onEnded();
         };
         this.audioPlayer.onerror = (e) => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 나레이션 재생 오류:', e);
             if (onEnded) onEnded();
         };
         this.audioPlayer.play().catch(err => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 나레이션 재생 실패:', err);
             if (onEnded) onEnded();
         });
@@ -496,14 +504,17 @@ class AnnouncementComponent {
         
         this.audioPlayer = new Audio(audioUrl);
         this.audioPlayer.onended = () => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.log('[AnnouncementComponent] 공지사항 오디오 재생 완료');
             if (onEnded) onEnded();
         };
         this.audioPlayer.onerror = (e) => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 공지사항 오디오 재생 오류:', e);
             if (onEnded) onEnded();
         };
         this.audioPlayer.play().catch(err => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 공지사항 오디오 재생 실패:', err);
             if (onEnded) onEnded();
         });
@@ -1004,6 +1015,37 @@ class AnnouncementComponent {
         }
         const questionKey = `${this.currentSetData.setId}_a${this.currentQuestion + 1}`;
         return this.answers[questionKey] || null;
+    }
+    
+    /**
+     * Cleanup (오디오/타이머 정리 - 겹침 원천 차단)
+     */
+    cleanup() {
+        console.log('[AnnouncementComponent] Cleanup 시작');
+        
+        // 🔴 destroyed 플래그 (에러 핸들러 콜백 차단)
+        this._destroyed = true;
+        
+        // 오디오 플레이어 정리
+        if (this.audioPlayer) {
+            this.audioPlayer.onended = null;
+            this.audioPlayer.onerror = null;
+            this.audioPlayer.pause();
+            this.audioPlayer = null;
+        }
+        
+        // 2차 풀이 AudioPlayer 정리
+        if (this.retakeAudioPlayer && typeof this.retakeAudioPlayer.destroy === 'function') {
+            this.retakeAudioPlayer.destroy();
+            this.retakeAudioPlayer = null;
+        }
+        
+        this.isAudioPlaying = false;
+        this.showingIntro = true;
+        this.currentImage = null;
+        this.answers = {};
+        
+        console.log('[AnnouncementComponent] Cleanup 완료');
     }
 }
 

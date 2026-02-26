@@ -1,5 +1,5 @@
 /**
- * ResponseComponent.js v=005
+ * ResponseComponent.js v=006_cleanup_fix
  * 
  * Listening - 응답고르기 컴포넌트
  * 
@@ -47,6 +47,8 @@ class ResponseComponent {
     this.audioPlayer = null;              // 오디오 플레이어
     this.isAudioPlaying = false;          // 오디오 재생 중 플래그
     this.isSubmitting = false;            // 중복 제출 방지
+    this._audioDelayTimer = null;          // 오디오 2초 딜레이 타이머 (겹침 방지)
+    this._destroyed = false;               // cleanup 호출 여부 플래그
     this._lastFemaleImage = null;          // 직전 여성 이미지 (연속 방지)
     this._lastMaleImage = null;            // 직전 남성 이미지 (연속 방지)
     
@@ -406,6 +408,13 @@ class ResponseComponent {
     // 🔴 이전 오디오 완전 정리 (렉 방지)
     this.stopAudio();
     
+    // 🔴 이전 2초 딜레이 타이머 취소 (오디오 겹침 방지)
+    if (this._audioDelayTimer) {
+      clearTimeout(this._audioDelayTimer);
+      this._audioDelayTimer = null;
+      console.log('[ResponseComponent] 🛑 이전 오디오 딜레이 타이머 취소');
+    }
+    
     const question = this.setData.questions[questionIndex];
     if (!question) {
       console.error('[ResponseComponent] 문제 데이터 없음');
@@ -437,11 +446,15 @@ class ResponseComponent {
       // 블러 처리된 선택지 표시
       this.renderOptions(question, true);
       
-      // 2초 대기 → 오디오 재생
-      setTimeout(() => {
+      // 2초 대기 → 오디오 재생 (타이머 ID 저장하여 취소 가능하게)
+      this._audioDelayTimer = setTimeout(() => {
+        this._audioDelayTimer = null;
+        if (this._destroyed) return; // 🚪 문지기 가드
         this.playAudio(question.audioUrl, () => {
+          if (this._destroyed) return; // 🚪 문지기 가드
           // 오디오 종료 후 0.5초 대기 → 블러 해제
           setTimeout(() => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             this.renderOptions(question, false);
             // Module에게 타이머 시작 요청 (20초 카운트다운 시작)
             if (this.onTimerStart) {
@@ -568,6 +581,13 @@ class ResponseComponent {
    * 오디오 완전 정지 및 정리 (렉 방지)
    */
   stopAudio() {
+    // 🔴 대기 중인 딜레이 타이머도 취소 (오디오 겹침 방지)
+    if (this._audioDelayTimer) {
+      clearTimeout(this._audioDelayTimer);
+      this._audioDelayTimer = null;
+      console.log('[ResponseComponent] 🛑 딜레이 타이머 취소');
+    }
+    
     if (this.audioPlayer) {
       try {
         this.audioPlayer.pause();
@@ -646,6 +666,7 @@ class ResponseComponent {
    */
   playAudio(audioUrl, onEnded) {
     console.log('[ResponseComponent] 오디오 재생 시작');
+    console.log('[ResponseComponent] 원본 audioUrl:', audioUrl);
     
     if (!audioUrl || audioUrl === 'PLACEHOLDER' || audioUrl.includes('1ABC123DEF456')) {
       console.warn('[ResponseComponent] 오디오 URL 없음, 즉시 진행');
@@ -672,6 +693,7 @@ class ResponseComponent {
     });
     
     this.audioPlayer.addEventListener('ended', () => {
+      if (this._destroyed) return; // 🚪 문지기 가드
       console.log('[ResponseComponent] 오디오 재생 완료');
       this.isAudioPlaying = false;
       
@@ -683,22 +705,33 @@ class ResponseComponent {
     });
     
     this.audioPlayer.addEventListener('error', (e) => {
+      if (this._destroyed) return; // 🚪 문지기 가드
       // ★ stopAudio()로 정리된 후 발생하는 error 이벤트 무시
       if (!this.audioPlayer) return;
+      const mediaErr = this.audioPlayer.error;
       console.error('[ResponseComponent] 오디오 재생 실패:', e);
-      alert('오디오 재생에 실패했습니다.\n\nGoogle Drive 파일 공유 설정을 확인해주세요.');
+      console.error('[ResponseComponent] 실패한 URL:', convertedUrl);
+      console.error('[ResponseComponent] 원본 URL:', audioUrl);
+      console.error('[ResponseComponent] MediaError code:', mediaErr ? mediaErr.code : 'N/A');
+      console.error('[ResponseComponent] MediaError message:', mediaErr ? mediaErr.message : 'N/A');
+      // alert 제거 — 조용히 진행
       this.isAudioPlaying = false;
       if (onEnded) onEnded();
     });
     
     this.audioPlayer.play().catch(err => {
-      console.error('[ResponseComponent] 오디오 재생 시작 실패:', err);
-      this.isAudioPlaying = false;
-      if (onEnded) onEnded();
+      if (this._destroyed) return; // 🚪 문지기 가드
+      console.error('[ResponseComponent] 오디오 play() 실패:', err.name, err.message);
+      // play() 실패 시에도 error 이벤트가 나중에 발생할 수 있으므로 중복 콜백 방지
+      if (this.isAudioPlaying) {
+        this.isAudioPlaying = false;
+        if (onEnded) onEnded();
+      }
     });
     
     // 2차 풀이 모드: 버튼 상태 업데이트 (재생 중)
     setTimeout(() => {
+      if (this._destroyed) return; // 🚪 문지기 가드
       const toggleBtn = document.getElementById('responseAudioToggleBtn');
       if (toggleBtn) toggleBtn.textContent = '⏸';
     }, 100);
@@ -1041,9 +1074,22 @@ class ResponseComponent {
   cleanup() {
     console.log('[ResponseComponent] Cleanup 시작');
     
-    if (this.audioPlayer) {
-      this.audioPlayer.pause();
-      this.audioPlayer = null;
+    // 🔴 대기 중인 딜레이 타이머 취소 (오디오 겹침 원천 차단)
+    if (this._audioDelayTimer) {
+      clearTimeout(this._audioDelayTimer);
+      this._audioDelayTimer = null;
+    }
+    
+    // 🔴 destroyed 플래그 설정 (에러 핸들러 콜백 차단)
+    this._destroyed = true;
+    
+    // 오디오 완전 정리
+    this.stopAudio();
+    
+    // 2차 풀이 AudioPlayer 정리
+    if (this.retakeAudioPlayer && typeof this.retakeAudioPlayer.destroy === 'function') {
+      this.retakeAudioPlayer.destroy();
+      this.retakeAudioPlayer = null;
     }
     
     this.isAudioPlaying = false;

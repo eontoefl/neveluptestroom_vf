@@ -31,6 +31,7 @@ class DiscussionComponent {
         
         // 데이터 저장
         this.writingDiscussionData = null;
+        this._destroyed = false; // 🚪 문지기 플래그
         
         // ============================================
         // 2. 프로필 이미지 관리 (7개)
@@ -993,6 +994,7 @@ class DiscussionComponent {
         
         // 피드백 박스로 부드럽게 스크롤
         setTimeout(() => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             bulletsElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
     }
@@ -1018,6 +1020,15 @@ class DiscussionComponent {
                 if (toggleButton) toggleButton.classList.remove('active');
             }
         }
+    }
+    
+    /**
+     * Cleanup (🚪 문지기 - 컴포넌트 전환 시 호출)
+     */
+    cleanup() {
+        console.log('[DiscussionComponent] Cleanup 시작');
+        this._destroyed = true;
+        console.log('[DiscussionComponent] Cleanup 완료');
     }
 }
 

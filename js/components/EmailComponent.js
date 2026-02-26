@@ -43,6 +43,7 @@ class EmailComponent {
         
         // 타이머 설정
         this.TIME_LIMIT = 420; // 7분
+        this._destroyed = false; // 🚪 문지기 플래그
         
         // 구글 시트 설정
         this.SHEET_CONFIG = {
@@ -325,6 +326,7 @@ class EmailComponent {
             
             // DOM이 완전히 렌더링된 후 단어수 업데이트
             setTimeout(() => {
+                if (this._destroyed) return; // 🚪 문지기 가드
                 this.updateWordCount();
             }, 100);
         }
@@ -640,6 +642,16 @@ Best regards,
                 }
             ]
         };
+    }
+    
+    /**
+     * Cleanup (🚪 문지기 - 컴포넌트 전환 시 호출)
+     */
+    cleanup() {
+        console.log('[EmailComponent] Cleanup 시작');
+        this._destroyed = true;
+        this.answers = {};
+        console.log('[EmailComponent] Cleanup 완료');
     }
 }
 

@@ -1,7 +1,7 @@
 /**
  * LectureComponent.js
  * 듣기 - 렉쳐 듣고 문제 풀기 컴포넌트
- * v=002
+ * v=003_cleanup_fix
  * 
  * 공지사항과 유사하지만 차이점:
  * - 문제 개수: 4개 (공지사항 2개)
@@ -37,6 +37,7 @@ class LectureComponent {
         // 오디오 플레이어
         this.audioPlayer = null;
         this.isAudioPlaying = false;
+        this._destroyed = false;           // cleanup 호출 여부 플래그
         
         // 타이머 설정
         this.TIME_LIMIT = 30; // 30초 (공지사항은 20초)
@@ -498,8 +499,12 @@ class LectureComponent {
         if (!narrationUrl || narrationUrl.trim() === '') {
             console.log('[LectureComponent] 나레이션 없음, 렉처 오디오만 재생');
             this.playMainAudio(() => {
+                if (this._destroyed) return; // 🚪 문지기 가드
                 console.log('[LectureComponent] 오디오 시퀀스 완료, 2초 후 문제 화면으로 전환');
-                setTimeout(() => this.showQuestions(), 2000);
+                setTimeout(() => {
+                    if (this._destroyed) return; // 🚪 문지기 가드
+                    this.showQuestions();
+                }, 2000);
             });
             return;
         }
@@ -507,16 +512,22 @@ class LectureComponent {
         // 1) 나레이션 재생
         console.log('[LectureComponent] 나레이션 재생 시작');
         this.playNarration(() => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.log('[LectureComponent] 나레이션 완료, 2초 대기');
             
             // 2) 2초 대기
             setTimeout(() => {
+                if (this._destroyed) return; // 🚪 문지기 가드
                 console.log('[LectureComponent] 렉처 오디오 재생 시작');
                 
                 // 3) 렉처 오디오 재생
                 this.playMainAudio(() => {
+                    if (this._destroyed) return; // 🚪 문지기 가드
                     console.log('[LectureComponent] 오디오 시퀀스 완료, 2초 후 문제 화면으로 전환');
-                    setTimeout(() => this.showQuestions(), 2000);
+                    setTimeout(() => {
+                        if (this._destroyed) return; // 🚪 문지기 가드
+                        this.showQuestions();
+                    }, 2000);
                 });
             }, 2000);
         });
@@ -537,14 +548,17 @@ class LectureComponent {
         
         this.audioPlayer = new Audio(narrationUrl);
         this.audioPlayer.onended = () => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.log('[LectureComponent] 나레이션 재생 완료');
             if (onEnded) onEnded();
         };
         this.audioPlayer.onerror = (e) => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[LectureComponent] 나레이션 재생 오류:', e);
             if (onEnded) onEnded();
         };
         this.audioPlayer.play().catch(err => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[LectureComponent] 나레이션 재생 실패:', err);
             if (onEnded) onEnded();
         });
@@ -565,14 +579,17 @@ class LectureComponent {
         
         this.audioPlayer = new Audio(audioUrl);
         this.audioPlayer.onended = () => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.log('[LectureComponent] 렉처 오디오 재생 완료');
             if (onEnded) onEnded();
         };
         this.audioPlayer.onerror = (e) => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[LectureComponent] 렉처 오디오 재생 오류:', e);
             if (onEnded) onEnded();
         };
         this.audioPlayer.play().catch(err => {
+            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[LectureComponent] 렉처 오디오 재생 실패:', err);
             if (onEnded) onEnded();
         });
@@ -1055,6 +1072,37 @@ class LectureComponent {
         }
         const questionKey = `${this.currentSetData.setId}_q${this.currentQuestion + 1}`;
         return this.answers[questionKey] || null;
+    }
+    
+    /**
+     * Cleanup (오디오/타이머 정리 - 겹침 원천 차단)
+     */
+    cleanup() {
+        console.log('[LectureComponent] Cleanup 시작');
+        
+        // 🔴 destroyed 플래그 (에러 핸들러 콜백 차단)
+        this._destroyed = true;
+        
+        // 오디오 플레이어 정리
+        if (this.audioPlayer) {
+            this.audioPlayer.onended = null;
+            this.audioPlayer.onerror = null;
+            this.audioPlayer.pause();
+            this.audioPlayer = null;
+        }
+        
+        // 2차 풀이 AudioPlayer 정리
+        if (this.retakeAudioPlayer && typeof this.retakeAudioPlayer.destroy === 'function') {
+            this.retakeAudioPlayer.destroy();
+            this.retakeAudioPlayer = null;
+        }
+        
+        this.isAudioPlaying = false;
+        this.showingIntro = true;
+        this.currentImage = null;
+        this.answers = {};
+        
+        console.log('[LectureComponent] Cleanup 완료');
     }
 }
 
