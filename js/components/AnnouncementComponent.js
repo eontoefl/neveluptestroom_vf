@@ -472,20 +472,26 @@ class AnnouncementComponent {
         }
         
         this.audioPlayer = new Audio(narrationUrl);
-        this.audioPlayer.onended = () => {
-            if (this._destroyed) return; // 🚪 문지기 가드
-            console.log('[AnnouncementComponent] 나레이션 재생 완료');
+        let _callbackFired = false; // 🔒 중복 콜백 방지 플래그
+        
+        const fireCallback = (source) => {
+            if (_callbackFired) { console.log(`[AnnouncementComponent] 나레이션 콜백 중복 차단 (${source})`); return; }
+            _callbackFired = true;
+            if (this._destroyed) return;
             if (onEnded) onEnded();
+        };
+        
+        this.audioPlayer.onended = () => {
+            console.log('[AnnouncementComponent] 나레이션 재생 완료');
+            fireCallback('ended');
         };
         this.audioPlayer.onerror = (e) => {
-            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 나레이션 재생 오류:', e);
-            if (onEnded) onEnded();
+            fireCallback('error');
         };
         this.audioPlayer.play().catch(err => {
-            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 나레이션 재생 실패:', err);
-            if (onEnded) onEnded();
+            fireCallback('catch');
         });
     }
     
@@ -503,20 +509,26 @@ class AnnouncementComponent {
         }
         
         this.audioPlayer = new Audio(audioUrl);
-        this.audioPlayer.onended = () => {
-            if (this._destroyed) return; // 🚪 문지기 가드
-            console.log('[AnnouncementComponent] 공지사항 오디오 재생 완료');
+        let _callbackFired = false; // 🔒 중복 콜백 방지 플래그
+        
+        const fireCallback = (source) => {
+            if (_callbackFired) { console.log(`[AnnouncementComponent] 공지사항오디오 콜백 중복 차단 (${source})`); return; }
+            _callbackFired = true;
+            if (this._destroyed) return;
             if (onEnded) onEnded();
+        };
+        
+        this.audioPlayer.onended = () => {
+            console.log('[AnnouncementComponent] 공지사항 오디오 재생 완료');
+            fireCallback('ended');
         };
         this.audioPlayer.onerror = (e) => {
-            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 공지사항 오디오 재생 오류:', e);
-            if (onEnded) onEnded();
+            fireCallback('error');
         };
         this.audioPlayer.play().catch(err => {
-            if (this._destroyed) return; // 🚪 문지기 가드
             console.error('[AnnouncementComponent] 공지사항 오디오 재생 실패:', err);
-            if (onEnded) onEnded();
+            fireCallback('catch');
         });
     }
     
