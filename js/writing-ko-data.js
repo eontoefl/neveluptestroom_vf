@@ -7,7 +7,7 @@
 console.log('✅ writing-ko-data.js 로드 완료');
 
 const WritingKoData = {
-    CACHE_VERSION: 'v005',  // 캐시 버전 (변경 시 자동 무효화)
+    CACHE_VERSION: 'v006',  // 캐시 버전 (변경 시 자동 무효화) ★ v006: 빈 데이터 캐싱 방지 + 디버깅 로그 추가
     
     SHEET_CONFIG: {
         spreadsheetId: '1Na3AmaqNeE2a3gcq7koj0TF2jGZhS7m8PFuk2S8rRfo',
@@ -18,16 +18,33 @@ const WritingKoData = {
     
     async load() {
         if (this.cache) {
-            console.log('📦 [KoData] 캐시 사용');
-            return this.cache;
+            // ★ 메모리 캐시도 빈 데이터인지 확인
+            const emailCount = Object.keys(this.cache.email || {}).length;
+            const discCount = Object.keys(this.cache.discussion || {}).length;
+            if (emailCount > 0 || discCount > 0) {
+                console.log(`📦 [KoData] 메모리 캐시 사용 (email: ${emailCount}개, discussion: ${discCount}개)`);
+                return this.cache;
+            } else {
+                console.warn('⚠️ [KoData] 메모리 캐시가 비어있음 → 재로드');
+                this.cache = null;
+            }
         }
         
         const cacheKey = `writing_ko_cache_${this.CACHE_VERSION}`;
         const cached = sessionStorage.getItem(cacheKey);
         if (cached) {
-            this.cache = JSON.parse(cached);
-            console.log(`📦 [KoData] sessionStorage 캐시 사용 (${this.CACHE_VERSION})`);
-            return this.cache;
+            const parsed = JSON.parse(cached);
+            // ★ 빈 캐시인지 확인 (이전 버그로 빈 데이터가 캐시된 경우 방지)
+            const emailCount = Object.keys(parsed.email || {}).length;
+            const discCount = Object.keys(parsed.discussion || {}).length;
+            if (emailCount > 0 || discCount > 0) {
+                this.cache = parsed;
+                console.log(`📦 [KoData] sessionStorage 캐시 사용 (${this.CACHE_VERSION}) - email: ${emailCount}개, discussion: ${discCount}개`);
+                return this.cache;
+            } else {
+                console.warn(`⚠️ [KoData] sessionStorage 캐시가 비어있음 → 재로드`);
+                sessionStorage.removeItem(cacheKey);
+            }
         }
         
         // 이전 버전 캐시 삭제
@@ -41,9 +58,17 @@ const WritingKoData = {
         // 1) Supabase 우선 시도
         const supabaseResult = await this._loadFromSupabase();
         if (supabaseResult) {
-            this.cache = supabaseResult;
-            sessionStorage.setItem(cacheKey, JSON.stringify(this.cache));
-            return this.cache;
+            // ★ 빈 데이터인지 한번 더 확인
+            const emailCount = Object.keys(supabaseResult.email || {}).length;
+            const discCount = Object.keys(supabaseResult.discussion || {}).length;
+            if (emailCount > 0 || discCount > 0) {
+                this.cache = supabaseResult;
+                sessionStorage.setItem(cacheKey, JSON.stringify(this.cache));
+                console.log(`✅ [KoData] Supabase 캐시 저장 (email: ${emailCount}개, discussion: ${discCount}개)`);
+                return this.cache;
+            } else {
+                console.warn('⚠️ [KoData] Supabase 결과가 비어있음 → Google Sheets 폴백');
+            }
         }
         
         // 2) Google Sheets 폴백
@@ -105,21 +130,45 @@ const WritingKoData = {
             
             console.log(`✅ [KoData] Supabase에서 ${rows.length}개 행 로드 성공`);
             
+            // ★ 디버깅: 첫 번째 행의 실제 필드명 확인
+            if (rows.length > 0) {
+                console.log('🔍 [KoData] 첫 번째 행 필드명:', Object.keys(rows[0]));
+                console.log('🔍 [KoData] 첫 번째 행 데이터:', JSON.stringify(rows[0]).substring(0, 500));
+            }
+            
             const result = { email: {}, discussion: {} };
-            rows.forEach(row => {
+            rows.forEach((row, idx) => {
                 const type = (row.type || '').trim();
                 const setId = (row.set_id || '').trim();
                 const koText = (row.ko_text || '').trim();
-                if (!koText) return;
+                
+                // ★ 디버깅: 각 행의 파싱 결과 로그
+                if (idx < 5) {
+                    console.log(`🔍 [KoData] Row ${idx}: type="${type}", set_id="${setId}", ko_text길이=${koText.length}`);
+                }
+                
+                if (!koText) {
+                    console.warn(`⚠️ [KoData] Row ${idx}: ko_text 비어있음 (type=${type}, set_id=${setId})`);
+                    return;
+                }
                 
                 if (type === 'email') {
                     result.email[setId] = koText;
                 } else if (type === 'discussion') {
                     result.discussion[setId] = koText;
+                } else {
+                    console.warn(`⚠️ [KoData] Row ${idx}: 알 수 없는 type="${type}" (set_id=${setId})`);
                 }
             });
             
-            console.log(`✅ [KoData] Supabase 파싱 완료 - email: ${Object.keys(result.email).length}개, discussion: ${Object.keys(result.discussion).length}개`);
+            console.log(`✅ [KoData] Supabase 파싱 완료 - email: ${Object.keys(result.email).length}개 ${JSON.stringify(Object.keys(result.email))}, discussion: ${Object.keys(result.discussion).length}개 ${JSON.stringify(Object.keys(result.discussion))}`);
+            
+            // ★ 파싱 결과가 모두 비어있으면 null 반환 (빈 데이터 캐싱 방지)
+            if (Object.keys(result.email).length === 0 && Object.keys(result.discussion).length === 0) {
+                console.warn('⚠️ [KoData] Supabase 행은 있으나 파싱된 데이터 없음 → Google Sheets 폴백');
+                return null;
+            }
+            
             return result;
             
         } catch (error) {
