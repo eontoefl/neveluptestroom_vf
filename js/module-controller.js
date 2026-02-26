@@ -769,6 +769,9 @@ class ModuleController {
             return;
         }
         
+        // 🔴 이전 컴포넌트의 문제별 타이머 정리 (다음 컴포넌트 인트로 중 타이머 만료 방지)
+        this.stopQuestionTimer();
+        
         // 🔴 이전 컴포넌트 오디오 정리 (겹침 방지)
         if (this.currentComponentInstance) {
             // 🚪 문지기: _destroyed 강제 설정 (setTimeout 콜백 차단)
@@ -1042,6 +1045,7 @@ class ModuleController {
         
         // 타이머 정리
         this.stopModuleTimer();
+        this.stopQuestionTimer(); // 🔴 문제별 타이머도 정리 (남은 카운트다운 방지)
         
         const endTime = Date.now();
         const totalTimeSpent = Math.floor((endTime - this.startTime) / 1000); // 초 단위
@@ -1086,6 +1090,7 @@ class ModuleController {
         console.log('🧹 ModuleController cleanup');
         
         this.stopModuleTimer();
+        this.stopQuestionTimer(); // 🔴 문제별 타이머도 정리 (중간 이탈 시 잔여 타이머 방지)
         
         if (this.currentComponentInstance && this.currentComponentInstance.cleanup) {
             this.currentComponentInstance.cleanup();
