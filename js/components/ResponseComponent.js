@@ -11,10 +11,15 @@
  * - TypeError: audioUrl.includes is not a function 해결
  * 
  * - 세트당 12문제
- * - 오디오 재생 (2초 대기 → 재생 → 0.5초 대기 → 블러 해제)
+ * - 오디오 재생 ([듣기 시작] 버튼 → 재생 → 블러 해제)
  * - 선택지 4개
  * - 답안 채점 및 sessionStorage 저장
  * - 타이머, 버튼 제어, 진행바는 Module Controller에서 관리
+ * 
+ * v007 - 수동재생 전환
+ * - 2초 대기 삭제 → [듣기 시작] 버튼 추가
+ * - 0.5초 대기 삭제 → 오디오 끝나면 바로 보기 표시
+ * - 블러: 버튼 클릭 시 흐리게 → 오디오 끝나면 선명하게
  */
 
 // ✅ 캐시 시스템 추가 (정렬된 데이터 재사용)
@@ -47,8 +52,9 @@ class ResponseComponent {
     this.audioPlayer = null;              // 오디오 플레이어
     this.isAudioPlaying = false;          // 오디오 재생 중 플래그
     this.isSubmitting = false;            // 중복 제출 방지
-    this._audioDelayTimer = null;          // 오디오 2초 딜레이 타이머 (겹침 방지)
+    // this._audioDelayTimer 삭제됨 (v007: 2초 대기 제거)
     this._destroyed = false;               // cleanup 호출 여부 플래그
+    this._questionTimedOut = false;        // v007: 타임아웃 상태 플래그
     this._lastFemaleImage = null;          // 직전 여성 이미지 (연속 방지)
     this._lastMaleImage = null;            // 직전 남성 이미지 (연속 방지)
     
@@ -408,12 +414,10 @@ class ResponseComponent {
     // 🔴 이전 오디오 완전 정리 (렉 방지)
     this.stopAudio();
     
-    // 🔴 이전 2초 딜레이 타이머 취소 (오디오 겹침 방지)
-    if (this._audioDelayTimer) {
-      clearTimeout(this._audioDelayTimer);
-      this._audioDelayTimer = null;
-      console.log('[ResponseComponent] 🛑 이전 오디오 딜레이 타이머 취소');
-    }
+    // v007: 타임아웃 상태 초기화
+    this._questionTimedOut = false;
+    const timeoutNotice = document.getElementById('responseTimeoutNotice');
+    if (timeoutNotice) timeoutNotice.remove();
     
     const question = this.setData.questions[questionIndex];
     if (!question) {
@@ -422,13 +426,14 @@ class ResponseComponent {
     }
     
     this.currentQuestion = questionIndex;
+    this._currentQuestion = question; // v007: 버튼 클릭 시 사용
     
     // ModuleController에게 진행률 업데이트 요청
     if (window.moduleController) {
       window.moduleController.updateCurrentQuestionInComponent(questionIndex);
     }
     
-    // 타이머 정지 및 표시 초기화 (오디오 재생 중에는 00:20 유지)
+    // 타이머 정지 및 표시 초기화
     if (window.moduleController) {
       window.moduleController.stopQuestionTimer();
       window.moduleController.resetQuestionTimerDisplay();
@@ -437,34 +442,74 @@ class ResponseComponent {
     // 사람 이미지 표시
     this.renderPersonImage(question.gender);
     
+    // v007: 보기를 보여주되 흐리게 + [듣기 시작] 버튼 표시
+    this.renderOptions(question, true);
+    this._showPlayButton();
+  }
+  
+  /**
+   * v007: [듣기 시작] 버튼 표시
+   */
+  _showPlayButton() {
+    const container = document.getElementById('responsePersonImage');
+    if (!container) return;
+    
+    // 기존 버튼 제거
+    const existingBtn = document.getElementById('responseListenBtn');
+    if (existingBtn) existingBtn.remove();
+    
+    const btn = document.createElement('button');
+    btn.id = 'responseListenBtn';
+    btn.innerHTML = '🔊 듣기 시작';
+    btn.style.cssText = `
+      display: block;
+      margin: 16px auto 0;
+      padding: 12px 28px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+    btn.onmouseover = () => btn.style.background = '#357abd';
+    btn.onmouseout = () => btn.style.background = '#4a90e2';
+    btn.onclick = () => this._onPlayButtonClick();
+    container.appendChild(btn);
+  }
+  
+  /**
+   * v007: [듣기 시작] 버튼 클릭 시 실행
+   */
+  _onPlayButtonClick() {
+    const question = this._currentQuestion;
+    if (!question) return;
+    
+    console.log('[ResponseComponent] 🔊 [듣기 시작] 버튼 클릭');
+    
+    // 버튼 숨기기
+    const btn = document.getElementById('responseListenBtn');
+    if (btn) btn.remove();
+    
     // 오디오가 유효한지 확인
     const hasValidAudio = question.audioUrl && 
                           question.audioUrl !== 'PLACEHOLDER' && 
                           !question.audioUrl.includes('1ABC123DEF456');
     
     if (hasValidAudio) {
-      // 블러 처리된 선택지 표시
-      this.renderOptions(question, true);
-      
-      // 2초 대기 → 오디오 재생 (타이머 ID 저장하여 취소 가능하게)
-      this._audioDelayTimer = setTimeout(() => {
-        this._audioDelayTimer = null;
-        if (this._destroyed) return; // 🚪 문지기 가드
-        this.playAudio(question.audioUrl, () => {
-          if (this._destroyed) return; // 🚪 문지기 가드
-          // 오디오 종료 후 0.5초 대기 → 블러 해제
-          setTimeout(() => {
-            if (this._destroyed) return; // 🚪 문지기 가드
-            this.renderOptions(question, false);
-            // Module에게 타이머 시작 요청 (20초 카운트다운 시작)
-            if (this.onTimerStart) {
-              this.onTimerStart();
-            }
-          }, 500);
-        });
-      }, 2000);
+      // 오디오 재생 (보기는 이미 흐린 상태)
+      this.playAudio(question.audioUrl, () => {
+        if (this._destroyed) return;
+        // 오디오 끝 → 바로 보기 선명하게 + 타이머 시작
+        this.renderOptions(question, false);
+        if (this.onTimerStart) {
+          this.onTimerStart();
+        }
+      });
     } else {
-      // 오디오 없으면 즉시 시작
+      // 오디오 없으면 즉시 보기 표시 + 타이머 시작
       this.renderOptions(question, false);
       if (this.onTimerStart) {
         this.onTimerStart();
@@ -663,6 +708,7 @@ class ResponseComponent {
 
   /**
    * 오디오 재생
+   * v007: 실패 시 다시 재생/건너뛰기 UI 표시
    */
   playAudio(audioUrl, onEnded) {
     console.log('[ResponseComponent] 오디오 재생 시작');
@@ -685,6 +731,19 @@ class ResponseComponent {
       this.audioPlayer = null;
     }
     
+    // v007: 중복 콜백 방지 플래그
+    let _callbackFired = false;
+    const fireCallback = (source) => {
+      if (_callbackFired) {
+        console.log(`[ResponseComponent] 콜백 중복 차단 (${source})`);
+        return;
+      }
+      _callbackFired = true;
+      this.isAudioPlaying = false;
+      const toggleBtn = document.getElementById('responseAudioToggleBtn');
+      if (toggleBtn) toggleBtn.textContent = '▶';
+    };
+    
     this.audioPlayer = new Audio(convertedUrl);
     this.isAudioPlaying = true;
     
@@ -693,55 +752,121 @@ class ResponseComponent {
     });
     
     this.audioPlayer.addEventListener('ended', () => {
-      if (this._destroyed) return; // 🚪 문지기 가드
+      if (this._destroyed) return;
       console.log('[ResponseComponent] 오디오 재생 완료');
-      this.isAudioPlaying = false;
-      
-      // 2차 풀이 모드: 버튼 상태 업데이트
-      const toggleBtn = document.getElementById('responseAudioToggleBtn');
-      if (toggleBtn) toggleBtn.textContent = '▶';
-      
+      fireCallback('ended');
       if (onEnded) onEnded();
     });
     
     this.audioPlayer.addEventListener('error', (e) => {
-      if (this._destroyed) return; // 🚪 문지기 가드
-      // ★ stopAudio()로 정리된 후 발생하는 error 이벤트 무시
+      if (this._destroyed) return;
       if (!this.audioPlayer) return;
-      const mediaErr = this.audioPlayer.error;
       console.error('[ResponseComponent] 오디오 재생 실패:', e);
-      console.error('[ResponseComponent] 실패한 URL:', convertedUrl);
-      console.error('[ResponseComponent] 원본 URL:', audioUrl);
-      console.error('[ResponseComponent] MediaError code:', mediaErr ? mediaErr.code : 'N/A');
-      console.error('[ResponseComponent] MediaError message:', mediaErr ? mediaErr.message : 'N/A');
-      // alert 제거 — 조용히 진행
-      this.isAudioPlaying = false;
-      if (onEnded) onEnded();
+      fireCallback('error');
+      // v007: 실패 시 다시 재생/건너뛰기 UI 표시
+      this._showAudioRetryUI(audioUrl, onEnded);
     });
     
     this.audioPlayer.play().catch(err => {
-      if (this._destroyed) return; // 🚪 문지기 가드
+      if (this._destroyed) return;
       console.error('[ResponseComponent] 오디오 play() 실패:', err.name, err.message);
-      // play() 실패 시에도 error 이벤트가 나중에 발생할 수 있으므로 중복 콜백 방지
-      if (this.isAudioPlaying) {
-        this.isAudioPlaying = false;
-        if (onEnded) onEnded();
-      }
+      fireCallback('catch');
+      // v007: 실패 시 다시 재생/건너뛰기 UI 표시
+      this._showAudioRetryUI(audioUrl, onEnded);
     });
     
     // 2차 풀이 모드: 버튼 상태 업데이트 (재생 중)
     setTimeout(() => {
-      if (this._destroyed) return; // 🚪 문지기 가드
+      if (this._destroyed) return;
       const toggleBtn = document.getElementById('responseAudioToggleBtn');
       if (toggleBtn) toggleBtn.textContent = '⏸';
     }, 100);
   }
+  
+  /**
+   * v007: 오디오 재생 실패 시 다시 재생 UI
+   */
+  _showAudioRetryUI(audioUrl, onEnded) {
+    // 이미 표시 중이면 중복 생성 방지
+    if (document.getElementById('responseAudioRetryUI')) return;
+    
+    const container = document.getElementById('responsePersonImage');
+    if (!container) return;
+    
+    const retryDiv = document.createElement('div');
+    retryDiv.id = 'responseAudioRetryUI';
+    retryDiv.style.cssText = `
+      text-align: center;
+      padding: 16px;
+      margin-top: 12px;
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+    `;
+    retryDiv.innerHTML = `
+      <p style="color: #dc2626; font-weight: 600; margin: 0 0 12px;">
+        오디오를 불러오지 못했습니다
+      </p>
+      <button id="responseRetryBtn" style="
+        padding: 10px 20px;
+        background: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      ">🔄 다시 재생</button>
+    `;
+    container.appendChild(retryDiv);
+    
+    // 다시 재생 버튼
+    document.getElementById('responseRetryBtn').onclick = () => {
+      retryDiv.remove();
+      console.log('[ResponseComponent] 🔄 오디오 다시 재생 시도');
+      this.playAudio(audioUrl, onEnded);
+    };
+  }
 
+  /**
+   * v007: 타임아웃 시 보기 선택 막기
+   */
+  onQuestionTimeout() {
+    console.log('[ResponseComponent] ⏰ 시간 초과 - 보기 선택 차단');
+    this._questionTimedOut = true;
+    
+    // 보기 흐리게 + 클릭 불가
+    document.querySelectorAll('.response-option').forEach(el => {
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.5';
+    });
+    
+    // 시간 초과 안내 표시
+    const container = document.getElementById('responseOptions');
+    if (container) {
+      const notice = document.createElement('div');
+      notice.id = 'responseTimeoutNotice';
+      notice.style.cssText = `
+        text-align: center;
+        padding: 12px;
+        margin-top: 12px;
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        color: #856404;
+        font-weight: 600;
+      `;
+      notice.textContent = '⏰ 시간이 초과되었습니다. Next 버튼을 눌러주세요.';
+      container.appendChild(notice);
+    }
+  }
+  
   /**
    * 선택지 선택
    */
   selectOption(optionIndex) {
     if (this.isAudioPlaying) return;
+    if (this._questionTimedOut) return; // v007: 타임아웃되면 선택 불가
     
     console.log(`[ResponseComponent] 선택 - Q${this.currentQuestion + 1}: ${optionIndex}`);
     
@@ -1074,11 +1199,7 @@ class ResponseComponent {
   cleanup() {
     console.log('[ResponseComponent] Cleanup 시작');
     
-    // 🔴 대기 중인 딜레이 타이머 취소 (오디오 겹침 원천 차단)
-    if (this._audioDelayTimer) {
-      clearTimeout(this._audioDelayTimer);
-      this._audioDelayTimer = null;
-    }
+    // v007: 2초 대기 타이머 삭제됨 (수동 버튼 방식)
     
     // 🔴 destroyed 플래그 설정 (에러 핸들러 콜백 차단)
     this._destroyed = true;
