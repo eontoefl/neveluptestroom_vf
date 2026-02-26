@@ -1072,6 +1072,10 @@ const FlowController = {
         window.isSecondAttempt = false;
         window.flowExplainData = null;
         
+        // ★ discussion 프로필 정리 (다음 과제에서 이전 이름이 남지 않도록)
+        sessionStorage.removeItem('discussionProfiles');
+        window.currentDiscussionProfiles = null;
+        
         // ★ 2차 뱃지 모두 숨기기 (이전 과제 잔재 방지)
         document.querySelectorAll('.retake-badge').forEach(function(badge) {
             badge.style.display = 'none';

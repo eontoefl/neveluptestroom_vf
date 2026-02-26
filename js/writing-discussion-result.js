@@ -15,11 +15,41 @@ function showDiscussionResult(data) {
         return;
     }
     
-    // 프로필 정보 가져오기 (작성 화면에서 저장한 것)
-    const profiles = window.currentDiscussionProfiles || {
-        student1: { name: 'Student 1' },
-        student2: { name: 'Student 2' }
-    };
+    // 프로필 정보 가져오기 (data 내장 → sessionStorage → window → 기본값)
+    let profiles = null;
+    
+    // 1) 결과 데이터에 프로필이 포함된 경우 (리플레이 시 가장 신뢰)
+    if (data.profiles && data.profiles.student1 && data.profiles.student2) {
+        profiles = data.profiles;
+        console.log('💬 [토론형 채점] data.profiles에서 프로필 사용:', profiles.student1?.name, profiles.student2?.name);
+    }
+    
+    // 2) sessionStorage (현재 세션에서 1차 풀이 시 저장된 것)
+    if (!profiles) {
+        const savedProfiles = sessionStorage.getItem('discussionProfiles');
+        if (savedProfiles) {
+            try { 
+                profiles = JSON.parse(savedProfiles); 
+                console.log('💬 [토론형 채점] sessionStorage에서 프로필 복원:', profiles.student1?.name, profiles.student2?.name);
+            } catch(e) {
+                console.warn('💬 [토론형 채점] sessionStorage 프로필 파싱 실패:', e);
+            }
+        }
+    }
+    
+    // 3) window 전역 변수
+    if (!profiles) {
+        profiles = window.currentDiscussionProfiles;
+        if (profiles) {
+            console.log('💬 [토론형 채점] window에서 프로필 사용:', profiles.student1?.name, profiles.student2?.name);
+        }
+    }
+    
+    // 4) 기본값
+    if (!profiles) {
+        profiles = { student1: { name: 'Student 1' }, student2: { name: 'Student 2' } };
+        console.warn('💬 [토론형 채점] 프로필 없음 - 기본값 사용');
+    }
     
     // 화면 전환
     showScreen('writingDiscussionResultScreen');

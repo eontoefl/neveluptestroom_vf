@@ -687,11 +687,21 @@ const WritingFlow = {
         
         const question = this.discussion1stData?.question || {};
         
-        // ★ {name1}/{name2} 치환을 위한 프로필 정보
-        const profiles = window.currentDiscussionProfiles || {
-            student1: { name: 'Student 1' },
-            student2: { name: 'Student 2' }
-        };
+        // ★ {name1}/{name2} 치환을 위한 프로필 정보 (sessionStorage 우선 → window 폴백)
+        let profiles = null;
+        const savedProfiles = sessionStorage.getItem('discussionProfiles');
+        if (savedProfiles) {
+            try { 
+                profiles = JSON.parse(savedProfiles);
+                console.log('📝 [ko-모범답안] sessionStorage에서 프로필 복원:', profiles.student1?.name, profiles.student2?.name);
+            } catch(e) {}
+        }
+        if (!profiles) {
+            profiles = window.currentDiscussionProfiles;
+        }
+        if (!profiles) {
+            profiles = { student1: { name: 'Student 1' }, student2: { name: 'Student 2' } };
+        }
         const replaceName = (text) => {
             if (!text) return text;
             return text.replace(/\{name1\}/g, profiles.student1.name).replace(/\{name2\}/g, profiles.student2.name);
@@ -1036,6 +1046,11 @@ const WritingFlow = {
         if (window.currentDiscussionComponent) {
             window.currentDiscussionComponent.stopDiscussionTimer();
         }
+        
+        // ★ discussion 프로필 정리 (다음 모듈에서 이전 프로필이 남지 않도록)
+        sessionStorage.removeItem('discussionProfiles');
+        window.currentDiscussionProfiles = null;
+        console.log('🧹 [WritingFlow] discussionProfiles 정리 완료');
         
         // 동적으로 추가한 요소들 정리
         const dynamicIds = ['emailCompareSection', 'discussionCompareSection', 'emailToDiscussionBtn', 'discussionFinishBtn', 'arrangeRetakeFloating'];
