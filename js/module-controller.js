@@ -770,9 +770,14 @@ class ModuleController {
         }
         
         // 🔴 이전 컴포넌트 오디오 정리 (겹침 방지)
-        if (this.currentComponentInstance && this.currentComponentInstance.cleanup) {
-            console.log('🧹 [ModuleController] 이전 컴포넌트 cleanup 실행');
-            this.currentComponentInstance.cleanup();
+        if (this.currentComponentInstance) {
+            // 🚪 문지기: _destroyed 강제 설정 (setTimeout 콜백 차단)
+            this.currentComponentInstance._destroyed = true;
+            console.log('🚪 [ModuleController] 이전 컴포넌트 _destroyed = true 설정');
+            if (this.currentComponentInstance.cleanup) {
+                console.log('🧹 [ModuleController] 이전 컴포넌트 cleanup 실행');
+                this.currentComponentInstance.cleanup();
+            }
         }
         
         // 🔴 전역 안전장치: 페이지 내 모든 audio/video 요소 강제 정지
