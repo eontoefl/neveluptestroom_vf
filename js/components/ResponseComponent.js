@@ -853,7 +853,6 @@ class ResponseComponent {
    * 선택지 선택
    */
   selectOption(optionIndex) {
-    if (this.isAudioPlaying) return;
     if (this._questionTimedOut) return; // v007: 타임아웃되면 선택 불가
     
     console.log(`[ResponseComponent] 선택 - Q${this.currentQuestion + 1}: ${optionIndex}`);
