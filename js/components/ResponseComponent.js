@@ -1067,10 +1067,7 @@ class ResponseComponent {
       window.moduleController.updateCurrentQuestionInComponent(questionIndex);
     }
     
-    // 오디오 재생 (일반 모드와 동일)
-    await this.playAudio(question.audioUrl);
-    
-    // 화자 이미지 표시 (2차 풀이 모드: 재생 버튼 포함)
+    // 화자 이미지 표시 (2차 풀이 모드: 재생 버튼 포함, 자동재생 없음)
     this.renderPersonImage(question.gender, true);
     
     // 선택지 렌더링 (2차 풀이 모드)
