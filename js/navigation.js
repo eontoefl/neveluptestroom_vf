@@ -119,7 +119,6 @@ function backToSchedule() {
     // 2차 풀이 플로팅 UI 제거
     const retakeFloating = document.getElementById('retakeFloatingUI');
     if (retakeFloating) retakeFloating.remove();
-    }
     
     // 모든 화면 숨기기 (inline style 제거)
     document.querySelectorAll('.screen').forEach(screen => {
