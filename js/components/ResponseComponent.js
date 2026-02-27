@@ -1067,6 +1067,18 @@ class ResponseComponent {
       window.moduleController.updateCurrentQuestionInComponent(questionIndex);
     }
     
+    // 오디오 파일 준비 (재생은 하지 않음, 학생이 버튼으로 수동 재생)
+    if (question.audioUrl && question.audioUrl !== 'PLACEHOLDER') {
+      const convertedUrl = this.convertGoogleDriveUrl(question.audioUrl);
+      this.audioPlayer = new Audio(convertedUrl);
+      this.audioPlayer.addEventListener('ended', () => {
+        if (this._destroyed) return;
+        this.isAudioPlaying = false;
+        const toggleBtn = document.getElementById('responseAudioToggleBtn');
+        if (toggleBtn) toggleBtn.textContent = '▶';
+      });
+    }
+    
     // 화자 이미지 표시 (2차 풀이 모드: 재생 버튼 포함, 자동재생 없음)
     this.renderPersonImage(question.gender, true);
     
