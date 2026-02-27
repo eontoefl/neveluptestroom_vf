@@ -921,9 +921,20 @@ const ReviewPanel = {
                 }
             }
         } else if (instance.answers) {
+            // setId 추출 (리스닝 컴포넌트: ${setId}_q1 형식)
+            const setId = (instance.setData && instance.setData.id) || 
+                          (instance.currentSetData && instance.currentSetData.setId) || '';
+            
             for (let i = 0; i < comp.questionsPerSet; i++) {
                 const key1 = `q${i + 1}`;
-                const answer = instance.answers[key1] ?? instance.answers[i] ?? null;
+                let answer = instance.answers[key1] ?? instance.answers[i] ?? null;
+                
+                // setId 기반 키도 시도 (리스닝 컴포넌트용)
+                if (answer === null && setId) {
+                    answer = instance.answers[`${setId}_q${i + 1}`] ?? 
+                             instance.answers[`${setId}_a${i + 1}`] ?? null;
+                }
+                
                 answers.push(answer);
             }
         }
