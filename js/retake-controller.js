@@ -1090,6 +1090,9 @@ class RetakeController {
         console.log(`  현재 인덱스: ${this.currentQuestionIndex + 1}`);
         console.log(`  현재 컴포넌트: ${this.currentComponentType}`);
         
+        // 🔇 이전 컴포넌트의 retakeAudioPlayer 정리 (세트/컴포넌트 전환 시 오디오 누출 방지)
+        this._stopCurrentRetakeAudio();
+        
         // 답안 수집
         if (this.currentComponentType === 'fillblanks') {
             // FillBlanks는 맞고 틀림 상관없이 무조건 수집 (10문제 묶음)
@@ -1140,6 +1143,9 @@ class RetakeController {
         console.log(`  현재 인덱스: ${this.currentQuestionIndex + 1}`);
         console.log(`  현재 컴포넌트: ${this.currentComponentType}`);
         
+        // 🔇 이전 컴포넌트의 retakeAudioPlayer 정리
+        this._stopCurrentRetakeAudio();
+        
         // 첫 번째 문제면 이동 불가
         if (this.currentQuestionIndex <= 0) {
             console.log(`  ⚠️ 첫 번째 문제입니다. 이전 문제가 없습니다.`);
@@ -1182,6 +1188,21 @@ class RetakeController {
         console.log(`========================================\n`);
         
         this.showNextQuestion();
+    }
+    
+    /**
+     * 🔇 현재 컴포넌트의 retakeAudioPlayer 정리
+     * 문제 전환 시 이전 오디오가 계속 재생되는 버그 방지
+     */
+    _stopCurrentRetakeAudio() {
+        if (this.currentComponentInstance && this.currentComponentInstance.retakeAudioPlayer) {
+            const ap = this.currentComponentInstance.retakeAudioPlayer;
+            if (typeof ap.destroy === 'function') {
+                ap.destroy();
+                console.log('  🔇 이전 retakeAudioPlayer 정리 완료');
+            }
+            this.currentComponentInstance.retakeAudioPlayer = null;
+        }
     }
     
     /**
