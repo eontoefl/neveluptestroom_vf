@@ -86,10 +86,24 @@ function nextLectureQuestion() {
     }
 }
 
+function cleanupListeningLecture() {
+    console.log('🧹 [어댑터] Lecture Cleanup 시작');
+    
+    if (currentLectureComponent) {
+        currentLectureComponent.cleanup();
+        currentLectureComponent = null;
+    }
+    
+    window.currentLectureComponent = null;
+    
+    console.log('🧹 [어댑터] Lecture Cleanup 완료');
+}
+
 window.initLectureComponent = initLectureComponent;
 window.initListeningLecture = initListeningLecture;
 window.submitListeningLecture = submitListeningLecture;
 window.nextLectureQuestion = nextLectureQuestion;
+window.cleanupListeningLecture = cleanupListeningLecture;
 
 // ========================================
 // 🎯 결과 화면 함수는 listening-lecture-logic-fixed.js에서 관리

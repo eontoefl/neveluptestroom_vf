@@ -86,10 +86,24 @@ function nextAnnouncementQuestion() {
     }
 }
 
+function cleanupListeningAnnouncement() {
+    console.log('🧹 [어댑터] Announcement Cleanup 시작');
+    
+    if (currentAnnouncementComponent) {
+        currentAnnouncementComponent.cleanup();
+        currentAnnouncementComponent = null;
+    }
+    
+    window.currentAnnouncementComponent = null;
+    
+    console.log('🧹 [어댑터] Announcement Cleanup 완료');
+}
+
 window.initAnnouncementComponent = initAnnouncementComponent;
 window.initListeningAnnouncement = initListeningAnnouncement;
 window.submitListeningAnnouncement = submitListeningAnnouncement;
 window.nextAnnouncementQuestion = nextAnnouncementQuestion;
+window.cleanupListeningAnnouncement = cleanupListeningAnnouncement;
 
 // ========================================
 // 🎯 결과 화면 함수는 listening-announcement-result.js에서 관리
