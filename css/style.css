@@ -203,6 +203,52 @@ body {
     box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
 }
 
+/* 듣기 시작 버튼 (Response, Conver, Announcement, Lecture) */
+#responseListenBtn,
+#converListenBtn,
+#announcementListenBtn,
+.listen-start-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 16px 0 !important;
+    padding: 12px 32px !important;
+    background: linear-gradient(135deg, #9480c5 0%, #7b68b0 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50px !important;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 16px rgba(148, 128, 197, 0.35) !important;
+    transform: none !important;
+}
+
+/* 버튼 부모 컨테이너 중앙정렬 */
+#responsePersonImage {
+    text-align: center;
+}
+
+#responseListenBtn:hover,
+#converListenBtn:hover,
+#announcementListenBtn:hover,
+.listen-start-btn:hover {
+    background: linear-gradient(135deg, #7b68b0 0%, #6a58a0 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 24px rgba(148, 128, 197, 0.5) !important;
+}
+
+#responseListenBtn:active,
+#converListenBtn:active,
+#announcementListenBtn:active,
+.listen-start-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(148, 128, 197, 0.3) !important;
+}
+
 .btn-success {
     background: var(--success-color);
     color: white;
