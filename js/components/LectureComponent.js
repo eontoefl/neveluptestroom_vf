@@ -1033,7 +1033,21 @@ class LectureComponent {
             // 4. 타이머 숨기기
             this.hideTimer();
             
-            // 5. 인트로 건너뛰고 문제 렌더링 (2차 풀이 모드)
+            // 5. 2차 풀이용 이미지 (RetakeController에서 설정, 없으면 랜덤)
+            if (!this.currentImage) {
+                const gender = this.currentSetData.gender.toLowerCase().trim();
+                const isFemale = gender === 'female' || gender === 'f';
+                const images = isFemale ? this.FEMALE_IMAGES : this.MALE_IMAGES;
+                const lastKey = isFemale ? '_lastFemaleImage' : '_lastMaleImage';
+                if (!LectureComponent[lastKey]) LectureComponent[lastKey] = null;
+                const last = LectureComponent[lastKey];
+                const candidates = (last && images.length > 1) ? images.filter(img => img !== last) : images;
+                this.currentImage = candidates[Math.floor(Math.random() * candidates.length)];
+                LectureComponent[lastKey] = this.currentImage;
+                console.log(`[LectureComponent] 2차 풀이 랜덤 이미지 (fallback):`, this.currentImage);
+            }
+            
+            // 6. 인트로 건너뛰고 문제 렌더링 (2차 풀이 모드)
             this.showingIntro = false;
             await this.renderQuestionRetakeMode(questionIndex, wasCorrect, firstAttemptAnswer);
             
@@ -1072,6 +1086,9 @@ class LectureComponent {
         // 문제 화면 표시 (인트로 없음)
         document.getElementById('lectureIntroScreen').style.display = 'none';
         document.getElementById('lectureQuestionScreen').style.display = 'block';
+        
+        // 작은 이미지 갱신
+        this.renderSmallImage();
         
         // 질문 및 선택지 렌더링 (2차 풀이 모드)
         const questionContentDiv = document.getElementById('lectureQuestionContent');
