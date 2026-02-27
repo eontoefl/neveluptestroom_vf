@@ -1,12 +1,19 @@
 /**
- * ConverComponent.js v=003_cleanup_fix
+ * ConverComponent.js v=004_manual_play
  * 
  * Listening - 컨버(Conversation) 컴포넌트
  * - 세트당 2문제
- * - 인트로 화면 (이미지 + 나레이션 + 대화 오디오)
+ * - 인트로 화면 (이미지 + [듣기 시작] 버튼)
+ * - 오디오 시퀀스: 버튼 클릭 → 나레이션 → 대화 오디오 (대기 없음)
  * - 문제 화면 (작은 이미지 + 질문 2개)
- * - 오디오 시퀀스: 2초 대기 → 나레이션 → 2초 대기 → 대화 오디오
  * - 타이머, 버튼 제어, 진행바는 Module Controller에서 관리
+ * 
+ * v004 - 수동재생 전환
+ * - 2초 대기 2개 삭제 → [듣기 시작] 버튼 추가
+ * - 나레이션 실패 시 조용히 대화 오디오로 넘어감
+ * - 대화 오디오 실패 시 [다시 재생] UI 표시
+ * - 오디오 URL 없으면 안내 후 바로 문제 화면
+ * - 타이머 만료 시 보기 선택 차단 (자동 넘김 제거)
  */
 
 // ✅ 캐시 시스템 추가 (정렬된 데이터 재사용)
@@ -23,6 +30,7 @@ class ConverComponent {
     console.log(`[ConverComponent] 생성 - setNumber: ${setNumber}`);
     
     this._destroyed = false;              // cleanup 호출 여부 플래그
+    this._questionTimedOut = false;       // v004: 타임아웃 상태 플래그
     this.setNumber = setNumber;           // 현재 세트 번호
     this.currentQuestion = 0;             // 현재 문제 인덱스 (0-based)
     this.answers = {};                    // 답안 저장
@@ -446,7 +454,7 @@ class ConverComponent {
       console.log(`[ConverComponent] 랜덤 이미지 선택 (직전 제외): ${this.CONVERSATION_IMAGES.indexOf(this.currentImage) + 1}/${this.CONVERSATION_IMAGES.length}`);
     }
     
-    // 이미지 렌더링
+    // 이미지 렌더링 + [듣기 시작] 버튼
     const container = document.getElementById('converIntroImage');
     container.innerHTML = `
       <img src="${this.currentImage}" alt="Conversation scene" 
@@ -455,35 +463,65 @@ class ConverComponent {
            onload="console.log('✅ 컨버 이미지 로드 성공:', this.src);">
     `;
     
-    // 오디오 시퀀스 시작
-    this.playAudioSequence();
+    // v004: 자동 재생 대신 [듣기 시작] 버튼 표시
+    this._showPlayButton();
   }
 
   /**
-   * 오디오 시퀀스: 2초 → 나레이션 → 2초 → 대화 오디오
+   * v004: [듣기 시작] 버튼 표시
    */
-  playAudioSequence() {
-    console.log('[ConverComponent] 오디오 시퀀스 시작');
+  _showPlayButton() {
+    const introScreen = document.getElementById('converIntroScreen');
+    const imageContainer = document.getElementById('converIntroImage');
+    if (!introScreen || !imageContainer) return;
     
-    // 이전 타이머 정리
-    if (this._seqTimer1) { clearTimeout(this._seqTimer1); this._seqTimer1 = null; }
-    if (this._seqTimer2) { clearTimeout(this._seqTimer2); this._seqTimer2 = null; }
+    // 기존 버튼 제거
+    const existingBtn = document.getElementById('converListenBtn');
+    if (existingBtn) existingBtn.remove();
     
-    this._seqTimer1 = setTimeout(() => {
-      this._seqTimer1 = null;
-      console.log('[ConverComponent] 나레이션 재생 시작');
-      this.playNarration(() => {
-        console.log('[ConverComponent] 나레이션 완료, 2초 대기');
-        this._seqTimer2 = setTimeout(() => {
-          this._seqTimer2 = null;
-          console.log('[ConverComponent] 대화 오디오 재생 시작');
-          this.playMainAudio(this.setData.audioUrl, () => {
-            console.log('[ConverComponent] 대화 오디오 완료, 문제 화면으로 전환');
-            this.showQuestions();
-          });
-        }, 2000);
+    const btn = document.createElement('button');
+    btn.id = 'converListenBtn';
+    btn.innerHTML = '🔊 듣기 시작';
+    btn.style.cssText = `
+      display: block;
+      margin: 0 auto 16px;
+      padding: 12px 28px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+    btn.onmouseover = () => btn.style.background = '#357abd';
+    btn.onmouseout = () => btn.style.background = '#4a90e2';
+    btn.onclick = () => this._onPlayButtonClick();
+    // h2와 이미지 사이에 배치 (이미지 위치 영향 없음)
+    introScreen.insertBefore(btn, imageContainer);
+  }
+  
+  /**
+   * v004: [듣기 시작] 버튼 클릭 → 나레이션 → 대화 오디오 자동 연결
+   */
+  _onPlayButtonClick() {
+    console.log('[ConverComponent] 🔊 [듣기 시작] 버튼 클릭');
+    
+    // 버튼 제거
+    const btn = document.getElementById('converListenBtn');
+    if (btn) btn.remove();
+    
+    // 나레이션 → 대화 오디오 → 문제 화면 (대기 시간 없이 자동 연결)
+    this.playNarration(() => {
+      if (this._destroyed) return;
+      console.log('[ConverComponent] 나레이션 완료 → 대화 오디오 바로 재생');
+      this.playMainAudio(this.setData.audioUrl, () => {
+        if (this._destroyed) return;
+        console.log('[ConverComponent] 대화 오디오 완료 → 문제 화면 전환');
+        this.showQuestions();
       });
-    }, 2000);
+    });
   }
 
   /**
@@ -526,19 +564,16 @@ class ConverComponent {
   }
 
   /**
-   * 대화 오디오 재생
+   * v004: 대화 오디오 재생 (실패 시 다시 재생 UI)
    */
   playMainAudio(audioUrl, onEnded) {
     console.log('[ConverComponent] 대화 오디오 재생');
     
+    // v004: 오디오 URL 없으면 안내 후 바로 문제 화면
     if (!audioUrl || audioUrl === 'PLACEHOLDER') {
-      console.warn('[ConverComponent] 오디오 URL 없음, 5초 후 진행');
-      this.isAudioPlaying = true;
-      this._seqTimer2 = setTimeout(() => {
-        this._seqTimer2 = null;
-        this.isAudioPlaying = false;
-        if (!this._destroyed && onEnded) onEnded();
-      }, 5000);
+      console.warn('[ConverComponent] 오디오 URL 없음 → 바로 문제 화면');
+      this._showNoAudioNotice();
+      if (!this._destroyed && onEnded) onEnded();
       return;
     }
     
@@ -550,7 +585,7 @@ class ConverComponent {
     
     this.audioPlayer = new Audio(audioUrl);
     this.isAudioPlaying = true;
-    let _callbackFired = false; // 🔒 중복 콜백 방지 플래그
+    let _callbackFired = false;
     
     const fireCallback = (source) => {
       if (_callbackFired) { console.log(`[ConverComponent] 대화오디오 콜백 중복 차단 (${source})`); return; }
@@ -566,13 +601,84 @@ class ConverComponent {
     
     this.audioPlayer.addEventListener('error', (e) => {
       console.error('[ConverComponent] 대화 오디오 재생 실패:', e);
-      fireCallback('error');
+      this.isAudioPlaying = false;
+      // v004: 실패 시 다시 재생 UI 표시 (자동 넘김 안 함)
+      this._showAudioRetryUI(audioUrl, onEnded);
     });
     
     this.audioPlayer.play().catch(err => {
       console.error('[ConverComponent] 대화 오디오 play() 실패:', err);
-      fireCallback('catch');
+      this.isAudioPlaying = false;
+      // v004: 실패 시 다시 재생 UI 표시
+      this._showAudioRetryUI(audioUrl, onEnded);
     });
+  }
+  
+  /**
+   * v004: 오디오 재생 실패 시 [다시 재생] UI
+   */
+  _showAudioRetryUI(audioUrl, onEnded) {
+    // 중복 생성 방지
+    if (document.getElementById('converAudioRetryUI')) return;
+    
+    const container = document.getElementById('converIntroImage');
+    if (!container) return;
+    
+    const retryDiv = document.createElement('div');
+    retryDiv.id = 'converAudioRetryUI';
+    retryDiv.style.cssText = `
+      text-align: center;
+      padding: 16px;
+      margin-top: 12px;
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+    `;
+    retryDiv.innerHTML = `
+      <p style="color: #dc2626; font-weight: 600; margin: 0 0 12px;">
+        오디오를 불러오지 못했습니다
+      </p>
+      <button id="converRetryBtn" style="
+        padding: 10px 20px;
+        background: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      ">🔄 다시 재생</button>
+    `;
+    container.appendChild(retryDiv);
+    
+    // 다시 재생 버튼
+    document.getElementById('converRetryBtn').onclick = () => {
+      retryDiv.remove();
+      console.log('[ConverComponent] 🔄 대화 오디오 다시 재생 시도');
+      this.playMainAudio(audioUrl, onEnded);
+    };
+  }
+  
+  /**
+   * v004: 오디오 URL 없을 때 안내
+   */
+  _showNoAudioNotice() {
+    const container = document.getElementById('converIntroImage');
+    if (!container) return;
+    
+    const notice = document.createElement('div');
+    notice.style.cssText = `
+      text-align: center;
+      padding: 12px;
+      margin-top: 12px;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      color: #92400e;
+      font-weight: 600;
+    `;
+    notice.textContent = '오디오가 없습니다. 문제 화면으로 이동합니다.';
+    container.appendChild(notice);
   }
 
   /**
@@ -613,6 +719,11 @@ class ConverComponent {
    */
   loadQuestion(questionIndex) {
     console.log(`[ConverComponent] 문제 로드 - questionIndex: ${questionIndex}`);
+    
+    // v004: 타임아웃 상태 리셋 (새 문제)
+    this._questionTimedOut = false;
+    const oldNotice = document.getElementById('converTimeoutNotice');
+    if (oldNotice) oldNotice.remove();
     
     this.currentQuestion = questionIndex;
     const question = this.setData.questions[questionIndex];
@@ -693,6 +804,12 @@ class ConverComponent {
    * 선택지 선택
    */
   selectOption(optionIndex) {
+    // v004: 타임아웃 상태에서는 선택 차단
+    if (this._questionTimedOut) {
+      console.log('[ConverComponent] ⏰ 시간 초과 - 선택 무시');
+      return;
+    }
+    
     console.log(`[ConverComponent] 선택 - Q${this.currentQuestion + 1}: ${optionIndex}`);
     
     const questionKey = `${this.setData.id}_q${this.currentQuestion + 1}`;
@@ -706,6 +823,39 @@ class ConverComponent {
         el.classList.remove('selected');
       }
     });
+  }
+  
+  /**
+   * v004: 타임아웃 시 보기 선택 막기
+   */
+  onQuestionTimeout() {
+    console.log('[ConverComponent] ⏰ 시간 초과 - 보기 선택 차단');
+    this._questionTimedOut = true;
+    
+    // 보기 흐리게 + 클릭 불가
+    document.querySelectorAll('.conver-options .response-option').forEach(el => {
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.5';
+    });
+    
+    // 시간 초과 안내 표시
+    const container = document.getElementById('converQuestionContent');
+    if (container) {
+      const notice = document.createElement('div');
+      notice.id = 'converTimeoutNotice';
+      notice.style.cssText = `
+        text-align: center;
+        padding: 12px;
+        margin-top: 12px;
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        color: #92400e;
+        font-weight: 600;
+      `;
+      notice.textContent = '⏰ 시간이 초과되었습니다. Next 버튼을 눌러주세요.';
+      container.appendChild(notice);
+    }
   }
 
   /**
@@ -1039,11 +1189,7 @@ class ConverComponent {
   cleanup() {
     console.log('[ConverComponent] Cleanup 시작');
     
-    // 🔴 모든 대기 타이머 취소 (오디오 겹침 원천 차단)
-    if (this._seqTimer1) { clearTimeout(this._seqTimer1); this._seqTimer1 = null; }
-    if (this._seqTimer2) { clearTimeout(this._seqTimer2); this._seqTimer2 = null; }
-    
-    // 🔴 에러 핸들러 내 setTimeout 방지용 플래그
+    // v004: _destroyed 플래그로 늦게 들어온 콜백 차단
     this._destroyed = true;
     
     // 오디오 플레이어 정리
@@ -1061,6 +1207,7 @@ class ConverComponent {
     }
     
     this.isAudioPlaying = false;
+    this._questionTimedOut = false;
     this.showingIntro = true;
     this.currentImage = null;
     this.answers = {};
