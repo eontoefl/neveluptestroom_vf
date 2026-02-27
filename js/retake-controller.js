@@ -830,6 +830,9 @@ class RetakeController {
             console.log(`  ♻️ 기존 Conver 인스턴스 재사용!`);
             console.log(`    현재 answers:`, conver.answers);
             
+            // 🖼️ 1차 결과 이미지 복원
+            conver.currentImage = firstAttemptComponent.imageUrl || null;
+            
             // ✅ 재진입 시에도 문제를 다시 렌더링
             await conver.initRetakeMode(localIndex, wasCorrect, firstAttemptAnswer);
             
@@ -846,6 +849,9 @@ class RetakeController {
             
             console.log('  ✅ ConverComponent 인스턴스 생성 완료');
             console.log('  🔄 initRetakeMode 호출 중... (localIndex:', localIndex, ')');
+            
+            // 🖼️ 1차 결과 이미지 복원
+            conver.currentImage = firstAttemptComponent.imageUrl || null;
             
             await conver.initRetakeMode(localIndex, wasCorrect, firstAttemptAnswer);
             
@@ -899,6 +905,9 @@ class RetakeController {
             console.log(`  ♻️ 기존 Announcement 인스턴스 재사용!`);
             console.log(`    현재 answers:`, announcement.answers);
             
+            // 🖼️ 1차 결과 이미지 복원
+            announcement.currentImage = firstAttemptComponent.imageUrl || null;
+            
             // ✅ 재진입 시에도 문제를 다시 렌더링
             await announcement.initRetakeMode(localIndex, wasCorrect, firstAttemptAnswer);
             
@@ -918,6 +927,9 @@ class RetakeController {
             
             console.log('  ✅ AnnouncementComponent 인스턴스 생성 완료');
             console.log('  🔄 initRetakeMode 호출 중... (localIndex:', localIndex, ')');
+            
+            // 🖼️ 1차 결과 이미지 복원
+            announcement.currentImage = firstAttemptComponent.imageUrl || null;
             
             await announcement.initRetakeMode(localIndex, wasCorrect, firstAttemptAnswer);
             
@@ -971,6 +983,9 @@ class RetakeController {
             console.log(`  ♻️ 기존 Lecture 인스턴스 재사용!`);
             console.log(`    현재 answers:`, lecture.answers);
             
+            // 🖼️ 1차 결과 이미지 복원
+            lecture.currentImage = firstAttemptComponent.imageUrl || null;
+            
             // ✅ 재진입 시에도 문제를 다시 렌더링
             await lecture.initRetakeMode(localIndex, wasCorrect, firstAttemptAnswer);
             
@@ -990,6 +1005,9 @@ class RetakeController {
             
             console.log('  ✅ LectureComponent 인스턴스 생성 완료');
             console.log('  🔄 initRetakeMode 호출 중... (localIndex:', localIndex, ')');
+            
+            // 🖼️ 1차 결과 이미지 복원
+            lecture.currentImage = firstAttemptComponent.imageUrl || null;
             
             await lecture.initRetakeMode(localIndex, wasCorrect, firstAttemptAnswer);
             
