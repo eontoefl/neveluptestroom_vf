@@ -29,12 +29,20 @@ function backToSchedule() {
     // 연습/마감 모드는 팝업 없이 바로 이동
     var isPracticeOrDeadline = window._isPracticeMode || window._deadlinePassedMode;
     
-    console.log('🔙 [뒤로가기] screen:', currentScreenId, 'step1:', step1Done, 'step2:', step2Done, 'explanation:', explanationDone, 'errorNote:', errorNoteSubmitted, 'explain:', isOnExplainScreen);
+    // 결과 화면 (vocab 등 FlowController를 안 거치는 과제의 결과 화면)
+    var isResultScreen = currentScreenId && (
+        currentScreenId === 'vocabResultScreen' ||
+        currentScreenId.includes('Result')
+    );
+    // AuthMonitor가 활성화되지 않은 결과 화면 = vocab/intro-book 등 → 팝업 불필요
+    var isNonFlowResult = isResultScreen && !(window.AuthMonitor && AuthMonitor.isActive);
+    
+    console.log('🔙 [뒤로가기] screen:', currentScreenId, 'step1:', step1Done, 'step2:', step2Done, 'explanation:', explanationDone, 'errorNote:', errorNoteSubmitted, 'explain:', isOnExplainScreen, 'nonFlow:', isNonFlowResult);
     
     // ── 판정 순서 (0→5, 먼저 매칭되면 실행) ──
     
-    // 순서 0: 과제 목록 화면 / 연습·마감 모드 → 바로 이동
-    if (isTaskListScreen || isPracticeOrDeadline) {
+    // 순서 0: 과제 목록 화면 / 연습·마감 모드 / FlowController 미사용 결과 화면 → 바로 이동
+    if (isTaskListScreen || isPracticeOrDeadline || isNonFlowResult) {
         // 팝업 없이 통과
     }
     // 순서 1: 오답노트 제출 완료 → 완료 알림 후 이동
@@ -68,6 +76,13 @@ function backToSchedule() {
     
     console.log('🔙 [뒤로가기] 학습 일정으로 돌아가기 시작');
     
+    // beforeunload 경고 해제
+    if (window._beforeUnloadHandler) {
+        window.removeEventListener('beforeunload', window._beforeUnloadHandler);
+        window._beforeUnloadHandler = null;
+        console.log('🚪 beforeunload 경고 해제 (뒤로가기)');
+    }
+    
     // 모든 미디어 즉시 중지
     stopAllMedia();
     
@@ -96,6 +111,15 @@ function backToSchedule() {
     
     // 타이머 정지
     stopAllTimers();
+    if (window.moduleController) {
+        window.moduleController.stopModuleTimer();
+        window.moduleController.stopQuestionTimer();
+    }
+    
+    // 2차 풀이 플로팅 UI 제거
+    const retakeFloating = document.getElementById('retakeFloatingUI');
+    if (retakeFloating) retakeFloating.remove();
+    }
     
     // 모든 화면 숨기기 (inline style 제거)
     document.querySelectorAll('.screen').forEach(screen => {
