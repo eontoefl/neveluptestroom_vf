@@ -662,7 +662,7 @@ class AnnouncementComponent {
         
         // ★ 문제 화면 전환 시 Review 버튼 복원
         const reviewBtn = document.querySelector('#listeningAnnouncementScreen .review-btn');
-        if (reviewBtn) reviewBtn.style.display = '';
+        if (reviewBtn) reviewBtn.style.display = 'inline-flex';
         
         document.getElementById('announcementIntroScreen').style.display = 'none';
         document.getElementById('announcementQuestionScreen').style.display = 'block';

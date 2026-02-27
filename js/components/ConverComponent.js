@@ -691,7 +691,7 @@ class ConverComponent {
     
     // ★ 문제 화면 전환 시 Review 버튼 복원
     const reviewBtn = document.querySelector('#listeningConverScreen .review-btn');
-    if (reviewBtn) reviewBtn.style.display = '';
+    if (reviewBtn) reviewBtn.style.display = 'inline-flex';
     
     // 화면 전환
     document.getElementById('converIntroScreen').style.display = 'none';

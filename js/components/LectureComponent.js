@@ -692,7 +692,7 @@ class LectureComponent {
         
         // ★ 문제 화면 전환 시 Review 버튼 복원
         const reviewBtn = document.querySelector('#listeningLectureScreen .review-btn');
-        if (reviewBtn) reviewBtn.style.display = '';
+        if (reviewBtn) reviewBtn.style.display = 'inline-flex';
         
         document.getElementById('lectureIntroScreen').style.display = 'none';
         document.getElementById('lectureQuestionScreen').style.display = 'block';
