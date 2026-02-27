@@ -1013,17 +1013,7 @@ class ConverComponent {
       // 4. 타이머 숨기기
       this.hideTimer();
       
-      // 5. 2차 풀이용 이미지 (RetakeController에서 설정, 없으면 랜덤)
-      if (!this.currentImage) {
-        const images = this.CONVERSATION_IMAGES;
-        const last = ConverComponent._lastImage;
-        const candidates = (last && images.length > 1) ? images.filter(img => img !== last) : images;
-        this.currentImage = candidates[Math.floor(Math.random() * candidates.length)];
-        ConverComponent._lastImage = this.currentImage;
-        console.log(`[ConverComponent] 2차 풀이 랜덤 이미지 (fallback): ${this.CONVERSATION_IMAGES.indexOf(this.currentImage) + 1}/${this.CONVERSATION_IMAGES.length}`);
-      }
-      
-      // 6. 인트로 건너뛰고 문제 렌더링 (2차 풀이 모드)
+      // 5. 인트로 건너뛰고 문제 렌더링 (2차 풀이 모드 - 이미지는 RetakeController에서 복원)
       this.showingIntro = false;
       await this.renderQuestionRetakeMode(questionIndex, wasCorrect, firstAttemptAnswer);
       
@@ -1063,11 +1053,8 @@ class ConverComponent {
     document.getElementById('converIntroScreen').style.display = 'none';
     document.getElementById('converQuestionScreen').style.display = 'block';
     
-    // 이미지 표시 (작은 이미지)
-    const questionImageEl = document.getElementById('converQuestionImage');
-    if (questionImageEl && this.currentImage) {
-      questionImageEl.src = this.currentImage;
-    }
+    // 작은 이미지 갱신
+    this.renderSmallImage();
     
     // 질문 및 선택지 렌더링 (2차 풀이 모드)
     const container = document.getElementById('converQuestionContent');
