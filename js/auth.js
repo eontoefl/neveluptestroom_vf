@@ -110,6 +110,21 @@ async function handleLogin(event) {
         // 세션에 저장 (새로고침 시에도 유지)
         sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
         
+        // 매핑 테이블에 저장 (이메일 → UUID 조회용)
+        try {
+            if (typeof supabaseUpsert === 'function') {
+                await supabaseUpsert('tr_user_map', {
+                    user_id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    updated_at: new Date().toISOString()
+                }, 'user_id');
+                console.log('✅ [UserMap] 매핑 저장 완료:', user.email);
+            }
+        } catch (mapErr) {
+            console.warn('⚠️ [UserMap] 매핑 저장 실패 (무시):', mapErr);
+        }
+        
         console.log('✅ 로그인 성공:', currentUser.name, '(' + programType + ')');
         
         const programLabel = programType === 'fast' ? '4주 Fast' : '8주 Standard';
