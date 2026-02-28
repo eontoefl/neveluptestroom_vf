@@ -932,11 +932,8 @@ var AuthMonitor = {
                 AuthMonitor._snapshot.moduleNumber = fc.moduleNumber;
                 AuthMonitor._snapshot.firstAttemptResult = fc.firstAttemptResult;
             }
-            // result-screen, test-screen 숨기기
-            document.querySelectorAll('.result-screen, .test-screen').forEach(function(el) {
-                el.style.display = 'none';
-            });
             // ★ 최종 저장: result_json 업데이트 + auth_record 최종 UPDATE
+            // (result-screen, test-screen 숨기기는 backToSchedule()에서 처리)
             await AuthMonitor.saveFinalRecords();
             AuthMonitor.stop();
             AuthMonitor._snapshot = null;
