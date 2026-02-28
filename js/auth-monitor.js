@@ -935,9 +935,9 @@ var AuthMonitor = {
             // ★ 최종 저장: result_json 업데이트 + auth_record 최종 UPDATE
             // (result-screen, test-screen 숨기기는 backToSchedule()에서 처리)
             await AuthMonitor.saveFinalRecords();
+            originalFinish();
             AuthMonitor.stop();
             AuthMonitor._snapshot = null;
-            originalFinish();
         };
 
         console.log('✅ [Auth] FlowController 연동');

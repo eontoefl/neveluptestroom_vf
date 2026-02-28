@@ -30,12 +30,8 @@ function backToSchedule() {
     var isPracticeOrDeadline = window._isPracticeMode || window._deadlinePassedMode;
     
     // 결과 화면 (vocab 등 FlowController를 안 거치는 과제의 결과 화면)
-    var isResultScreen = currentScreenId && (
-        currentScreenId === 'vocabResultScreen' ||
-        currentScreenId.includes('Result')
-    );
-    // AuthMonitor가 활성화되지 않은 결과 화면 = vocab/intro-book 등 → 팝업 불필요
-    var isNonFlowResult = isResultScreen && !(window.AuthMonitor && AuthMonitor.isActive);
+    // ★ 화면 이름이 아닌, 실제 FlowController 미사용 화면만 명시적으로 지정
+    var isNonFlowResult = currentScreenId === 'vocabResultScreen';
     
     console.log('🔙 [뒤로가기] screen:', currentScreenId, 'step1:', step1Done, 'step2:', step2Done, 'explanation:', explanationDone, 'errorNote:', errorNoteSubmitted, 'explain:', isOnExplainScreen, 'nonFlow:', isNonFlowResult);
     
@@ -75,6 +71,16 @@ function backToSchedule() {
     }
     
     console.log('🔙 [뒤로가기] 학습 일정으로 돌아가기 시작');
+    
+    // ★ FlowController 정리 (종료 처리 함수에서 옮겨온 작업)
+    if (window.FlowController && FlowController.cleanup) {
+        FlowController.cleanup();
+    }
+    
+    // ★ 오답노트 패널 정리
+    if (typeof ErrorNote !== 'undefined') {
+        ErrorNote.hide();
+    }
     
     // beforeunload 경고 해제
     if (window._beforeUnloadHandler) {
@@ -124,6 +130,11 @@ function backToSchedule() {
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
         screen.style.display = ''; // inline style 제거!
+    });
+    
+    // result-screen, test-screen도 숨기기 (.screen 클래스가 아닌 해설/결과 화면)
+    document.querySelectorAll('.result-screen, .test-screen').forEach(screen => {
+        screen.style.display = 'none';
     });
     
     // 학습 일정 화면 표시
@@ -191,6 +202,11 @@ function backToScheduleFromResult() {
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
         screen.style.display = ''; // inline style 제거!
+    });
+    
+    // result-screen, test-screen도 숨기기 (.screen 클래스가 아닌 해설/결과 화면)
+    document.querySelectorAll('.result-screen, .test-screen').forEach(screen => {
+        screen.style.display = 'none';
     });
     
     // 학습 일정 화면 표시
