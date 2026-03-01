@@ -8,14 +8,18 @@
  * 번역 수에 맞춰 원문을 문장 단위로 분리하는 공통 함수
  * 
  * ★ 새 방식: 원문에 ##가 있으면 사람이 직접 지정한 구분점으로 나눔
- *   - ## : 블록 구분 (다음 해석으로 넘어감)
+ *   - ## : 단락구분 (빈 줄)
+ *   - #||# : 줄바꿈
+ *   - #|# : 이어붙이기 (공백)
+ *   → 해설 화면에서는 모두 동일한 블록 구분으로 처리
  *   - \n : 같은 블록 안의 줄바꿈 (화면에 <br>로 표시)
  * ★ 기존 방식: ##가 없으면 자동 분리 (하위 호환)
  */
 function splitToMatchTranslations_d2(cleanContent, translationCount) {
-    // ★ 새 방식: 원문에 ##가 있으면 그걸로 나눔
-    if (cleanContent.includes('##')) {
-        return cleanContent.split('##');
+    // ★ 새 방식: #|#, #||#, ## 중 하나라도 있으면 블록 구분자로 나눔
+    if (cleanContent.includes('##') || cleanContent.includes('#|#')) {
+        // 모든 구분자를 ##로 통일한 후 split (해설 화면에서는 동일하게 처리)
+        return cleanContent.replace(/#\|\|#/g, '##').replace(/#\|#/g, '##').split('##');
     }
     
     // ── 기존 자동 분리 (하위 호환) ──
