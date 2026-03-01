@@ -247,7 +247,7 @@
         // 플로팅 버튼
         const btn = document.createElement('button');
         btn.id = 'errorReporterBtn';
-        btn.innerHTML = '<img src="https://www.genspark.ai/api/files/s/l8WX73RZ" alt="오류 전송" style="width:28px;height:28px;">';
+        btn.innerHTML = '<img src="https://eontoefl.github.io/neveluptestroom_vf/icon/error_send_icon.png" alt="오류 전송" style="width:28px;height:28px;">';
         btn.title = '오류 전송';
         btn.style.display = 'none'; // 로그인 전에는 숨김
         btn.onclick = openModal;
