@@ -113,8 +113,78 @@ async function loadAllData() {
 // ================================================
 function renderAll() {
     renderSummaryCards();
+    renderDeadlineExtensionBanner();
     renderGrass();
     renderRecentRecords();
+}
+
+// ================================================
+// 데드라인 연장 알림 배너 렌더링
+// ================================================
+function renderDeadlineExtensionBanner() {
+    const container = document.getElementById('deadlineExtensionBanner');
+    if (!container) return;
+
+    // 활성 연장 건 필터 (마감이 아직 안 지난 것만)
+    if (!mpDeadlineExtensions || mpDeadlineExtensions.length === 0 || !mpUser.startDate) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const now = new Date();
+    const dayKrNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const activeExtensions = [];
+
+    mpDeadlineExtensions.forEach(ext => {
+        const origDate = new Date(ext.original_date + 'T00:00:00');
+        if (isNaN(origDate.getTime())) return;
+
+        // 연장된 마감 계산 (task-router.js와 동일)
+        let extDeadline = new Date(origDate);
+        extDeadline.setDate(extDeadline.getDate() + 1);
+        extDeadline.setHours(4, 0, 0, 0);
+        extDeadline.setDate(extDeadline.getDate() + (ext.extra_days || 1));
+
+        if (now < extDeadline) {
+            activeExtensions.push({
+                originalDate: origDate,
+                deadline: extDeadline,
+                extraDays: ext.extra_days || 1
+            });
+        }
+    });
+
+    if (activeExtensions.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // 마감이 가까운 순으로 정렬
+    activeExtensions.sort((a, b) => a.deadline - b.deadline);
+
+    const items = activeExtensions.map(ext => {
+        const origM = ext.originalDate.getMonth() + 1;
+        const origD = ext.originalDate.getDate();
+        const origDay = dayKrNames[ext.originalDate.getDay()];
+        const dlM = ext.deadline.getMonth() + 1;
+        const dlD = ext.deadline.getDate();
+        const dlDay = dayKrNames[ext.deadline.getDay()];
+        return `<div class="ext-banner-item">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span><strong>${origM}/${origD}(${origDay})</strong> 과제의 마감이 <strong>${dlM}/${dlD}(${dlDay}) 새벽 4시</strong>까지 연장되었습니다.</span>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="ext-banner">
+            <div class="ext-banner-header">
+                <i class="fa-solid fa-calendar-plus"></i> 데드라인 연장 안내
+            </div>
+            ${items}
+        </div>
+    `;
+
+    console.log(`📊 [MyPage] 데드라인 연장 알림 ${activeExtensions.length}건 표시`);
 }
 
 // ================================================
@@ -414,6 +484,11 @@ function renderGrass() {
     document.querySelectorAll(`#${gridId} .g`).forEach(cell => {
         const dayNum = parseInt(cell.dataset.day);
         const order = parseInt(cell.dataset.order);
+
+        // ★ 연장된 셀 테두리 표시
+        if (extendedDayNums.has(dayNum)) {
+            cell.classList.add('extended');
+        }
 
         if (completedMap.has(`${dayNum}_${order}`)) {
             cell.classList.remove('empty', 'fail');
