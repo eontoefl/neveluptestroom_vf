@@ -72,7 +72,7 @@ async function _fetchAcademicFromSupabase() {
                 mainTitle: row.main_title,
                 passage: {
                     title: row.passage_title,
-                    content: row.passage_content,
+                    content: convertAcademicPassage(row.passage_content),
                     translations,
                     interactiveWords: interactiveWordsList
                 },
@@ -119,6 +119,16 @@ function removeQuotesAcademic(str) {
         return str.slice(1, -1);
     }
     return str;
+}
+
+// Academic 지문 구분자 변환 (DB 원시 문자열 → HTML)
+function convertAcademicPassage(raw) {
+    if (!raw) return '';
+    return raw
+        .replace(/<<([^>]+)>>/g, '$1')   // <<validity>> → validity (마크업 제거)
+        .replace(/#\|\|#/g, '<br>')      // #||# → 줄바꿈 (4글자, 먼저)
+        .replace(/#\|#/g, ' ')            // #|# → 이어붙이기 (3글자)
+        .replace(/##/g, '<br><br>');       // ## → 단락 구분 (2글자, 마지막)
 }
 
 // 문제 데이터 파싱 (Q번호::문제원문::문제해석::정답번호::보기데이터##보기데이터...)
