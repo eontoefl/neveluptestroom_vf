@@ -170,6 +170,20 @@ var ProgressTracker = {
                 taskDate.setHours(0, 0, 0, 0);
 
                 // 과제 날짜가 오늘(effective) 이하면 포함
+                // ★ 데드라인 연장 체크: 연장된 마감이 아직 안 지났으면 제외
+                var taskDateStr = taskDate.getFullYear() + '-' +
+                    String(taskDate.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(taskDate.getDate()).padStart(2, '0');
+                var extensions = window._deadlineExtensions || [];
+                var ext = extensions.find(function(e) { return e.original_date === taskDateStr; });
+                if (ext) {
+                    var extDeadline = new Date(taskDate);
+                    extDeadline.setDate(extDeadline.getDate() + 1);
+                    extDeadline.setHours(4, 0, 0, 0);
+                    extDeadline.setDate(extDeadline.getDate() + (ext.extra_days || 1));
+                    if (now < extDeadline) continue; // 연장 마감 전 → 분모 제외
+                }
+
                 if (taskDate <= effectiveToday) {
                     var tasks = getDayTasks(programType, w, dayOrder[d]);
                     totalTasks += tasks.length;

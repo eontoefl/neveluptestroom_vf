@@ -16,6 +16,7 @@ let mpUser = null;           // sessionStorage에서 로드한 유저 정보
 let mpStudyRecords = [];     // tr_study_records
 let mpAuthRecords = [];      // tr_auth_records
 let mpGradeRules = [];       // tr_grade_rules (등급/환급 기준표)
+let mpDeadlineExtensions = []; // tr_deadline_extensions (데드라인 연장)
 
 // ================================================
 // 스케줄 데이터 (총 과제 수 / 총 일수 계산용)
@@ -98,7 +99,13 @@ async function loadAllData() {
         'order=min_rate.desc'
     ) || [];
 
-    console.log(`📊 [MyPage] 로드 완료 - 학습기록: ${mpStudyRecords.length}건, 인증기록: ${mpAuthRecords.length}건, 등급규칙: ${mpGradeRules.length}건`);
+    // 데드라인 연장 기록 로드
+    mpDeadlineExtensions = await supabaseSelect(
+        'tr_deadline_extensions',
+        `user_id=eq.${userId}&select=original_date,extra_days`
+    ) || [];
+
+    console.log(`📊 [MyPage] 로드 완료 - 학습기록: ${mpStudyRecords.length}건, 인증기록: ${mpAuthRecords.length}건, 등급규칙: ${mpGradeRules.length}건, 연장: ${mpDeadlineExtensions.length}건`);
 }
 
 // ================================================
@@ -295,6 +302,21 @@ function countTasksDueToday(programType, totalWeeks) {
             taskDate.setDate(taskDate.getDate() + (w - 1) * 7 + d);
             taskDate.setHours(0, 0, 0, 0);
 
+            // ★ 데드라인 연장 체크
+            const taskDateStr = taskDate.getFullYear() + '-' +
+                String(taskDate.getMonth() + 1).padStart(2, '0') + '-' +
+                String(taskDate.getDate()).padStart(2, '0');
+            const ext = (mpDeadlineExtensions || []).find(e => e.original_date === taskDateStr);
+            
+            // 연장된 과제: 연장된 마감이 아직 안 지났으면 분모에서 제외
+            if (ext) {
+                let extDeadline = new Date(taskDate);
+                extDeadline.setDate(extDeadline.getDate() + 1);
+                extDeadline.setHours(4, 0, 0, 0);
+                extDeadline.setDate(extDeadline.getDate() + (ext.extra_days || 1));
+                if (now < extDeadline) continue; // 연장 마감 전 → 분모 제외
+            }
+
             // 과제 날짜가 오늘(effective) 이하면 분모에 포함
             if (taskDate <= effectiveToday) {
                 const dayEn = dayOrder[d];
@@ -386,6 +408,9 @@ function renderGrass() {
     const completedMap = buildCompletedMap();
     const currentDay = isBeforeStart() ? 0 : getCurrentScheduleDay(); // 시작 전이면 fail 처리 안 함
 
+    // ★ 데드라인 연장된 dayNum 목록 계산
+    const extendedDayNums = buildExtendedDayNums();
+
     document.querySelectorAll(`#${gridId} .g`).forEach(cell => {
         const dayNum = parseInt(cell.dataset.day);
         const order = parseInt(cell.dataset.order);
@@ -393,11 +418,52 @@ function renderGrass() {
         if (completedMap.has(`${dayNum}_${order}`)) {
             cell.classList.remove('empty', 'fail');
             cell.classList.add('success');
-        } else if (dayNum < currentDay) {
+        } else if (dayNum < currentDay && !extendedDayNums.has(dayNum)) {
+            // ★ 연장된 날짜는 빨간칸(fail) 처리 안 함
             cell.classList.remove('empty', 'success');
             cell.classList.add('fail');
         }
     });
+}
+
+/**
+ * 데드라인 연장된 날짜 → dayNum 목록 (아직 마감 전인 것만)
+ */
+function buildExtendedDayNums() {
+    const set = new Set();
+    if (!mpUser.startDate || !mpDeadlineExtensions || mpDeadlineExtensions.length === 0) return set;
+
+    const startDate = new Date(mpUser.startDate + 'T00:00:00');
+    if (isNaN(startDate.getTime())) return set;
+
+    const now = new Date();
+    const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+    mpDeadlineExtensions.forEach(ext => {
+        const origDate = new Date(ext.original_date + 'T00:00:00');
+        if (isNaN(origDate.getTime())) return;
+
+        // 연장된 마감 계산 (task-router.js와 동일한 순서)
+        let extDeadline = new Date(origDate);
+        extDeadline.setDate(extDeadline.getDate() + 1);
+        extDeadline.setHours(4, 0, 0, 0);
+        extDeadline.setDate(extDeadline.getDate() + (ext.extra_days || 1));
+
+        // 아직 마감 전이면 → dayNum 계산해서 추가
+        if (now < extDeadline) {
+            const diffMs = origDate - startDate;
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            // 토요일(6) 제외한 일차 계산: 7일 중 6일 사용
+            const weekIndex = Math.floor(diffDays / 7);
+            const dayIndex = diffDays % 7;
+            if (dayIndex < dayOrder.length) {
+                const dayNum = weekIndex * 6 + dayIndex + 1;
+                set.add(dayNum);
+            }
+        }
+    });
+
+    return set;
 }
 
 /**
