@@ -2519,6 +2519,33 @@ body {
     transform: scale(1.1);
 }
 
+/* 🆕 Academic - highlight/insertion 문제 유형 스타일 */
+.ac-highlight-word {
+    transition: all 0.3s;
+}
+
+.ac-highlight-word.ac-highlight-active {
+    background: #FFEB3B;
+    color: #000;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.ac-insertion-marker {
+    display: none;
+}
+
+.ac-insertion-marker.ac-insertion-active {
+    display: inline;
+    background-color: #FFF9C4;
+    font-weight: bold;
+    padding: 2px 6px;
+    border: 1px solid #F9A825;
+    border-radius: 4px;
+    color: #E65100;
+}
+
 .insert-marker.selected {
     background: var(--success-color);
     border-color: var(--success-color);
