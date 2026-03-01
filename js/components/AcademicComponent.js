@@ -383,6 +383,9 @@ class AcademicComponent {
       return;
     }
     
+    // 🆕 highlight/insertion 지문 스타일 토글
+    this.updatePassageHighlight(question);
+    
     // 1. 문제 텍스트 표시 (insertion 문제: "..." 를 박스로 표시)
     const questionEl = document.getElementById('academicQuestion');
     if (questionEl) {
