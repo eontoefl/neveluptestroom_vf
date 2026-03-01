@@ -249,8 +249,22 @@
         btn.id = 'errorReporterBtn';
         btn.innerHTML = '<img src="https://www.genspark.ai/api/files/s/l8WX73RZ" alt="오류 전송" style="width:28px;height:28px;">';
         btn.title = '오류 전송';
+        btn.style.display = 'none'; // 로그인 전에는 숨김
         btn.onclick = openModal;
         document.body.appendChild(btn);
+
+        // 로그인 화면 감지 — 로그인 화면이면 숨기고 아니면 표시
+        function updateBtnVisibility() {
+            const loginScreen = document.getElementById('loginScreen');
+            const isLogin = loginScreen && (loginScreen.style.display === 'block' || loginScreen.style.display === 'flex' || loginScreen.classList.contains('active'));
+            btn.style.display = isLogin ? 'none' : 'flex';
+        }
+
+        // 화면 전환 감지 (MutationObserver)
+        const observer = new MutationObserver(updateBtnVisibility);
+        observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style', 'class'] });
+        // 초기 체크 (1초 후 — DOM 렌더링 대기)
+        setTimeout(updateBtnVisibility, 1000);
 
         // 오버레이 + 모달
         const overlay = document.createElement('div');
