@@ -101,10 +101,36 @@ class AcademicComponent {
       titleEl.innerHTML = this.setData.passage.title || '';
     }
     if (contentEl) {
-      contentEl.innerHTML = this.setData.passage.content || '';
+      // 지문 렌더링 시 (A)~(D) 마커를 미리 span으로 감싸놓기 (기본 숨김)
+      let html = this.setData.passage.content || '';
+      html = html.replace(/\(([A-D])\)/g, '<span class="ac-insertion-marker">($1)</span>');
+      contentEl.innerHTML = html;
     }
 
     console.log('[AcademicComponent] 지문 렌더링 완료');
+  }
+
+  /**
+   * 🆕 5-1. 지문 highlight/insertion 스타일 토글
+   * - highlight 문제 활성: .ac-highlight-word에 활성 클래스 추가
+   * - insertion 문제 활성: (A)(B)(C)(D) 마커에 강조 클래스 추가
+   * - 그 외: 모든 강조 제거
+   */
+  updatePassageHighlight(question) {
+    const contentEl = document.getElementById('academicPassageContent');
+    if (!contentEl) return;
+
+    const type = question.questionType || 'normal';
+
+    // highlight 토글
+    contentEl.querySelectorAll('.ac-highlight-word').forEach(el => {
+      el.classList.toggle('ac-highlight-active', type === 'highlight');
+    });
+
+    // insertion 마커 표시/숨김 (renderPassage에서 이미 span으로 감싸놓음)
+    contentEl.querySelectorAll('.ac-insertion-marker').forEach(el => {
+      el.classList.toggle('ac-insertion-active', type === 'insertion');
+    });
   }
 
   /**
@@ -125,6 +151,9 @@ class AcademicComponent {
     if (window.isModuleMode && window.moduleController) {
       window.moduleController.updateCurrentQuestionInComponent(questionIndex);
     }
+
+    // 🆕 highlight/insertion 지문 스타일 토글
+    this.updatePassageHighlight(question);
 
     // 질문 텍스트
     const questionTextEl = document.getElementById('academicQuestion');
