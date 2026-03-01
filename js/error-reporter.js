@@ -97,19 +97,18 @@
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
-                width: 44px;
-                height: 44px;
+                width: 48px;
+                height: 48px;
                 border-radius: 50%;
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
+                background: #f97c7c;
                 border: none;
                 cursor: pointer;
-                box-shadow: 0 2px 12px rgba(239, 68, 68, 0.4);
+                box-shadow: 0 2px 12px rgba(239, 68, 68, 0.25);
                 z-index: 99999;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 18px;
+                padding: 0;
                 transition: transform 0.2s, box-shadow 0.2s;
             }
             #errorReporterBtn:hover {
@@ -158,7 +157,16 @@
             #errorReporterModal .err-subtitle {
                 font-size: 13px;
                 color: #718096;
-                margin-bottom: 16px;
+                margin-bottom: 10px;
+            }
+            #errorReporterModal .err-privacy-note {
+                font-size: 12px;
+                color: #94a3b8;
+                background: #f8fafc;
+                border-radius: 6px;
+                padding: 8px 10px;
+                margin-bottom: 14px;
+                line-height: 1.5;
             }
             #errorReporterModal textarea {
                 width: 100%;
@@ -239,7 +247,7 @@
         // 플로팅 버튼
         const btn = document.createElement('button');
         btn.id = 'errorReporterBtn';
-        btn.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:18px;"></i>';
+        btn.innerHTML = '<img src="https://www.genspark.ai/api/files/s/l8WX73RZ" alt="오류 전송" style="width:28px;height:28px;">';
         btn.title = '오류 전송';
         btn.onclick = openModal;
         document.body.appendChild(btn);
@@ -251,6 +259,7 @@
             <div id="errorReporterModal">
                 <h3>⚠️ 오류 전송</h3>
                 <p class="err-subtitle">현재 상태와 로그가 자동으로 전송됩니다.</p>
+                <p class="err-privacy-note">🔒 우리 사이트 코드 내부에서 자체적으로 찍은 로그만 수집하는 거라 카메라/마이크/위치 같은 민감한 API를 쓰는 게 아니니 걱정마세요.</p>
                 <textarea id="errorReporterMessage" placeholder="어떤 문제가 발생했나요? (선택사항)"></textarea>
                 <div class="err-btn-row">
                     <button class="err-btn-cancel" id="errorReporterCancel">취소</button>
