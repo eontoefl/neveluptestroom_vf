@@ -2,6 +2,12 @@
  * ================================================
  * RetakeController - 2차 풀이 (이중채점) 시스템
  * ================================================
+ * v033 - 2026-03-02
+ * - 🔥 1차 결과 데이터 유실 방어 로직 추가
+ *   → firstAttemptData가 없거나 componentResults가 불완전하면
+ *     DB(tr_study_records.result_json)에서 자동 복원
+ * - 🔍 디버그 로그 강화 (원인 추적용)
+ *
  * v032 - 2025-02-13
  * - 🔥 레벨 계산 버그 수정 (구간 환산표 적용)
  * - 기존: 점수 / 7 (부정확)
@@ -38,6 +44,55 @@ class RetakeController {
     async start() {
         console.log('🎬 [RetakeController] 2차 풀이 시작');
         
+        // ========================================
+        // 🔍 [디버그] firstAttemptData 상태 진단
+        // ========================================
+        console.log('🔍 [RetakeController] === firstAttemptData 진단 시작 ===');
+        console.log('🔍 [RetakeController] firstAttemptData 존재:', !!this.firstAttemptData);
+        console.log('🔍 [RetakeController] firstAttemptData 타입:', typeof this.firstAttemptData);
+        if (this.firstAttemptData) {
+            console.log('🔍 [RetakeController] moduleId:', this.firstAttemptData.moduleId || 'MISSING');
+            console.log('🔍 [RetakeController] componentResults 존재:', !!this.firstAttemptData.componentResults);
+            console.log('🔍 [RetakeController] componentResults 길이:', this.firstAttemptData.componentResults?.length || 'MISSING');
+            if (this.firstAttemptData.componentResults) {
+                this.firstAttemptData.componentResults.forEach((comp, i) => {
+                    const ansArr = comp.answers || comp.results || [];
+                    const correctCount = ansArr.filter(a => a.isCorrect === true).length;
+                    console.log(`🔍   [${i}] type=${comp.componentType}, setId=${comp.setId}, answers=${ansArr.length}, correct=${correctCount}`);
+                });
+            }
+        } else {
+            console.error('🚨 [RetakeController] firstAttemptData가 NULL/undefined!');
+        }
+        console.log('🔍 [RetakeController] === firstAttemptData 진단 끝 ===');
+        
+        // ========================================
+        // 🛡️ [방어] firstAttemptData 검증 및 DB 복원
+        // ========================================
+        const isDataMissing = !this.firstAttemptData 
+            || !this.firstAttemptData.componentResults 
+            || this.firstAttemptData.componentResults.length === 0;
+        
+        const isDataIncomplete = !isDataMissing && this.firstAttemptData.componentResults.some(comp => {
+            const ansArr = comp.answers || comp.results || [];
+            return ansArr.length === 0;
+        });
+        
+        if (isDataMissing || isDataIncomplete) {
+            console.warn(`🚨 [RetakeController] 1차 결과 데이터 ${isDataMissing ? '누락' : '불완전'} 감지! DB에서 복원 시도...`);
+            
+            const restored = await this._restoreFirstAttemptFromDB();
+            if (restored) {
+                this.firstAttemptData = restored;
+                console.log('✅ [RetakeController] DB에서 1차 결과 복원 성공!');
+                console.log('✅ [RetakeController] 복원된 componentResults:', restored.componentResults?.length, '개');
+            } else {
+                console.error('❌ [RetakeController] DB 복원도 실패! 2차 풀이를 정상 진행할 수 없습니다.');
+                alert('1차 풀이 결과를 불러올 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+                return;
+            }
+        }
+        
         // 1. 모듈 설정 로드
         const moduleNumber = this.extractModuleNumber();
         this.moduleConfig = getModule(this.sectionType, moduleNumber);
@@ -58,6 +113,13 @@ class RetakeController {
             }
         }
         console.log(`❌ 틀린 문제 ${this.wrongQuestionsList.length}개:`, this.wrongQuestionsList.map(i => i + 1));
+        
+        // 🔍 [디버그] 전체 문제 중 맞은 수 로그
+        const totalCorrectCount = this.totalQuestions - this.wrongQuestionsList.length;
+        console.log(`🔍 [RetakeController] 1차 정답: ${totalCorrectCount}/${this.totalQuestions} (틀린 문제: ${this.wrongQuestionsList.length}개)`);
+        if (this.wrongQuestionsList.length === this.totalQuestions) {
+            console.error('🚨 [RetakeController] 경고: 모든 문제가 틀린 것으로 판정됨! 데이터 이상 가능성 있음');
+        }
         
         // 3. 헤더를 2차 풀이 모드로 전환
         this.switchHeaderToRetakeMode();
@@ -141,8 +203,73 @@ class RetakeController {
      * 모듈 번호 추출
      */
     extractModuleNumber() {
+        if (!this.firstAttemptData || !this.firstAttemptData.moduleId) {
+            console.warn('🚨 [RetakeController] moduleId 없음, 기본값 1 사용');
+            return 1;
+        }
         const match = this.firstAttemptData.moduleId.match(/\d+$/);
         return match ? parseInt(match[0]) : 1;
+    }
+    
+    /**
+     * 🛡️ DB에서 1차 풀이 결과 복원
+     * tr_study_records.result_json에서 firstAttemptResult를 가져옴
+     */
+    async _restoreFirstAttemptFromDB() {
+        try {
+            const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+            if (!user || !user.id) {
+                console.warn('🚨 [RetakeController] 유저 정보 없음 — DB 복원 불가');
+                return null;
+            }
+            
+            // moduleId에서 sectionType과 moduleNumber 추출
+            let moduleNumber = 1;
+            if (this.firstAttemptData && this.firstAttemptData.moduleId) {
+                const match = this.firstAttemptData.moduleId.match(/\d+$/);
+                if (match) moduleNumber = parseInt(match[0]);
+            } else {
+                // FlowController에서 moduleNumber 가져오기 시도
+                const fc = window.FlowController;
+                if (fc && fc.moduleNumber) moduleNumber = fc.moduleNumber;
+            }
+            
+            console.log(`🔍 [RetakeController] DB 복원 시도: user=${user.id}, type=${this.sectionType}, module=${moduleNumber}`);
+            
+            const query = `select=result_json&user_id=eq.${user.id}&task_type=eq.${this.sectionType}&module_number=eq.${moduleNumber}&attempt=eq.1&order=completed_at.desc&limit=1`;
+            const records = await supabaseSelect('tr_study_records', query);
+            
+            if (!records || records.length === 0) {
+                console.warn('🚨 [RetakeController] DB에 1차 기록 없음');
+                return null;
+            }
+            
+            const resultJson = records[0].result_json;
+            if (!resultJson) {
+                console.warn('🚨 [RetakeController] result_json이 NULL');
+                return null;
+            }
+            
+            // result_json 구조: { firstAttemptResult: { moduleId, componentResults, ... } }
+            const firstAttemptResult = resultJson.firstAttemptResult || resultJson;
+            
+            if (!firstAttemptResult.componentResults || firstAttemptResult.componentResults.length === 0) {
+                console.warn('🚨 [RetakeController] result_json에 componentResults 없음');
+                return null;
+            }
+            
+            console.log('✅ [RetakeController] DB 복원 데이터 확인:');
+            firstAttemptResult.componentResults.forEach((comp, i) => {
+                const ansArr = comp.answers || comp.results || [];
+                const correctCount = ansArr.filter(a => a.isCorrect === true).length;
+                console.log(`  [${i}] type=${comp.componentType}, setId=${comp.setId}, answers=${ansArr.length}, correct=${correctCount}`);
+            });
+            
+            return firstAttemptResult;
+        } catch (e) {
+            console.error('❌ [RetakeController] DB 복원 중 오류:', e.message || e);
+            return null;
+        }
     }
     
     /**
