@@ -6,9 +6,19 @@
 
 /**
  * 번역 수에 맞춰 원문을 문장 단위로 분리하는 공통 함수
- * (daily1-logic.js와 동일)
+ * 
+ * ★ 새 방식: 원문에 ##가 있으면 사람이 직접 지정한 구분점으로 나눔
+ *   - ## : 블록 구분 (다음 해석으로 넘어감)
+ *   - \n : 같은 블록 안의 줄바꿈 (화면에 <br>로 표시)
+ * ★ 기존 방식: ##가 없으면 자동 분리 (하위 호환)
  */
 function splitToMatchTranslations_d2(cleanContent, translationCount) {
+    // ★ 새 방식: 원문에 ##가 있으면 그걸로 나눔
+    if (cleanContent.includes('##')) {
+        return cleanContent.split('##');
+    }
+    
+    // ── 기존 자동 분리 (하위 호환) ──
     if (translationCount <= 0) {
         return cleanContent.split(/\n\n+/).filter(s => s.trim());
     }

@@ -6,9 +6,19 @@
 
 /**
  * 번역 수에 맞춰 원문을 문장 단위로 분리하는 공통 함수
- * 이메일 주소(.com, .gov 등)에서 끊기지 않도록 보호
+ * 
+ * ★ 새 방식: 원문에 ##가 있으면 사람이 직접 지정한 구분점으로 나눔
+ *   - ## : 블록 구분 (다음 해석으로 넘어감)
+ *   - \n : 같은 블록 안의 줄바꿈 (화면에 <br>로 표시)
+ * ★ 기존 방식: ##가 없으면 자동 분리 (하위 호환)
  */
 function splitToMatchTranslations(cleanContent, translationCount) {
+    // ★ 새 방식: 원문에 ##가 있으면 그걸로 나눔
+    if (cleanContent.includes('##')) {
+        return cleanContent.split('##');
+    }
+    
+    // ── 기존 자동 분리 (하위 호환) ──
     if (translationCount <= 0) {
         return cleanContent.split(/\n\n+/).filter(s => s.trim());
     }
@@ -20,13 +30,8 @@ function splitToMatchTranslations(cleanContent, translationCount) {
     }
     
     // 2순위: 문장 단위 split (이메일 주소 보호)
-    // 전체 텍스트를 하나로 합치고 문장 끝에서 분리
     const allText = cleanContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    
-    // 문장 끝(. ! ?) 뒤에 공백 + 대문자/괄호로 시작하는 지점에서 split
-    // 단, 이메일/URL(.com .gov .org 등) 뒤에서는 끊지 않음
     const sentenceSplit = allText.split(/(?<=[.!?])(?<!\w\.\w)(?<![A-Z])(?:\s*\([A-Z]\))?\s+(?=[A-Z\("])/).filter(s => s.trim());
-    
     if (sentenceSplit.length === translationCount) {
         return sentenceSplit;
     }
