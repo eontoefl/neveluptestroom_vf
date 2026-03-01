@@ -75,17 +75,17 @@ class ResultController {
             return 6.0; // 33~35개
         } else if (this.sectionType === 'listening') {
             // Listening: 32문제 기준
-            if (correctCount <= 3) return 1.0;
-            if (correctCount <= 6) return 1.5;
-            if (correctCount <= 10) return 2.0;
-            if (correctCount <= 13) return 2.5;
-            if (correctCount <= 17) return 3.0;
-            if (correctCount <= 20) return 3.5;
-            if (correctCount <= 24) return 4.0;
-            if (correctCount <= 27) return 4.5;
-            if (correctCount <= 30) return 5.0;
-            if (correctCount <= 32) return 5.5;
-            return 6.0; // 33개 이상 (불가능하지만 안전장치)
+            if (correctCount <= 2) return 1.0;
+            if (correctCount <= 5) return 1.5;
+            if (correctCount <= 8) return 2.0;
+            if (correctCount <= 11) return 2.5;
+            if (correctCount <= 15) return 3.0;
+            if (correctCount <= 18) return 3.5;
+            if (correctCount <= 21) return 4.0;
+            if (correctCount <= 24) return 4.5;
+            if (correctCount <= 27) return 5.0;
+            if (correctCount <= 29) return 5.5;
+            return 6.0; // 30~32개
         } else {
             // 기타 섹션 (Writing, Speaking 등)
             // 나중에 추가 가능
