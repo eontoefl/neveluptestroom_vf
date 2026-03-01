@@ -155,10 +155,14 @@ class AcademicComponent {
     // 🆕 highlight/insertion 지문 스타일 토글
     this.updatePassageHighlight(question);
 
-    // 질문 텍스트
+    // 질문 텍스트 (insertion 문제: "..." 를 박스로 표시)
     const questionTextEl = document.getElementById('academicQuestion');
     if (questionTextEl) {
-      questionTextEl.innerHTML = question.question || '';
+      let qText = question.question || '';
+      if ((question.questionType || 'normal') === 'insertion') {
+        qText = qText.replace(/"([^"]+)"/g, '<div class="ac-insertion-sentence">"$1"</div>');
+      }
+      questionTextEl.innerHTML = qText;
     }
 
     // 선택지 렌더링 (6-2)
@@ -379,10 +383,14 @@ class AcademicComponent {
       return;
     }
     
-    // 1. 문제 텍스트 표시
+    // 1. 문제 텍스트 표시 (insertion 문제: "..." 를 박스로 표시)
     const questionEl = document.getElementById('academicQuestion');
     if (questionEl) {
-      questionEl.textContent = question.question;
+      let qText = question.question || '';
+      if ((question.questionType || 'normal') === 'insertion') {
+        qText = qText.replace(/"([^"]+)"/g, '<div class="ac-insertion-sentence">"$1"</div>');
+      }
+      questionEl.innerHTML = qText;
     }
     
     // 2. 보기 컨테이너 초기화
