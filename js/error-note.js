@@ -534,7 +534,7 @@ var ErrorNote = {
     async uploadFileToStorage(file, attemptNum) {
         if (!file) return null;
 
-        var user = window.currentUser;
+        var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
         if (!user || !user.id) return null;
 
         var ext = file.name.split('.').pop() || 'bin';
@@ -683,7 +683,7 @@ var ErrorNote = {
     // ========================================
     async _fallbackSave(text, wordCount, file1Path, file2Path) {
         try {
-            var user = window.currentUser;
+            var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
             if (!user || !user.id) {
                 console.warn('📝 [ErrorNote] 폴백 — 유저 정보 없음');
                 return false;
@@ -728,7 +728,7 @@ var ErrorNote = {
     // ========================================
     async _emergencySave(text, wordCount, file1Path, file2Path) {
         try {
-            var user = window.currentUser;
+            var user = (typeof getCurrentUser === 'function') ? getCurrentUser() : window.currentUser;
             if (!user || !user.id) return false;
 
             var scheduleInfo = { week: 1, day: '일' };
