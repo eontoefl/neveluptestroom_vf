@@ -124,10 +124,12 @@ class Daily2Component {
     renderPassage() {
         const passage = this.currentSet.passage;
         document.getElementById(this.passageTitleId).textContent = passage.title;
+        // ##를 줄바꿈으로, \n을 <br>로 변환하여 렌더링
         const formattedContent = (passage.content || '')
-    .replace(/\\n/g, '<br>')
-    .replace(/\n/g, '<br>');
-document.getElementById(this.passageContentId).innerHTML = formattedContent;
+            .replace(/##/g, '\n\n')
+            .replace(/\\n/g, '\n')
+            .replace(/\n/g, '<br>');
+        document.getElementById(this.passageContentId).innerHTML = formattedContent;
     }
     
     /**
