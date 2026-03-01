@@ -655,10 +655,11 @@ var ErrorNote = {
             }
         }
 
+        // ★ 실제 업로드 성공한 파일만 카운트 (파일 선택이 아닌 업로드 성공 기준)
         var speakingFileCount = 0;
         if (this._sectionType === 'speaking') {
-            if (this._uploadedFiles.first) speakingFileCount++;
-            if (this._uploadedFiles.second) speakingFileCount++;
+            if (file1Path) speakingFileCount++;
+            if (file2Path) speakingFileCount++;
         }
 
         // 커스텀 이벤트 발생 (auth-monitor 등에서 감지 가능)
