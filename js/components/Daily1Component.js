@@ -164,8 +164,12 @@ class Daily1Component {
         }
         
         document.getElementById(this.passageTitleId).textContent = passage.title;
-        // ##를 줄바꿈으로, \n을 <br>로 변환하여 렌더링
+        // 구분자 처리 (문제풀이 화면용)
+        // ## = 단락구분 (빈 줄), #||# = 줄바꿈, #|# = 이어붙이기 (공백)
+        // 순서 중요: #||# → #|# → ## (긴 것부터 먼저 치환)
         const formattedContent = (passage.content || '')
+            .replace(/#\|\|#/g, '\n')
+            .replace(/#\|#/g, ' ')
             .replace(/##/g, '\n\n')
             .replace(/\\n/g, '\n')
             .replace(/\n/g, '<br>');
