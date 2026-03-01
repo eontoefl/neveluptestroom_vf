@@ -2546,6 +2546,17 @@ body {
     color: #E65100;
 }
 
+/* Academic - insertion 문제 삽입 문장 박스 */
+.ac-insertion-sentence {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background-color: #F3F4F6;
+    border-left: 4px solid #6366F1;
+    border-radius: 6px;
+    font-style: italic;
+    line-height: 1.6;
+}
+
 .insert-marker.selected {
     background: var(--success-color);
     border-color: var(--success-color);
