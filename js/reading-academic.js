@@ -125,7 +125,7 @@ function removeQuotesAcademic(str) {
 function convertAcademicPassage(raw) {
     if (!raw) return '';
     return raw
-        .replace(/<<([^>]+)>>/g, '$1')   // <<validity>> → validity (마크업 제거)
+        .replace(/<<([^>]+)>>/g, '<span class="ac-highlight-word">$1</span>')  // <<validity>> → 하이라이트 span
         .replace(/#\|\|#/g, '<br>')      // #||# → 줄바꿈 (4글자, 먼저)
         .replace(/#\|#/g, ' ')            // #|# → 이어붙이기 (3글자)
         .replace(/##/g, '<br><br>');       // ## → 단락 구분 (2글자, 마지막)
@@ -148,7 +148,11 @@ function parseAcademicQuestionData(questionStr) {
         return null;
     }
     
-    const questionNum = parts[0].trim(); // Q1, Q2, Q3, Q4, Q5
+    // 유형 태그 파싱: Q1[highlight] → questionNum='Q1', questionType='highlight'
+    const rawQNum = parts[0].trim();
+    const typeMatch = rawQNum.match(/^(Q\d+)(?:\[(\w+)\])?$/);
+    const questionNum = typeMatch ? typeMatch[1] : rawQNum;
+    const questionType = typeMatch && typeMatch[2] ? typeMatch[2] : 'normal';
     const questionText = parts[1].trim();
     const questionTranslation = parts[2].trim();
     const correctAnswer = parseInt(parts[3].trim());
@@ -198,6 +202,7 @@ function parseAcademicQuestionData(questionStr) {
     
     return {
         questionNum,
+        questionType,   // 'normal' | 'highlight' | 'insertion'
         question: questionText,
         questionTranslation,
         correctAnswer,
