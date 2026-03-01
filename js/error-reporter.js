@@ -1,7 +1,7 @@
 /**
  * ================================================
- * error-reporter.js v=001
- * 오류 제보 플로팅 버튼 + 콘솔 로그 수집
+ * error-reporter.js v=002
+ * 오류 전송 플로팅 버튼 + 콘솔 로그 수집
  * ================================================
  * 
  * 기능:
@@ -239,8 +239,8 @@
         // 플로팅 버튼
         const btn = document.createElement('button');
         btn.id = 'errorReporterBtn';
-        btn.innerHTML = '🐛';
-        btn.title = '오류 제보';
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:18px;"></i>';
+        btn.title = '오류 전송';
         btn.onclick = openModal;
         document.body.appendChild(btn);
 
@@ -249,12 +249,12 @@
         overlay.id = 'errorReporterOverlay';
         overlay.innerHTML = `
             <div id="errorReporterModal">
-                <h3>🐛 오류 제보</h3>
-                <p class="err-subtitle">현재 상태와 콘솔 로그가 자동으로 전송됩니다.</p>
+                <h3>⚠️ 오류 전송</h3>
+                <p class="err-subtitle">현재 상태와 로그가 자동으로 전송됩니다.</p>
                 <textarea id="errorReporterMessage" placeholder="어떤 문제가 발생했나요? (선택사항)"></textarea>
                 <div class="err-btn-row">
                     <button class="err-btn-cancel" id="errorReporterCancel">취소</button>
-                    <button class="err-btn-submit" id="errorReporterSubmit">제보하기</button>
+                    <button class="err-btn-submit" id="errorReporterSubmit">전송하기</button>
                 </div>
             </div>
         `;
@@ -323,8 +323,8 @@
             if (typeof supabaseInsert === 'function') {
                 const result = await supabaseInsert('tr_error_reports', reportData);
                 if (result) {
-                    originalConsole.log('✅ [ErrorReporter] 오류 제보 전송 성공:', result.id);
-                    showToast('✅ 오류 제보가 전송되었습니다. 감사합니다!');
+                    originalConsole.log('✅ [ErrorReporter] 오류 전송 성공:', result.id);
+                    showToast('✅ 오류 전송이 완료되었습니다. 감사합니다!');
                 } else {
                     throw new Error('supabaseInsert 실패');
                 }
@@ -343,7 +343,7 @@
                 });
                 if (response.ok) {
                     originalConsole.log('✅ [ErrorReporter] 직접 전송 성공');
-                    showToast('✅ 오류 제보가 전송되었습니다. 감사합니다!');
+                    showToast('✅ 오류 전송이 완료되었습니다. 감사합니다!');
                 } else {
                     throw new Error(`HTTP ${response.status}`);
                 }
@@ -356,7 +356,7 @@
             showToast('❌ 전송에 실패했습니다. 다시 시도해주세요.');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.textContent = '제보하기';
+            submitBtn.textContent = '전송하기';
         }
     }
 
@@ -369,5 +369,5 @@
         createUI();
     }
 
-    originalConsole.log('✅ [ErrorReporter] 오류 제보 시스템 로드 완료 (v=001)');
+    originalConsole.log('✅ [ErrorReporter] 오류 전송 시스템 로드 완료 (v=002)');
 })();
