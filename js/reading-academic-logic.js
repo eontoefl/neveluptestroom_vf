@@ -6,12 +6,24 @@
 
 /**
  * 번역 수에 맞춰 원문을 문장 단위로 분리 (academic 전용)
+ * 🆕 새 구분자(#|#, ##) 우선 처리, 없으면 기존 온점 기반 분리
  * (A)(B)(C)(D) 괄호 마커를 앞 문장에 병합
  */
 function splitToMatchTranslations_ac(cleanContent, translationCount) {
     if (translationCount <= 0) {
         return cleanContent.split(/\n\n+/).filter(s => s.trim());
     }
+    
+    // 🆕 새 구분자가 있으면 그걸로 분리 (정확한 1:1 매칭)
+    if (cleanContent.includes('#|#') || cleanContent.includes('##')) {
+        // <<word>> 마크업 제거 (result screen에서는 순수 텍스트로)
+        let raw = cleanContent.replace(/<<([^>]+)>>/g, '$1');
+        // 모든 구분자를 통일된 구분자로 변환 후 split
+        const sentences = raw.split(/(?:##|#\|\|#|#\|#)/).map(s => s.trim()).filter(s => s);
+        if (sentences.length === translationCount) return sentences;
+    }
+    
+    // 기존 로직 (구 데이터용)
     const paragraphs = cleanContent.split(/\n\n+/).filter(s => s.trim());
     if (paragraphs.length === translationCount) return paragraphs;
     
@@ -279,8 +291,9 @@ function renderAcademicSetResult(setResult, secondAttemptData, firstResults, sec
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 수에 맞춰 문장 분리
-    const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+    // \n 처리 + 번역 수에 맞춰 문장 분리 (contentRaw 우선 사용)
+    const rawContent = setResult.passage.contentRaw || setResult.passage.content;
+    const cleanContent = rawContent.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
     const sentences = splitToMatchTranslations_ac(cleanContent, translations.length);
     
@@ -504,8 +517,9 @@ function renderAcademicSetResultOriginal(setResult, setIdx) {
                 <div class="passage-content-bilingual">
     `;
     
-    // \n 처리 + 번역 수에 맞춰 문장 분리
-    const cleanContent = setResult.passage.content.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+    // \n 처리 + 번역 수에 맞춰 문장 분리 (contentRaw 우선 사용)
+    const rawContent = setResult.passage.contentRaw || setResult.passage.content;
+    const cleanContent = rawContent.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
     const translations = setResult.passage.translations || [];
     const sentences = splitToMatchTranslations_ac(cleanContent, translations.length);
     

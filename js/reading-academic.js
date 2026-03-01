@@ -73,6 +73,7 @@ async function _fetchAcademicFromSupabase() {
                 passage: {
                     title: row.passage_title,
                     content: convertAcademicPassage(row.passage_content),
+                    contentRaw: row.passage_content,  // result screen용 원시 문자열
                     translations,
                     interactiveWords: interactiveWordsList
                 },
