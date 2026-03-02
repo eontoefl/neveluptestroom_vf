@@ -4,6 +4,7 @@
  * Review 패널 - 리딩/리스닝 1차 풀이 중 문제 목록 확인 + 이동
  * ================================================
  * 
+ * v4 - 2026-03-02 컴포넌트 이동 시 componentResults 복원 버그 수정
  * v3 - 2026-02-24 전면 재설계
  * 
  * ★ 핵심 원칙: 
@@ -615,12 +616,13 @@ const ReviewPanel = {
     },
 
     /**
-     * ★★★ 컴포넌트 이동 (v3 — splice/pop 없는 안전한 이동)
+     * ★★★ 컴포넌트 이동 (v4 — _answerStore 기반 완전 복원)
      * 
      * 핵심 원칙:
      * 1. 현재 답안을 _answerStore에 저장
-     * 2. componentResults / allAnswers를 대상 지점으로 되감기 (splice)
-     *    → 되감기 해도 _answerStore에 원본이 있으므로 유실 없음
+     * 2. componentResults / allAnswers를 처음부터 재구성
+     *    → _answerStore에서 target 이전 모든 파트의 채점 기록을 복원
+     *    → 뒤로 갔다가 다시 앞으로 점프해도 중간 파트 기록이 유실되지 않음
      * 3. 대상 컴포넌트를 재초기화하고, _answerStore에서 답안 복원
      * 4. onComponentComplete를 패치하여 다음 컴포넌트도 자동 복원
      */
@@ -639,21 +641,38 @@ const ReviewPanel = {
         const savedAnswers = targetStore ? targetStore.answers : [];
         console.log(`📋 [Review] 대상(comp ${targetCompIndex}) 저장된 답안: ${savedAnswers.length}개`);
 
-        // ── 2. componentResults / allAnswers를 대상 지점으로 되감기 ──
-        //    (onComponentComplete의 push 로직과 호환하기 위해 필수)
-        //    _answerStore에 원본이 있으므로 유실 걱정 없음
-        if (mc.componentResults.length > targetCompIndex) {
-            mc.componentResults.splice(targetCompIndex);
-            console.log(`📋 [Review] componentResults를 ${targetCompIndex}개로 잘라냄`);
-        }
-        let answersBeforeTarget = 0;
+        // ── 2. componentResults / allAnswers를 대상 지점으로 재구성 ──
+        //    v4: splice로 자른 후, _answerStore에서 target 이전 파트들의 채점 기록을 복원
+        //    → 뒤로 갔다가 다시 앞으로 점프해도 중간 파트 기록이 유실되지 않음
+        mc.componentResults = [];
+        mc.allAnswers = [];
+        
         for (let i = 0; i < targetCompIndex; i++) {
-            answersBeforeTarget += mc.config.components[i].questionsPerSet;
+            const comp = mc.config.components[i];
+            const store = this._answerStore[i];
+            
+            if (store && store.answers && store.answers.length > 0) {
+                // _answerStore에서 채점 기록 복원
+                mc.componentResults.push({
+                    componentType: comp.type,
+                    setId: comp.setId,
+                    answers: JSON.parse(JSON.stringify(store.answers))
+                });
+                mc.allAnswers.push(...JSON.parse(JSON.stringify(store.answers)));
+                console.log(`📋 [Review] comp[${i}] ${comp.type}(setId:${comp.setId}) 복원 완료 - 답안 ${store.answers.length}개`);
+            } else {
+                // 답안이 없는 파트는 빈 결과로 채움 (인덱스 정합성 유지)
+                mc.componentResults.push({
+                    componentType: comp.type,
+                    setId: comp.setId,
+                    answers: []
+                });
+                console.log(`📋 [Review] comp[${i}] ${comp.type}(setId:${comp.setId}) 답안 없음 - 빈 결과 삽입`);
+            }
         }
-        if (mc.allAnswers.length > answersBeforeTarget) {
-            mc.allAnswers.splice(answersBeforeTarget);
-            console.log(`📋 [Review] allAnswers를 ${answersBeforeTarget}개로 잘라냄`);
-        }
+        
+        let answersBeforeTarget = mc.allAnswers.length;
+        console.log(`📋 [Review] componentResults ${mc.componentResults.length}개 복원, allAnswers ${answersBeforeTarget}개 복원`);
 
         // ── 3. 컴포넌트 인덱스 이동 ──
         mc.currentComponentIndex = targetCompIndex;
