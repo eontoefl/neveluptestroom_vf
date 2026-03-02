@@ -166,6 +166,12 @@ class RetakeController {
                 }
             });
         });
+        
+        // ★ Review 버튼 숨기기 (2차 풀이에서는 불필요)
+        document.querySelectorAll('.review-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+        console.log('🔄 [RetakeController] Review 버튼 숨김 완료');
     }
     
     /**
