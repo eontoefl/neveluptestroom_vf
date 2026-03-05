@@ -324,7 +324,6 @@ function renderAnswerStructure(result, isCorrectAnswer) {
         } else {
             // 주어진 단어 (회색으로 표시)
             html += `<span class="arrange-result-given">${escapeHtml(word)}</span> `;
-            correctIndex++;
         }
     });
     
