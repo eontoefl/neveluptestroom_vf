@@ -356,12 +356,14 @@
     transform: translateX(-50%);
     background: #1e1e2f;
     color: #fff;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.6;
     font-weight: 400;
     white-space: nowrap;
-    max-width: 280px;
+    max-width: 360px;
+    min-width: 200px;
     white-space: normal;
     z-index: 50;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
