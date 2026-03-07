@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="css/vocab-test-v3.css?v=20250209-icon-buttons">
     <link rel="stylesheet" href="css/vocab-test-result-v4.css?v=20250209-clean-layout">
     <link rel="stylesheet" href="css/intro-book-modal.css?v=001">
+    <link rel="stylesheet" href="css/notification.css?v=001">
     <link rel="stylesheet" href="css/review-panel.css?v=001">
     <link rel="stylesheet" href="css/error-note.css?v=003_retry">
     
@@ -300,18 +301,43 @@
                     <span class="program-badge" id="userProgramBadge"></span>
                 </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="mypage-btn" onclick="window.location.href='mypage.html'">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <!-- 🔔 알림 버튼 -->
+                <div class="notif-wrapper" id="notifWrapper">
+                    <button class="nav-icon-btn notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown()" title="알림">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notifBadge" style="display:none;"></span>
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-dropdown-header">
+                            <span>📬 알림</span>
+                            <span class="notif-dropdown-count" id="notifDropdownCount"></span>
+                        </div>
+                        <div class="notif-dropdown-list" id="notifDropdownList"></div>
+                    </div>
+                </div>
+                <button class="nav-icon-btn" onclick="window.location.href='mypage.html'" title="마이페이지">
                     <i class="fas fa-chart-line"></i>
-                    마이페이지
                 </button>
-                <button class="logout-btn" onclick="logout()">
+                <button class="nav-icon-btn nav-icon-logout" onclick="logout()" title="로그아웃">
                     <i class="fas fa-sign-out-alt"></i>
-                    로그아웃
                 </button>
             </div>
         </div>
-        
+        <!-- 🔔 알림 상세 팝업 -->
+        <div class="notif-popup-overlay" id="notifPopupOverlay" onclick="closeNotifDetail()">
+            <div class="notif-popup" onclick="event.stopPropagation()">
+                <div class="notif-popup-header">
+                    <div class="notif-popup-title" id="notifPopupTitle"></div>
+                    <button class="notif-popup-close" onclick="closeNotifDetail()">✕</button>
+                </div>
+                <div class="notif-popup-meta" id="notifPopupMeta"></div>
+                <div class="notif-popup-body" id="notifPopupBody"></div>
+                <div class="notif-popup-footer">
+                    <button class="notif-popup-confirm" onclick="closeNotifDetail()">확인</button>
+                </div>
+            </div>
+        </div>
         <!-- 📢 공지사항 (top-nav-bar 왼쪽 면에 정렬, Supabase에서 동적 로드) -->
         <div id="noticeContainer" style="
             position: absolute;
@@ -3270,6 +3296,7 @@
     
 <script src="js/vocab-test-logic-v2.js?v=20260223_stats"></script>
     <script src="js/timer.js"></script>
+    <script src="js/notification.js?v=001"></script>
     <script src="js/main.js?v=20260223_progress_fix"></script>
     <script src="js/navigation.js?v=003_popup_rules"></script>
     <script src="js/supabase-client.js?v=003_upsert_fix"></script>
