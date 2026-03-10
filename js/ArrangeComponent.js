@@ -120,6 +120,15 @@ class ArrangeComponent {
     async loadData() {
         console.log('[ArrangeComponent] 데이터 로드 시작');
         
+        // 1) Supabase 우선 시도
+        const supabaseResult = await this._loadFromSupabase();
+        if (supabaseResult) {
+            this.data = supabaseResult;
+            return;
+        }
+        
+        // 2) Google Sheets 폴백
+        console.log('🔄 [ArrangeComponent] Google Sheets 폴백 시도...');
         const csvUrl = `https://docs.google.com/spreadsheets/d/${this.SHEET_CONFIG.spreadsheetId}/export?format=csv&gid=${this.SHEET_CONFIG.gid}`;
         console.log('[ArrangeComponent] CSV URL:', csvUrl);
         
@@ -138,6 +147,60 @@ class ArrangeComponent {
         } catch (error) {
             console.error('[ArrangeComponent] 데이터 로드 실패, 데모 데이터 사용:', error);
             this.data = this.getDemoData();
+        }
+    }
+    
+    // --- Supabase에서 로드 ---
+    async _loadFromSupabase() {
+        if (typeof USE_SUPABASE !== 'undefined' && !USE_SUPABASE) return null;
+        if (typeof supabaseSelect !== 'function') return null;
+        
+        try {
+            console.log('📥 [ArrangeComponent] Supabase에서 데이터 로드...');
+            const rows = await supabaseSelect('tr_writing_arrange', 'select=*&order=set_id.asc,question_num.asc');
+            
+            if (!rows || rows.length === 0) {
+                console.warn('⚠️ [ArrangeComponent] Supabase 데이터 없음');
+                return null;
+            }
+            
+            console.log(`✅ [ArrangeComponent] Supabase에서 ${rows.length}개 행 로드 성공`);
+            
+            // 행 데이터를 세트별로 그룹화
+            const setsMap = {};
+            rows.forEach(row => {
+                const setId = row.set_id;
+                if (!setsMap[setId]) {
+                    setsMap[setId] = {
+                        setId: setId,
+                        week: row.week || 'Week 1',
+                        day: row.day || '월',
+                        questions: []
+                    };
+                }
+                setsMap[setId].questions.push({
+                    questionNum: parseInt(row.question_num) || 1,
+                    givenSentence: row.given_sentence || '',
+                    givenTranslation: row.given_translation || '',
+                    correctAnswer: (row.correct_answer || '').split('|'),
+                    correctTranslation: row.correct_translation || '',
+                    presentedWords: (row.presented_words || '').split('|'),
+                    optionWords: (row.option_words || '').split('|'),
+                    endPunctuation: row.end_punctuation || '.',
+                    explanation: row.explanation || ''
+                });
+            });
+            
+            const setsArray = Object.values(setsMap).map(set => {
+                set.questions.sort((a, b) => a.questionNum - b.questionNum);
+                return set;
+            });
+            
+            return { type: 'writing_arrange', timeLimit: this.TIME_LIMIT, sets: setsArray };
+            
+        } catch (error) {
+            console.error('❌ [ArrangeComponent] Supabase 로드 실패:', error);
+            return null;
         }
     }
     
@@ -245,11 +308,24 @@ class ArrangeComponent {
     }
     
     /**
-     * 랜덤 남녀 조합 생성 (남남/여여 불가)
+     * 랜덤 남녀 조합 생성 (남남/여여 불가, 직전 이미지 제외)
      */
     getRandomGenderPair() {
-        const femaleIndex = Math.floor(Math.random() * this.FEMALE_IMAGES.length);
-        const maleIndex = Math.floor(Math.random() * this.MALE_IMAGES.length);
+        // static 레벨 직전 이미지 추적
+        if (!ArrangeComponent._lastFemaleImage) ArrangeComponent._lastFemaleImage = null;
+        if (!ArrangeComponent._lastMaleImage) ArrangeComponent._lastMaleImage = null;
+        
+        const pickExcludingLast = (images, lastKey) => {
+            if (images.length <= 1) return images[0] || '';
+            const last = ArrangeComponent[lastKey];
+            const candidates = last ? images.filter(img => img !== last) : images;
+            const picked = candidates[Math.floor(Math.random() * candidates.length)];
+            ArrangeComponent[lastKey] = picked;
+            return picked;
+        };
+        
+        const femaleImage = pickExcludingLast(this.FEMALE_IMAGES, '_lastFemaleImage');
+        const maleImage = pickExcludingLast(this.MALE_IMAGES, '_lastMaleImage');
         
         // 랜덤으로 순서 결정 (50% 확률로 여자가 먼저 or 남자가 먼저)
         const femaleFirst = Math.random() < 0.5;
@@ -257,17 +333,17 @@ class ArrangeComponent {
         return {
             first: femaleFirst ? {
                 gender: 'female',
-                image: this.FEMALE_IMAGES[femaleIndex]
+                image: femaleImage
             } : {
                 gender: 'male',
-                image: this.MALE_IMAGES[maleIndex]
+                image: maleImage
             },
             second: femaleFirst ? {
                 gender: 'male',
-                image: this.MALE_IMAGES[maleIndex]
+                image: maleImage
             } : {
                 gender: 'female',
-                image: this.FEMALE_IMAGES[femaleIndex]
+                image: femaleImage
             }
         };
     }
