@@ -479,10 +479,12 @@ class ArrangeComponent {
         
         // 하단 보기 단어들
         const usedWords = savedAnswer ? Object.values(savedAnswer) : [];
-        // ★ 대소문자 무시 비교 (첫 빈칸 대문자 변환 대응)
-        const usedWordsLower = usedWords.map(w => w.toLowerCase());
-        const optionsHtml = question.optionWords.map(word => {
-            const isUsed = isReadonly || usedWordsLower.includes(word.toLowerCase());
+const usedWordsLower = [...usedWords.map(w => w.toLowerCase())];
+const optionsHtml = question.optionWords.map(word => {
+    const wordLower = word.toLowerCase();
+    const usedIndex = usedWordsLower.indexOf(wordLower);
+    const isUsed = isReadonly || usedIndex !== -1;
+    if (usedIndex !== -1) usedWordsLower.splice(usedIndex, 1);
             return `
                 <div class="arrange-option ${isUsed ? 'used' : ''}" 
                      draggable="${!isUsed}" 
