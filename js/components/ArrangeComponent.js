@@ -602,14 +602,16 @@ const optionsHtml = question.optionWords.map(word => {
                 const questionKey = `${this.currentSetData.setId}_q${question.questionNum}`;
                 this.answers[questionKey] = {};
                 
-                // correctAnswer 배열에서 빈칸 위치에 맞는 단어를 채움
+                // ★ correctAnswer 배열에서 빈칸 위치에 맞는 단어를 채움
+                let correctIdx = 0;
                 question.presentedWords.forEach((word, wordIdx) => {
                     if (word === '_') {
-                        // correctAnswer에서 대응하는 단어 찾기
-                        const correctWord = question.correctAnswer[wordIdx];
+                        // correctAnswer에서 순서대로 단어 가져오기
+                        const correctWord = question.correctAnswer[correctIdx];
                         if (correctWord) {
                             this.answers[questionKey][wordIdx] = correctWord;
                         }
+                        correctIdx++;
                     }
                 });
                 
@@ -768,25 +770,28 @@ const optionsHtml = question.optionWords.map(word => {
             
             // 사용자가 입력한 전체 문장 만들기
             const userFullAnswer = [];
+            const userBlankAnswers = []; // ★ 빈칸 답만 추출
             question.presentedWords.forEach((word, idx) => {
                 if (word === '_') {
                     if (userAnswer && userAnswer[idx]) {
                         userFullAnswer.push(userAnswer[idx]);
+                        userBlankAnswers.push(userAnswer[idx]); // ★ 빈칸 답 수집
                     } else {
                         userFullAnswer.push('___');
+                        userBlankAnswers.push('___'); // ★ 미입력도 수집
                     }
                 } else {
                     userFullAnswer.push(word);
                 }
             });
             
-            // 정답 확인
+            // ★ 정답 확인 (빈칸 답만 비교)
             let isCorrect = true;
-            if (userFullAnswer.length !== question.correctAnswer.length) {
+            if (userBlankAnswers.length !== question.correctAnswer.length) {
                 isCorrect = false;
             } else {
                 for (let i = 0; i < question.correctAnswer.length; i++) {
-                    if (userFullAnswer[i] !== question.correctAnswer[i]) {
+                    if (userBlankAnswers[i] !== question.correctAnswer[i]) {
                         isCorrect = false;
                         break;
                     }
