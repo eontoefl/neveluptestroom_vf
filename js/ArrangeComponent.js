@@ -786,7 +786,7 @@ const optionsHtml = question.optionWords.map(word => {
                 isCorrect = false;
             } else {
                 for (let i = 0; i < question.correctAnswer.length; i++) {
-                    if (userFullAnswer[i] !== question.correctAnswer[i]) {
+                    if (userFullAnswer[i].toLowerCase() !== question.correctAnswer[i].toLowerCase()) {
                         isCorrect = false;
                         break;
                     }

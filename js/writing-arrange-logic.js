@@ -317,7 +317,7 @@ function renderAnswerStructure(result, isCorrectAnswer) {
             } else {
                 // 내 답변: 내가 채운 단어 표시
                 const userWord = userFilledWords[index] || '___';
-                const isWrong = userWord !== correctWords[correctIndex];
+                const isWrong = (userWord || '').toLowerCase() !== (correctWords[correctIndex] || '').toLowerCase();
                 html += `<span class="arrange-result-blank user-blank ${isWrong ? 'wrong-blank' : 'correct-blank'}">${escapeHtml(userWord)}</span> `;
             }
             correctIndex++;
