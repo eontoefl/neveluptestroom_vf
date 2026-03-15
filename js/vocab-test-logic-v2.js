@@ -68,8 +68,9 @@ async function _loadVocabFromSupabase(pages) {
     if (typeof supabaseSelect !== 'function') return null;
     
     try {
-        console.log('📥 [Vocab] Supabase에서 데이터 로드...');
-        const rows = await supabaseSelect('tr_vocab', 'select=*&order=page.asc,id.asc');
+        console.log('📥 [Vocab] Supabase에서 데이터 로드... 페이지:', pages.join(', '));
+        const pageFilter = pages.map(p => `page.eq.${p}`).join(',');
+        const rows = await supabaseSelect('tr_vocab', `select=*&or=(${pageFilter})&order=page.asc,id.asc`);
         
         if (!rows || rows.length === 0) {
             console.warn('⚠️ [Vocab] Supabase 데이터 없음');
