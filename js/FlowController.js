@@ -619,8 +619,17 @@ const FlowController = {
         window.flowExplainData = explainData;
         
         // ★ 섹션별로 다른 해설 화면 호출
-        if (this.sectionType === 'reading' || this.sectionType === 'listening') {
-            // 리딩/리스닝: 기존 final-explain-screen.js 사용
+        if (this.sectionType === 'reading') {
+            // 리딩: showReadingRetakeResult 사용 (만점이든 아니든 동일 경로)
+            if (typeof window.showReadingRetakeResult === 'function') {
+                const resultData = this._buildReadingResultData();
+                window.showReadingRetakeResult(resultData);
+            } else {
+                console.warn('⚠️ [FlowController] showReadingRetakeResult 함수가 없습니다.');
+                this.showCompletionScreen();
+            }
+        } else if (this.sectionType === 'listening') {
+            // 리스닝: 기존 final-explain-screen.js 사용
             if (typeof window.showFinalExplainScreen === 'function') {
                 window.showFinalExplainScreen(this.firstAttemptResult, this.retakeResult);
             } else {
@@ -1061,6 +1070,73 @@ const FlowController = {
         document.querySelectorAll('.retake-badge').forEach(function(badge) {
             badge.style.display = 'none';
         });
+    },
+
+    // ========================================
+    // 리딩 결과 데이터 구성 (showReadingRetakeResult용)
+    // 만점이면 2차 = 1차와 동일, 만점 아니면 retakeResult 사용
+    // ========================================
+    _buildReadingResultData() {
+        const firstResult = this.firstAttemptResult;
+        const totalQuestions = firstResult.totalQuestions || 35;
+        
+        // 1차 결과 배열 구성: componentResults에서 isCorrect 추출
+        const firstResults = [];
+        if (firstResult.componentResults) {
+            firstResult.componentResults.forEach(comp => {
+                const answers = comp.answers || comp.results || [];
+                answers.forEach(a => firstResults.push(a.isCorrect || false));
+            });
+        }
+        
+        // 2차 결과: retakeResult가 있으면 사용, 없으면 (만점) 1차와 동일
+        let secondResults;
+        let secondScore, secondPercent, secondLevel;
+        let retakeGraded = this.retakeResult;
+        
+        if (retakeGraded && retakeGraded.firstAttempt) {
+            // 2차 풀이를 한 경우: retakeResult에 이미 채점 데이터가 있음
+            return retakeGraded;
+        }
+        
+        // 만점인 경우: 2차 = 1차와 동일
+        secondResults = [...firstResults];
+        const firstScore = firstResults.filter(r => r).length;
+        const firstPercent = Math.round((firstScore / totalQuestions) * 100);
+        secondScore = firstScore;
+        secondPercent = firstPercent;
+        
+        // 레벨 계산 (Reading 35문제 기준)
+        const calcLevel = (c) => {
+            if (c <= 3) return 1.0; if (c <= 6) return 1.5; if (c <= 10) return 2.0;
+            if (c <= 13) return 2.5; if (c <= 17) return 3.0; if (c <= 20) return 3.5;
+            if (c <= 24) return 4.0; if (c <= 27) return 4.5; if (c <= 30) return 5.0;
+            if (c <= 32) return 5.5; return 6.0;
+        };
+        const firstLevel = calcLevel(firstScore);
+        secondLevel = calcLevel(secondScore);
+        
+        return {
+            firstAttempt: {
+                score: firstScore,
+                percentage: firstPercent,
+                level: firstLevel,
+                results: firstResults
+            },
+            secondAttempt: {
+                score: secondScore,
+                percentage: secondPercent,
+                level: secondLevel,
+                results: secondResults
+            },
+            improvement: {
+                scoreDiff: 0,
+                percentDiff: 0,
+                levelDiff: 0
+            },
+            secondAttemptAnswers: {},
+            componentResults: firstResult.componentResults
+        };
     },
 
     // ========================================
