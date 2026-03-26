@@ -16,6 +16,8 @@ let mpUser = null;           // sessionStorage에서 로드한 유저 정보
 let mpStudyRecords = [];     // tr_study_records
 let mpAuthRecords = [];      // tr_auth_records
 let mpGradeRules = [];       // tr_grade_rules (등급/환급 기준표)
+let mpRecordPage = 1;        // 최근 기록 현재 페이지 (더보기용)
+const MP_RECORDS_PER_PAGE = 20; // 한 번에 표시할 기록 수
 
 // ================================================
 // 스케줄 데이터 (총 과제 수 / 총 일수 계산용)
@@ -451,13 +453,39 @@ function renderRecentRecords() {
                 </td>
             </tr>
         `;
+        hideLoadMoreButton();
         return;
     }
 
-    // 최근 20개만 표시
-    const recent = mpStudyRecords.slice(0, 20);
+    // 페이지 초기화 후 첫 페이지 렌더
+    mpRecordPage = 1;
+    const recent = mpStudyRecords.slice(0, MP_RECORDS_PER_PAGE);
     
-    tbody.innerHTML = recent.map(record => {
+    tbody.innerHTML = buildRecordRows(recent);
+    updateLoadMoreButton();
+}
+
+/**
+ * 더보기 – 다음 페이지 기록 추가
+ */
+function loadMoreRecords() {
+    mpRecordPage++;
+    const start = (mpRecordPage - 1) * MP_RECORDS_PER_PAGE;
+    const end = start + MP_RECORDS_PER_PAGE;
+    const next = mpStudyRecords.slice(start, end);
+
+    if (next.length === 0) return;
+
+    const tbody = document.getElementById('recordTableBody');
+    tbody.insertAdjacentHTML('beforeend', buildRecordRows(next));
+    updateLoadMoreButton();
+}
+
+/**
+ * 기록 행 HTML 생성 (공통)
+ */
+function buildRecordRows(records) {
+    return records.map(record => {
         const date = formatDate(record.completed_at);
         const taskLabel = getTaskLabel(record.task_type);
         const moduleText = getModuleText(record);
@@ -486,6 +514,29 @@ function renderRecentRecords() {
             </tr>
         `;
     }).join('');
+}
+
+/**
+ * 더보기 버튼 표시/숨김 업데이트
+ */
+function updateLoadMoreButton() {
+    const total = mpStudyRecords.length;
+    const shown = mpRecordPage * MP_RECORDS_PER_PAGE;
+    const btn = document.getElementById('loadMoreBtn');
+    if (!btn) return;
+
+    if (shown >= total) {
+        btn.style.display = 'none';
+    } else {
+        const remaining = total - shown;
+        btn.style.display = '';
+        btn.textContent = `이전 기록 더보기 (${remaining}건 남음)`;
+    }
+}
+
+function hideLoadMoreButton() {
+    const btn = document.getElementById('loadMoreBtn');
+    if (btn) btn.style.display = 'none';
 }
 
 /**
